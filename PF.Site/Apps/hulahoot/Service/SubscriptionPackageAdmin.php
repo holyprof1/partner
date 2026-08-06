@@ -184,19 +184,24 @@ class SubscriptionPackageAdmin
      * insert, same convention as ProfileTypeAdmin's is_default handling).
      *
      * @param int $iPackageId must already exist in subscribe_package
-     * @param array $aData subtitle, description, badge_text, image,
-     *        accent_color, button_text, ordering, purchase_limit,
-     *        campaign_limit, posting_limit_per_day, posting_limit_per_month,
+     * @param array $aData subtitle, description, badge_text, accent_color,
+     *        button_text, ordering, purchase_limit, campaign_limit,
+     *        posting_limit_per_day, posting_limit_per_month,
      *        monthly_credits, is_active
      * @param int[] $aIndustryIds
      * @param string[] $aFeatureTexts in display order - blank entries are
      *        dropped, order in the array becomes the stored ordering
+     * @param string|null $sImagePath already-uploaded path (see
+     *        Service\ImageUpload::upload()), or null to leave the
+     *        existing image untouched (i.e. no new file was uploaded this
+     *        submit) - same convention as IndustryAdmin::update()'s
+     *        banner/thumbnail params.
      *
      * @return bool
      *
      * @throws \InvalidArgumentException if the native package doesn't exist
      */
-    public function saveRules($iPackageId, array $aData, array $aIndustryIds, array $aFeatureTexts = [])
+    public function saveRules($iPackageId, array $aData, array $aIndustryIds, array $aFeatureTexts = [], $sImagePath = null)
     {
         $iPackageId = (int)$iPackageId;
 
@@ -213,12 +218,14 @@ class SubscriptionPackageAdmin
         db()->beginTransaction();
 
         try {
-            $bExists = (bool)db()->select('package_id')
+            $aExisting = db()->select('image')
                 ->from(':hulahoot_subscription_package')
                 ->where(['package_id' => $iPackageId])
-                ->execute('getSlaveField');
+                ->execute('getSlaveRow');
 
-            if ($bExists) {
+            $aClean['image'] = $sImagePath !== null ? $sImagePath : ($aExisting['image'] ?? null);
+
+            if ($aExisting) {
                 db()->update(':hulahoot_subscription_package', array_merge($aClean, [
                     'updated' => time(),
                 ]), ['package_id' => $iPackageId]);
@@ -291,7 +298,6 @@ class SubscriptionPackageAdmin
             'subtitle' => trim((string)($aData['subtitle'] ?? '')),
             'description' => trim((string)($aData['description'] ?? '')),
             'badge_text' => trim((string)($aData['badge_text'] ?? '')),
-            'image' => trim((string)($aData['image'] ?? '')),
             'accent_color' => $sAccentColor,
             'button_text' => trim((string)($aData['button_text'] ?? '')),
             'ordering' => max(0, (int)($aData['ordering'] ?? 0)),

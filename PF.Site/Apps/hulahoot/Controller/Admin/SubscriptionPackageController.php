@@ -21,11 +21,18 @@ class SubscriptionPackageController extends Phpfox_Component
     public function process()
     {
         $service = new \Apps\Hulahoot\Service\SubscriptionPackageAdmin();
+        $uploadService = new \Apps\Hulahoot\Service\ImageUpload();
+
+        $aPackages = $service->listAll();
+        foreach ($aPackages as &$aPackage) {
+            $aPackage['hulahoot_image_url'] = $uploadService->resolveUrl($aPackage['hulahoot_rules']['image'] ?? null);
+        }
+        unset($aPackage);
 
         $this->template()->setTitle(_p('hulahoot_admin_subscription_packages'))
             ->setBreadCrumb(_p('hulahoot_admin_subscription_packages'))
             ->assign([
-                'packages' => $service->listAll(),
+                'packages' => $aPackages,
                 'subscriptions_active' => Phpfox::isAppActive('Core_Subscriptions'),
             ]);
     }

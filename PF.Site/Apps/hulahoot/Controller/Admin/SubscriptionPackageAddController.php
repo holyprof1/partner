@@ -9,17 +9,12 @@ use Phpfox_Plugin;
 defined('PHPFOX') or exit('NO DICE!');
 
 /**
- * AdminCP "Edit Rules" form for one native subscription package. Only ever
- * writes to hulahoot_subscription_package / hulahoot_subscription_package_industry
+ * AdminCP "Edit Package" form for one native subscription package. Only
+ * ever writes to hulahoot_subscription_package /
+ * hulahoot_subscription_package_industry / hulahoot_subscription_package_feature
  * (via Service/SubscriptionPackageAdmin::saveRules()) - never touches
  * subscribe_package itself, so the native package's own title/price/billing
  * screen (Core Subscriptions' AdminCP) remains the only place those change.
- *
- * Still the Phase 2 foundation cut of this form (limits + Industry
- * checkboxes only) - the presentation fields (subtitle, image, badge,
- * etc.) and Feature list added to the schema alongside hulahoot_industry
- * get their own admin UI in a later milestone. See
- * docs/PHASE_2_SUBSCRIPTION.md.
  *
  * Named "Add" (not "Edit") to match the "{resource}-add" -> "{resource}-form"
  * component/template naming convention already established by
@@ -34,6 +29,7 @@ class SubscriptionPackageAddController extends Phpfox_Component
     public function process()
     {
         $service = new \Apps\Hulahoot\Service\SubscriptionPackageAdmin();
+        $uploadService = new \Apps\Hulahoot\Service\ImageUpload();
         $req = $this->request();
         $error = null;
 
@@ -46,22 +42,37 @@ class SubscriptionPackageAddController extends Phpfox_Component
 
         $rules = $service->getRules($packageId);
         $selectedIndustryIds = $service->getIndustryIdsForPackage($packageId);
+        $featureTexts = array_column($service->getFeaturesForPackage($packageId), 'feature_text');
 
         if ($req->method() === 'POST') {
             if ($req->get('hulahoot_token') !== Phpfox::getService('log.session')->getToken()) {
                 $error = _p('hulahoot_invalid_token');
             } else {
                 $rules = [
+                    'subtitle' => $req->get('subtitle'),
+                    'description' => $req->get('description'),
+                    'badge_text' => $req->get('badge_text'),
+                    'accent_color' => $req->get('accent_color'),
+                    'button_text' => $req->get('button_text'),
+                    'ordering' => $req->get('ordering'),
                     'purchase_limit' => $req->get('purchase_limit'),
+                    'campaign_limit' => $req->get('campaign_limit'),
                     'posting_limit_per_day' => $req->get('posting_limit_per_day'),
                     'posting_limit_per_month' => $req->get('posting_limit_per_month'),
                     'monthly_credits' => (int)$req->get('monthly_credits'),
                     'is_active' => $req->get('is_active') ? 1 : 0,
                 ];
                 $selectedIndustryIds = array_map('intval', (array)$req->get('industry_ids', []));
+                // One feature per line - the simplest possible "add /
+                // remove / reorder" UI: typing a new line adds a feature,
+                // deleting one removes it, and reordering the lines
+                // reorders the list. No JS-driven repeater needed.
+                $featureTexts = preg_split('/\r\n|\r|\n/', (string)$req->get('features', ''));
 
                 try {
-                    $service->saveRules($packageId, $rules, $selectedIndustryIds);
+                    $sImagePath = $uploadService->upload('image');
+
+                    $service->saveRules($packageId, $rules, $selectedIndustryIds, $featureTexts, $sImagePath);
 
                     $this->url()->send('/admincp/hulahoot/subscriptionpackage', [], _p('hulahoot_subscription_package_rules_updated'));
                 } catch (\InvalidArgumentException $e) {
@@ -83,6 +94,10 @@ class SubscriptionPackageAddController extends Phpfox_Component
                 'package_id' => $packageId,
                 'package' => $package,
                 'rules' => $rules,
+                'image_url' => $uploadService->resolveUrl($rules['image'] ?? null),
+                'features_text' => implode("\n", array_filter($featureTexts, function ($s) {
+                    return trim((string)$s) !== '';
+                })),
                 'industries' => $service->getAllIndustries(),
                 'selected_industry_map' => $selectedIndustryMap,
                 'error' => $error,

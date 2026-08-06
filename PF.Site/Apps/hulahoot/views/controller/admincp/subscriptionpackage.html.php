@@ -21,6 +21,10 @@ defined('PHPFOX') or exit('NO DICE!');
     .hulahoot-admin-actions { white-space: nowrap; text-align: right; }
     .hulahoot-admin-actions .btn { margin-left: 4px; }
     .hulahoot-admin-empty { text-align: center; color: #888; padding: 28px 10px !important; }
+    .hulahoot-package-thumb {
+        width: 40px; height: 40px; border-radius: 4px; object-fit: cover;
+        background: #f0f0f0; display: inline-block; vertical-align: middle; margin-right: 8px;
+    }
 {/literal}
 </style>
 <div class="hulahoot-admin">
@@ -51,7 +55,12 @@ defined('PHPFOX') or exit('NO DICE!');
         <tbody>
             {foreach from=$packages item=aPackage}
                 <tr>
-                    <td>{_p var=$aPackage.title}</td>
+                    <td>
+                        {if $aPackage.hulahoot_image_url}
+                            <img class="hulahoot-package-thumb" src="{$aPackage.hulahoot_image_url}" alt="">
+                        {/if}
+                        {_p var=$aPackage.title}
+                    </td>
                     <td>
                         {if $aPackage.default_cost}
                             {$aPackage.default_cost} {$aPackage.default_currency_id|clean}

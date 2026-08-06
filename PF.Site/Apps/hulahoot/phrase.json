@@ -178,5 +178,24 @@
     "hulahoot_industry_slug_help": "Lowercase letters, numbers, and hyphens only. Leave blank to auto-generate from the name.",
     "hulahoot_field_package_count": "# Packages",
     "hulahoot_image_upload_invalid": "That file isn't a valid image. We only accept: {support}.",
-    "hulahoot_image_upload_failed": "Something went wrong uploading that file - please try again."
+    "hulahoot_image_upload_failed": "Something went wrong uploading that file - please try again.",
+
+    "hulahoot_section_presentation": "Presentation",
+    "hulahoot_field_subtitle": "Subtitle",
+    "hulahoot_subtitle_placeholder": "e.g. Best for solo creators",
+    "hulahoot_field_badge_text": "Badge Text",
+    "hulahoot_badge_text_placeholder": "e.g. Most Popular",
+    "hulahoot_field_button_text": "Button Text",
+    "hulahoot_button_text_placeholder": "e.g. Choose Plan",
+    "hulahoot_field_accent_color": "Accent Color",
+    "hulahoot_accent_color_help": "Hex value (e.g. #2C7BE5), or leave blank for the theme default.",
+    "hulahoot_field_package_image": "Package Image",
+    "hulahoot_package_ordering_help": "Display order among packages within the same industry.",
+    "hulahoot_section_limits": "Limits & Credits",
+    "hulahoot_field_campaign_limit": "Campaign Limit",
+    "hulahoot_campaign_limit_help": "Maximum number of campaigns this plan allows. Leave blank for unlimited.",
+    "hulahoot_section_features": "Features",
+    "hulahoot_field_features": "Feature List",
+    "hulahoot_features_placeholder": "One feature per line, e.g.:\nUnlimited promotions\nPriority support\nCustom branding",
+    "hulahoot_features_help": "One feature per line. The order here is the display order - reorder by moving lines."
 }
