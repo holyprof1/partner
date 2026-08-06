@@ -1,0 +1,17 @@
+<div class="hulahoot-admin">
+    <div class="page-header hulahoot-page-header">
+        <h1>{{ _p('hulahoot_delete_category') }}</h1>
+    </div>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error|e }}</div>
+    {% endif %}
+
+    <p>{{ _p('hulahoot_confirm_delete_category', {name: _p(category.name)}) }}</p>
+
+    <form method="post" action="{{ url('/admincp/hulahoot/profilecategory/delete', {id: category.category_id}) }}">
+        <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-danger">{{ _p('hulahoot_delete') }}</button>
+        <a href="{{ url('/admincp/hulahoot/profilecategory', {profile_type_id: category.profile_type_id}) }}" class="btn btn-link">{{ _p('hulahoot_cancel') }}</a>
+    </form>
+</div>

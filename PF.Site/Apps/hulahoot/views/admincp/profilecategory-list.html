@@ -1,0 +1,57 @@
+{% include 'admincp/_admin-styles.html' %}
+<div class="hulahoot-admin">
+    <div class="page-header hulahoot-page-header">
+        <h1>{{ _p('hulahoot_admin_profile_categories') }} &mdash; {{ _p(profile_type.name)|e }}</h1>
+        <div class="hulahoot-header-actions">
+            <a href="{{ url('/admincp/hulahoot/profilecategory') }}" class="btn btn-default">{{ _p('hulahoot_change_profile_type') }}</a>
+            <a href="{{ url('/admincp/hulahoot/profilecategory/add', {profile_type_id: profile_type.profile_type_id}) }}" class="btn btn-primary">
+                <i class="fa fa-plus"></i> {{ _p('hulahoot_add_category') }}
+            </a>
+        </div>
+    </div>
+
+    <table class="table table-bordered table-striped hulahoot-admin-table">
+        <thead>
+            <tr>
+                <th>{{ _p('hulahoot_field_name') }}</th>
+                <th>{{ _p('hulahoot_field_active') }}</th>
+                <th>{{ _p('hulahoot_field_profile_count') }}</th>
+                <th>{{ _p('hulahoot_field_actions') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for category in categories %}
+                {% if category.parent_id == 0 %}
+                    <tr>
+                        <td><strong>{{ _p(category.name)|e }}</strong></td>
+                        <td>{% if category.is_active %}<span class="label label-success">{{ _p('hulahoot_active') }}</span>{% else %}<span class="label label-default">{{ _p('hulahoot_inactive') }}</span>{% endif %}</td>
+                        <td>{{ category.profile_count }}</td>
+                        <td class="hulahoot-admin-actions">
+                            <a href="{{ url('/admincp/hulahoot/profilecategory/add', {id: category.category_id}) }}" class="btn btn-default btn-sm">{{ _p('hulahoot_edit') }}</a>
+                            <a href="{{ url('/admincp/hulahoot/profilecategory/add', {profile_type_id: profile_type.profile_type_id, parent_id: category.category_id}) }}" class="btn btn-default btn-sm">{{ _p('hulahoot_add_subcategory') }}</a>
+                            <a href="{{ url('/admincp/hulahoot/profilecategory/delete', {id: category.category_id}) }}" class="btn btn-danger btn-sm">{{ _p('hulahoot_delete') }}</a>
+                        </td>
+                    </tr>
+                    {% for sub in categories %}
+                        {% if sub.parent_id == category.category_id %}
+                            <tr class="hulahoot-sub-row">
+                                <td>&nbsp;&nbsp;&nbsp;&nbsp;&raquo; {{ _p(sub.name)|e }}</td>
+                                <td>{% if sub.is_active %}<span class="label label-success">{{ _p('hulahoot_active') }}</span>{% else %}<span class="label label-default">{{ _p('hulahoot_inactive') }}</span>{% endif %}</td>
+                                <td>{{ sub.profile_count }}</td>
+                                <td class="hulahoot-admin-actions">
+                                    <a href="{{ url('/admincp/hulahoot/profilecategory/add', {id: sub.category_id}) }}" class="btn btn-default btn-sm">{{ _p('hulahoot_edit') }}</a>
+                                    <a href="{{ url('/admincp/hulahoot/profilecategory/delete', {id: sub.category_id}) }}" class="btn btn-danger btn-sm">{{ _p('hulahoot_delete') }}</a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+            {% if categories is empty %}
+                <tr>
+                    <td colspan="4" class="hulahoot-admin-empty">{{ _p('hulahoot_no_categories_found') }}</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>

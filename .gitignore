@@ -1,0 +1,13 @@
+# Session safety backups made during direct-SSH deploys - not source
+*.bak
+*.bak_*
+*.bak_ordering
+*.bak_swess
+*.bak_phase1sub
+
+# Runtime logs, never source
+error_log
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db

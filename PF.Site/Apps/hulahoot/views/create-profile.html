@@ -1,0 +1,137 @@
+{% include '_profile-styles.html' %}
+<div class="hulahoot-create-profile">
+    <div class="page-header hulahoot-page-header">
+        <h1>{{ _p('hulahoot_create_new_profile') }}</h1>
+        <a href="{{ url('/my-profiles') }}" class="btn btn-default hulahoot-btn-back">
+            <i class="fa fa-arrow-left"></i> {{ _p('hulahoot_my_profiles') }}
+        </a>
+    </div>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error|e }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ url('/my-profiles/create') }}" class="form-horizontal hulahoot-profile-form" id="hulahoot_create_form">
+        <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
+
+        <div class="form-group">
+            <label for="hulahoot_profile_type_id" class="col-sm-3 control-label">{{ _p('hulahoot_profile_type') }}</label>
+            <div class="col-sm-9">
+                <select name="profile_type_id" id="hulahoot_profile_type_id" class="form-control" required>
+                    <option value="">{{ _p('hulahoot_select_profile_type') }}</option>
+                    {% for type in types %}
+                        <option value="{{ type.profile_type_id }}" data-requires-category="{{ type.requires_category }}"{% if selected_type_id == type.profile_type_id %} selected="selected"{% endif %}>
+                            {{ _p(type.name)|e }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="hulahoot_profile_name" class="col-sm-3 control-label">{{ _p('hulahoot_profile_name') }}</label>
+            <div class="col-sm-9">
+                <input type="text" name="profile_name" id="hulahoot_profile_name" class="form-control"
+                       placeholder="{{ _p('hulahoot_profile_name_placeholder') }}" maxlength="100"
+                       value="{{ profile_name|e }}" required>
+            </div>
+        </div>
+
+        <div class="form-group hulahoot-field-category" style="display:none;">
+            <label for="hulahoot_category_id" class="col-sm-3 control-label">{{ _p('hulahoot_category') }}</label>
+            <div class="col-sm-9">
+                <select name="category_id" id="hulahoot_category_id" class="form-control">
+                    <option value="">{{ _p('hulahoot_select_category') }}</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group hulahoot-field-subcategory" style="display:none;">
+            <label for="hulahoot_subcategory_id" class="col-sm-3 control-label">{{ _p('hulahoot_subcategory_optional') }}</label>
+            <div class="col-sm-9">
+                <select name="subcategory_id" id="hulahoot_subcategory_id" class="form-control">
+                    <option value="">{{ _p('hulahoot_none') }}</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-offset-3 col-sm-9 hulahoot-form-actions">
+                <button type="submit" class="btn btn-primary">{{ _p('hulahoot_create_profile') }}</button>
+                <a href="{{ url('/my-profiles') }}" class="btn btn-link">{{ _p('hulahoot_cancel') }}</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+(function () {
+    var categoriesByType = {{ categories_by_type_json|raw }};
+    var subcategoriesByCategory = {{ subcategories_by_category_json|raw }};
+    var selectedCategoryId = {{ selected_category_id|default('null') }};
+    var selectedSubcategoryId = {{ selected_subcategory_id|default('null') }};
+
+    var typeSelect = document.getElementById('hulahoot_profile_type_id');
+    var categoryField = document.querySelector('.hulahoot-field-category');
+    var categorySelect = document.getElementById('hulahoot_category_id');
+    var subcategoryField = document.querySelector('.hulahoot-field-subcategory');
+    var subcategorySelect = document.getElementById('hulahoot_subcategory_id');
+
+    function fillSelect(select, options, placeholder, selectedId) {
+        select.innerHTML = '';
+        var placeholderOption = document.createElement('option');
+        placeholderOption.value = '';
+        placeholderOption.textContent = placeholder;
+        select.appendChild(placeholderOption);
+
+        (options || []).forEach(function (option) {
+            var el = document.createElement('option');
+            el.value = option.id;
+            el.textContent = option.name;
+            if (selectedId && parseInt(selectedId, 10) === option.id) {
+                el.selected = true;
+            }
+            select.appendChild(el);
+        });
+    }
+
+    function onTypeChange(preserveCategoryId, preserveSubcategoryId) {
+        var typeId = parseInt(typeSelect.value, 10);
+        var selectedOption = typeSelect.options[typeSelect.selectedIndex];
+        var requiresCategory = selectedOption && selectedOption.getAttribute('data-requires-category') === '1';
+
+        if (!typeId || !requiresCategory) {
+            categoryField.style.display = 'none';
+            subcategoryField.style.display = 'none';
+            categorySelect.innerHTML = '';
+            subcategorySelect.innerHTML = '';
+            return;
+        }
+
+        categoryField.style.display = '';
+        fillSelect(categorySelect, categoriesByType[typeId], '{{ _p('hulahoot_select_category')|e('js') }}', preserveCategoryId);
+        onCategoryChange(preserveSubcategoryId);
+    }
+
+    function onCategoryChange(preserveSubcategoryId) {
+        var categoryId = parseInt(categorySelect.value, 10);
+        var subs = categoryId ? subcategoriesByCategory[categoryId] : null;
+
+        if (!subs || !subs.length) {
+            subcategoryField.style.display = 'none';
+            subcategorySelect.innerHTML = '';
+            return;
+        }
+
+        subcategoryField.style.display = '';
+        fillSelect(subcategorySelect, subs, '{{ _p('hulahoot_none')|e('js') }}', preserveSubcategoryId);
+    }
+
+    typeSelect.addEventListener('change', function () { onTypeChange(null, null); });
+    categorySelect.addEventListener('change', function () { onCategoryChange(null); });
+
+    if (typeSelect.value) {
+        onTypeChange(selectedCategoryId, selectedSubcategoryId);
+    }
+})();
+</script>
