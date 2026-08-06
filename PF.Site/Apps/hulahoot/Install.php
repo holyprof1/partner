@@ -112,15 +112,23 @@ class Install extends App\App
         $this->admincp_menu = [
             _p('hulahoot_admin_profile_types') => 'hulahoot.profiletype',
             _p('hulahoot_admin_profile_categories') => 'hulahoot.profilecategory',
+            _p('hulahoot_admin_subscription_packages') => 'hulahoot.subscriptionpackage',
         ];
 
         // Table::install() runs for each of these, in this order, every
         // time processInstall() runs - idempotent create-or-diff-upgrade.
         // See docs/MigrationPlan.md "Implementation order".
+        //
+        // SubscriptionPackage / SubscriptionPackageCategory (Phase 2):
+        // companion overlay tables for Core Subscriptions' native
+        // subscribe_package - no core table touched, no price/title/
+        // billing data duplicated. See docs/PHASE_2_SUBSCRIPTION.md.
         $this->database = [
             'ProfileType',
             'ProfileCategory',
             'Profile',
+            'SubscriptionPackage',
+            'SubscriptionPackageCategory',
         ];
 
         // Registers a real phpfox_menu row via the sanctioned App

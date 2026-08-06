@@ -311,6 +311,16 @@ group('/my-profiles', function () {
         'hulahoot.admincp.profilecategory-add' => \Apps\Hulahoot\Controller\Admin\ProfileCategoryAddController::class,
         'hulahoot.admincp.profilecategory-delete' => \Apps\Hulahoot\Controller\Admin\ProfileCategoryDeleteController::class,
 
+        // Phase 2: companion overlay rules for native Core Subscriptions
+        // packages - see Service/SubscriptionPackageAdmin.php. No
+        // create/delete controller: packages themselves are still only
+        // created/deleted from Core Subscriptions' own AdminCP.
+        'hulahoot.admincp.subscriptionpackage' => \Apps\Hulahoot\Controller\Admin\SubscriptionPackageController::class,
+        // Named "-add" (not "-edit") to match the naming convention that
+        // resolves to views/admincp/subscriptionpackage-form.html - see
+        // SubscriptionPackageAddController's own docblock.
+        'hulahoot.admincp.subscriptionpackage-add' => \Apps\Hulahoot\Controller\Admin\SubscriptionPackageAddController::class,
+
         // Backs the "SWESS Wallet" profile tab (/username/hulahoot),
         // reached via the standard {module}.profile sub-section dispatch
         // in Profile_Component_Controller_Index. Phase 1: renders real
@@ -386,6 +396,26 @@ group('/admincp/hulahoot', function () {
     route('/profilecategory/delete', function () {
         auth()->isAdmin(true);
         \Phpfox::getLib('module')->dispatch('hulahoot.admincp.profilecategory-delete');
+
+        return 'controller';
+    });
+
+    // GET /admincp/hulahoot/subscriptionpackage - every native Core
+    // Subscriptions package, with whichever Hulahoot companion rules exist
+    // merged in. Phase 2 foundation - see docs/PHASE_2_SUBSCRIPTION.md.
+    route('/subscriptionpackage', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.subscriptionpackage');
+
+        return 'controller';
+    });
+
+    // GET/POST /admincp/hulahoot/subscriptionpackage/edit?id=X - edit the
+    // Hulahoot companion rules + industry links for one native package.
+    // Never creates/edits/deletes the native package itself.
+    route('/subscriptionpackage/edit', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.subscriptionpackage-add');
 
         return 'controller';
     });
