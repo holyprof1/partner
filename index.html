@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partner Portal — Hulahoot</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ ICON SPRITE ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-ring" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="3.6" r="1.7" fill="currentColor"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.4" y2="16.4"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 4.2 1.5 5.5 1.5 5.5H4.5S6 12.2 6 8Z"/><path d="M10 17a2 2 0 0 0 4 0"/></symbol>
+<symbol id="i-chev-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></symbol>
+<symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 9 17 19 7"/></symbol>
+<symbol id="i-check-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 9 17 19 7"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="1.6"/><path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14.5" rx="1.6"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="8" y1="3.5" x2="8" y2="7"/><line x1="16" y1="3.5" x2="16" y2="7"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="1.8"/><circle cx="9" cy="10" r="1.6"/><path d="M20 15.5 15.5 11 6 19"/></symbol>
+
+<symbol id="i-restaurant" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/></symbol>
+<symbol id="i-automotive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 16 5 10.5c.5-1.4 1.3-2 2.7-2h8.6c1.4 0 2.2.6 2.7 2L20.5 16"/><path d="M3.5 16h17v2.2a1 1 0 0 1-1 1H17a1 1 0 0 1-1-1V17H8v1.2a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1Z"/><circle cx="7.5" cy="16" r="1.4"/><circle cx="16.5" cy="16" r="1.4"/></symbol>
+<symbol id="i-healthcare" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></symbol>
+<symbol id="i-realestate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 5l8 6.5"/><path d="M6 10.5V19a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-8.5"/><rect x="10.3" y="14" width="3.4" height="6"/></symbol>
+<symbol id="i-construction" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 18.5 19h-13Z"/><line x1="9" y1="12.2" x2="15" y2="12.2"/><line x1="4" y1="19" x2="20" y2="19"/></symbol>
+<symbol id="i-retail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8h10l-1 12H8Z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></symbol>
+<symbol id="i-fashion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6.4" r="1.5"/><path d="M12 8 4 15h16Z"/><line x1="7.5" y1="15" x2="16.5" y2="15"/></symbol>
+<symbol id="i-education" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10 12 5l10 5-10 5Z"/><path d="M6 12v4.2c0 1 2.7 2.3 6 2.3s6-1.3 6-2.3V12"/><line x1="21" y1="10" x2="21" y2="15.5"/></symbol>
+<symbol id="i-travel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5 20.5 4 13 20l-2.3-6.7L3 12.5Z"/></symbol>
+<symbol id="i-technology" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="1.4"/><line x1="9" y1="7" x2="9" y2="4"/><line x1="15" y1="7" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="17"/><line x1="15" y1="20" x2="15" y2="17"/><line x1="7" y1="9" x2="4" y2="9"/><line x1="7" y1="15" x2="4" y2="15"/><line x1="20" y1="9" x2="17" y2="9"/><line x1="20" y1="15" x2="17" y2="15"/></symbol>
+
+<symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="17" cy="14.3" r="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-megaphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4h3l9 4.5V5.5L6 10Z"/><path d="M17 9a5 5 0 0 1 0 6"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="13" width="3" height="7"/><rect x="11" y="9" width="3" height="11"/><rect x="16" y="5" width="3" height="15"/></symbol>
+<symbol id="i-invoice" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="1.5"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></symbol>
+</defs>
+</svg>
+
+<!-- ============================================================
+     1. LOGIN
+     ============================================================ -->
+<section class="screen is-active" id="screen-login">
+  <div class="login-shell">
+    <aside class="login-panel">
+      <div class="brand">
+        <svg class="mark"><use href="#i-ring"/></svg>
+        <div class="brand-text"><b>hula<em>hoot</em></b><span>Partner Portal</span></div>
+      </div>
+      <div class="login-orbit">
+        <svg viewBox="0 0 300 300" fill="none">
+          <circle cx="150" cy="150" r="120" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
+          <circle cx="150" cy="150" r="86" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
+          <circle cx="150" cy="150" r="50" stroke="rgba(255,255,255,.2)" stroke-width="1"/>
+          <circle cx="150" cy="150" r="26" fill="#6E36E0"/>
+          <circle cx="270" cy="150" r="7" fill="#B6A9E0"/>
+          <circle cx="150" cy="30" r="5" fill="#8B77C9"/>
+          <circle cx="64" cy="214" r="6" fill="#8B77C9"/>
+          <circle cx="222" cy="228" r="4.5" fill="#6E36E0"/>
+        </svg>
+      </div>
+      <p class="login-quote"><b>Partner network</b>Every industry package, wallet balance and promotion your agents create here syncs directly to Hulahoot.</p>
+    </aside>
+
+    <div class="login-form-wrap">
+      <form class="login-form" id="loginForm" novalidate>
+        <h1>Sign in</h1>
+        <p class="lede">Access your industries, SWESS wallet and promotions.</p>
+        <div class="field">
+          <label for="loginEmail">Email address</label>
+          <input id="loginEmail" type="email" placeholder="you@agency.com" value="tobi@northlightmedia.com">
+        </div>
+        <div class="field">
+          <label for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" placeholder="••••••••" value="••••••••">
+        </div>
+        <div class="login-row">
+          <label style="display:flex; align-items:center; gap:7px; font-size:13px; color:var(--ink-soft);">
+            <input type="checkbox" checked style="width:auto;"> Stay signed in
+          </label>
+          <a class="link" href="#">Forgot password?</a>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="loginBtn" style="margin-top:26px;">
+          <span class="spinner"></span><span class="btn-label">Sign In</span>
+        </button>
+        <p class="login-foot">New partner agent? <a class="link" href="#">Contact your account manager</a></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     2. FIND INDUSTRY
+     ============================================================ -->
+<section class="screen" id="screen-find">
+  <header class="app-header">
+    <div class="brand"><svg class="mark" style="color:var(--purple);"><use href="#i-ring"/></svg>
+      <div class="brand-text"><b>hula<em>hoot</em></b><span>Partner Portal</span></div>
+    </div>
+    <div class="header-search"><svg><use href="#i-search"/></svg><span>Search the portal…</span></div>
+    <div class="header-right">
+      <button class="icon-btn" aria-label="Notifications"><svg style="width:19px;height:19px;"><use href="#i-bell"/></svg><span class="dot"></span></button>
+      <div style="position:relative;">
+        <button class="user-chip" id="userChipFind"><span class="avatar">TO</span><span class="who"><b>Tobi Okafor</b><span>Marketing Agent</span></span><svg style="width:14px;height:14px;color:var(--ink-faint);"><use href="#i-chev-down"/></svg></button>
+        <div class="user-menu" id="userMenuFind">
+          <button data-toast="Account settings open here in the full product">Account settings</button>
+          <button data-nav="screen-login">Sign out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="hero">
+      <span class="eyebrow">Step 1 of 3</span>
+      <h1>Find Your Industry</h1>
+      <p class="sub">Search below — matching industries appear instantly.</p>
+    </div>
+
+    <div class="search-hero">
+      <svg><use href="#i-search"/></svg>
+      <input id="industrySearch" type="text" placeholder="Search for your industry…" autocomplete="off">
+    </div>
+
+    <div class="section-label">Recently viewed</div>
+    <div class="industry-grid" style="grid-template-columns:repeat(4,minmax(0,1fr)); margin-bottom:6px;" id="recentRow">
+      <button class="industry-card" data-nav="screen-restaurant" style="padding:14px 16px; flex-direction:row; align-items:center; gap:12px;">
+        <span class="ic" style="margin:0;"><svg><use href="#i-restaurant"/></svg></span>
+        <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:14px; font-weight:700; font-family:var(--font-display);">Restaurant</span><span style="font-size:11.5px; color:var(--ink-faint);">Viewed yesterday</span></span>
+      </button>
+    </div>
+
+    <div class="section-label">All industries</div>
+    <div class="industry-grid" id="industryGrid">
+      <button class="industry-card" data-name="restaurant" data-nav="screen-restaurant">
+        <span class="ic"><svg><use href="#i-restaurant"/></svg></span>
+        <h3>Restaurant</h3><p>Dine-in, delivery &amp; takeout promotion.</p>
+        <span class="count"><b>6</b> packages available</span>
+      </button>
+      <button class="industry-card" data-name="automotive" data-toast="Automotive — coming soon">
+        <span class="ic"><svg><use href="#i-automotive"/></svg></span>
+        <h3>Automotive</h3><p>Dealerships, repair &amp; detailing shops.</p>
+        <span class="count"><b>5</b> packages available</span>
+      </button>
+      <button class="industry-card" data-name="construction" data-toast="Construction — coming soon">
+        <span class="ic"><svg><use href="#i-construction"/></svg></span>
+        <h3>Construction</h3><p>Contractors &amp; home improvement.</p>
+        <span class="count"><b>5</b> packages available</span>
+      </button>
+      <button class="industry-card" data-name="healthcare" data-toast="Healthcare — coming soon">
+        <span class="ic"><svg><use href="#i-healthcare"/></svg></span>
+        <h3>Healthcare</h3><p>Clinics, dental &amp; wellness providers.</p>
+        <span class="count"><b>4</b> packages available</span>
+      </button>
+      <button class="industry-card" data-name="technology" data-toast="Technology — coming soon">
+        <span class="ic"><svg><use href="#i-technology"/></svg></span>
+        <h3>Technology</h3><p>IT services &amp; software resellers.</p>
+        <span class="count"><b>4</b> packages available</span>
+      </button>
+      <button class="industry-card" data-name="retail" data-toast="Retail — coming soon">
+        <span class="ic"><svg><use href="#i-retail"/></svg></span>
+        <h3>Retail</h3><p>Local shops &amp; independent storefronts.</p>
+        <span class="count"><b>6</b> packages available</span>
+      </button>
+      <button class="industry-card" data-name="fashion" data-toast="Fashion — coming soon">
+        <span class="ic"><svg><use href="#i-fashion"/></svg></span>
+        <h3>Fashion</h3><p>Apparel, boutiques &amp; accessories.</p>
+        <span class="count"><b>4</b> packages available</span>
+      </button>
+      <button class="industry-card" data-name="travel" data-toast="Travel — coming soon">
+        <span class="ic"><svg><use href="#i-travel"/></svg></span>
+        <h3>Travel</h3><p>Agencies, tours &amp; hospitality.</p>
+        <span class="count"><b>5</b> packages available</span>
+      </button>
+      <button class="industry-card" data-name="education" data-toast="Education — coming soon">
+        <span class="ic"><svg><use href="#i-education"/></svg></span>
+        <h3>Education</h3><p>Tutoring centers &amp; academies.</p>
+        <span class="count"><b>3</b> packages available</span>
+      </button>
+      <button class="industry-card" data-name="real estate" data-toast="Real Estate — coming soon">
+        <span class="ic"><svg><use href="#i-realestate"/></svg></span>
+        <h3>Real Estate</h3><p>Agents, listings &amp; property groups.</p>
+        <span class="count"><b>7</b> packages available</span>
+      </button>
+    </div>
+    <p class="empty-state" id="emptyState" style="display:none;">No industries match your search. Try “restaurant” or “retail”.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     3. RESTAURANT INDUSTRY
+     ============================================================ -->
+<section class="screen" id="screen-restaurant">
+  <header class="app-header">
+    <div class="brand"><svg class="mark" style="color:var(--purple);"><use href="#i-ring"/></svg>
+      <div class="brand-text"><b>hula<em>hoot</em></b><span>Partner Portal</span></div>
+    </div>
+    <div class="header-search"><svg><use href="#i-search"/></svg><span>Search the portal…</span></div>
+    <div class="header-right">
+      <button class="icon-btn"><svg style="width:19px;height:19px;"><use href="#i-bell"/></svg><span class="dot"></span></button>
+      <button class="user-chip"><span class="avatar">TO</span><span class="who"><b>Tobi Okafor</b><span>Marketing Agent</span></span></button>
+    </div>
+  </header>
+  <div class="content">
+    <button class="back-link" data-nav="screen-find"><svg><use href="#i-arrow-left"/></svg>Find Your Industry</button>
+
+    <div class="industry-head">
+      <span class="ic"><svg><use href="#i-restaurant"/></svg></span>
+      <div>
+        <h1>Restaurant Industry</h1>
+        <p>Reach diners actively searching for places to eat. Promote menus, specials and reservations to a local, high-intent audience across the Hulahoot network.</p>
+        <div class="industry-stats"><span><b>6</b> packages</span><span><b>1,204</b> partners live in this industry</span></div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:34px;">Available packages</div>
+    <div class="package-grid">
+      <div class="package-card">
+        <h3>Lite</h3>
+        <p class="tagline">For single-location restaurants getting started with local promotion.</p>
+        <div class="package-price"><span class="amt mono">$49</span><span class="per">/ month</span></div>
+        <ul class="feature-list">
+          <li><svg><use href="#i-check"/></svg><span><b>500</b> SWESS credits / mo</span></li>
+          <li><svg><use href="#i-check"/></svg><span><b>2</b> active promotions</span></li>
+          <li><svg><use href="#i-check"/></svg><span><b>4</b> scheduled posts / mo</span></li>
+          <li><svg><use href="#i-check"/></svg><span>Standard placement</span></li>
+        </ul>
+        <button class="btn btn-secondary btn-block" data-plan="Lite" data-price="49" data-credits="500" data-promos="2">Subscribe</button>
+      </div>
+
+      <div class="package-card featured">
+        <span class="package-flag">Most popular</span>
+        <h3>Elite</h3>
+        <p class="tagline">For restaurants running regular specials and seasonal campaigns.</p>
+        <div class="package-price"><span class="amt mono">$149</span><span class="per">/ month</span></div>
+        <ul class="feature-list">
+          <li><svg><use href="#i-check"/></svg><span><b>2,000</b> SWESS credits / mo</span></li>
+          <li><svg><use href="#i-check"/></svg><span><b>8</b> active promotions</span></li>
+          <li><svg><use href="#i-check"/></svg><span><b>20</b> scheduled posts / mo</span></li>
+          <li><svg><use href="#i-check"/></svg><span>Priority placement</span></li>
+          <li><svg><use href="#i-check"/></svg><span>Real-time performance analytics</span></li>
+        </ul>
+        <button class="btn btn-primary btn-block" data-plan="Elite" data-price="149" data-credits="2000" data-promos="8">Subscribe</button>
+      </div>
+
+      <div class="package-card">
+        <h3>Domination</h3>
+        <p class="tagline">For multi-location groups that want category exclusivity.</p>
+        <div class="package-price"><span class="amt mono">$399</span><span class="per">/ month</span></div>
+        <ul class="feature-list">
+          <li><svg><use href="#i-check"/></svg><span><b>6,000</b> SWESS credits / mo</span></li>
+          <li><svg><use href="#i-check"/></svg><span>Unlimited active promotions</span></li>
+          <li><svg><use href="#i-check"/></svg><span>Unlimited scheduled posts</span></li>
+          <li><svg><use href="#i-check"/></svg><span>Top-of-category placement</span></li>
+        </ul>
+        <button class="btn btn-secondary btn-block" data-plan="Domination" data-price="399" data-credits="6000" data-promos="999">Subscribe</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     4. PAYMENT
+     ============================================================ -->
+<section class="screen" id="screen-payment">
+  <header class="app-header">
+    <div class="brand"><svg class="mark" style="color:var(--purple);"><use href="#i-ring"/></svg>
+      <div class="brand-text"><b>hula<em>hoot</em></b><span>Partner Portal</span></div>
+    </div>
+    <div class="header-right" style="margin-left:auto;">
+      <button class="user-chip"><span class="avatar">TO</span><span class="who"><b>Tobi Okafor</b><span>Marketing Agent</span></span></button>
+    </div>
+  </header>
+  <div class="content content-narrow">
+    <button class="back-link" data-nav="screen-restaurant"><svg><use href="#i-arrow-left"/></svg>Restaurant Industry</button>
+    <div class="hero" style="margin-top:8px;">
+      <span class="eyebrow">Step 2 of 3</span>
+      <h1>Checkout</h1>
+      <p class="sub">Confirm your package and enter payment details to activate your SWESS Wallet.</p>
+    </div>
+
+    <div class="checkout-grid">
+      <div>
+        <div class="credit-card">
+          <div class="cc-top"><span class="cc-brand">hulahoot pay</span><span class="cc-chip"></span></div>
+          <div class="cc-number" id="ccNumberDisplay">•••• •••• •••• ••••</div>
+          <div class="cc-bottom">
+            <div><span>Card holder</span><b id="ccNameDisplay">YOUR NAME</b></div>
+            <div><span>Expires</span><b id="ccExpDisplay">MM/YY</b></div>
+          </div>
+        </div>
+
+        <form id="paymentForm" style="margin-top:28px;">
+          <div class="field">
+            <label for="ccName">Cardholder name</label>
+            <input id="ccName" type="text" placeholder="Tobi Okafor">
+          </div>
+          <div class="field">
+            <label for="ccNumber">Card number</label>
+            <input id="ccNumber" type="text" placeholder="4242 4242 4242 4242" inputmode="numeric" maxlength="19">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="ccExp">Expiry</label>
+              <input id="ccExp" type="text" placeholder="MM/YY" maxlength="5">
+            </div>
+            <div class="field">
+              <label for="ccCvc">CVC</label>
+              <input id="ccCvc" type="text" placeholder="123" maxlength="4" inputmode="numeric">
+            </div>
+          </div>
+          <div class="field">
+            <label for="ccZip">Billing ZIP / postal code</label>
+            <input id="ccZip" type="text" placeholder="94107">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" id="payBtn" style="margin-top:24px;">
+            <span class="spinner"></span><span class="btn-label">Subscribe</span>
+          </button>
+        </form>
+      </div>
+
+      <div class="summary-panel">
+        <h3>Order summary</h3>
+        <div class="summary-row"><span>Plan</span><b id="sumPlan">Elite — Restaurant</b></div>
+        <div class="summary-row"><span>Billing cycle</span><b>Monthly</b></div>
+        <div class="summary-row"><span>SWESS credits included</span><b id="sumCredits">2,000 / mo</b></div>
+        <div class="summary-row total"><span>Due today</span><b class="mono" id="sumTotal">$149.00</b></div>
+        <div class="summary-note"><svg><use href="#i-lock"/></svg>Payments are encrypted. You can change or cancel your plan anytime from Billing.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     5. SWESS WALLET
+     ============================================================ -->
+<section class="screen" id="screen-wallet">
+  <header class="app-header">
+    <div class="brand"><svg class="mark" style="color:var(--purple);"><use href="#i-ring"/></svg>
+      <div class="brand-text"><b>hula<em>hoot</em></b><span>Partner Portal</span></div>
+    </div>
+    <div class="header-search"><svg><use href="#i-search"/></svg><span>Search the portal…</span></div>
+    <div class="header-right">
+      <button class="icon-btn"><svg style="width:19px;height:19px;"><use href="#i-bell"/></svg><span class="dot"></span></button>
+      <button class="user-chip"><span class="avatar">TO</span><span class="who"><b>Tobi Okafor</b><span>Marketing Agent</span></span></button>
+    </div>
+  </header>
+  <div class="content">
+    <div class="hero">
+      <span class="eyebrow" id="walletEyebrow">Elite · Restaurant</span>
+      <h1>SWESS Wallet</h1>
+      <p class="sub">Credits, promotion usage and quick actions for your current plan.</p>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-tile">
+        <div class="label"><svg style="width:13px;height:13px;"><use href="#i-invoice"/></svg>Current plan</div>
+        <div class="value" id="statPlan">Elite</div>
+        <div class="foot">Restaurant · renews Sep 1</div>
+      </div>
+      <div class="stat-tile">
+        <div class="label"><svg style="width:13px;height:13px;"><use href="#i-wallet"/></svg>Credits remaining</div>
+        <div class="value"><span id="statCreditsUsed">1,340</span> <small>/ <span id="statCreditsTotal">2,000</span></small></div>
+        <div class="progress"><i id="statCreditsBar" style="width:67%;"></i></div>
+      </div>
+      <div class="stat-tile">
+        <div class="label"><svg style="width:13px;height:13px;"><use href="#i-restaurant"/></svg>Current industry</div>
+        <div class="value" style="font-family:var(--font-display); font-size:18px;">Restaurant</div>
+        <div class="foot"><button class="btn-ghost" style="padding:0;font-size:12px; font-weight:700; color:var(--purple);" data-nav="screen-find">Browse other industries →</button></div>
+      </div>
+      <div class="stat-tile">
+        <div class="label"><svg style="width:13px;height:13px;"><use href="#i-megaphone"/></svg>Promotion usage</div>
+        <div class="value"><span id="statPromoUsed">5</span> <small>/ <span id="statPromoTotal">8</span> active</small></div>
+        <div class="progress"><i id="statPromoBar" style="width:62%;"></i></div>
+      </div>
+    </div>
+
+    <div class="section-label">Quick actions</div>
+    <div class="action-grid">
+      <button class="action-tile primary" data-nav="screen-promo"><span class="ic"><svg style="width:19px;height:19px;"><use href="#i-megaphone"/></svg></span><b>Create Promotion</b></button>
+      <button class="action-tile" data-toast="Promotion list opens here in the full product"><span class="ic"><svg style="width:19px;height:19px;"><use href="#i-chart"/></svg></span><b>View Promotions</b></button>
+      <button class="action-tile" data-toast="Billing history opens here in the full product"><span class="ic"><svg style="width:19px;height:19px;"><use href="#i-invoice"/></svg></span><b>Billing History</b></button>
+      <button class="action-tile" data-toast="Analytics summary opens here in the full product"><span class="ic"><svg style="width:19px;height:19px;"><use href="#i-chart"/></svg></span><b>Analytics Summary</b></button>
+    </div>
+
+    <div class="section-label">Credit usage — last 30 days</div>
+    <div class="panel">
+      <div class="spark-wrap">
+        <div class="spark-copy">
+          <div class="n mono">660 <span style="font-size:13px;font-weight:500;color:var(--ink-faint);">SWESS spent</span></div>
+          <div class="l">Trending down 8% vs prior period</div>
+        </div>
+        <svg class="spark-svg" viewBox="0 0 300 64" preserveAspectRatio="none">
+          <line x1="0" y1="16" x2="300" y2="16" stroke="var(--border)" stroke-width="1"/>
+          <line x1="0" y1="32" x2="300" y2="32" stroke="var(--border)" stroke-width="1"/>
+          <line x1="0" y1="48" x2="300" y2="48" stroke="var(--border)" stroke-width="1"/>
+          <path d="M0,44 L20,40 L40,42 L60,30 L80,34 L100,24 L120,28 L140,18 L160,22 L180,14 L200,20 L220,12 L240,16 L260,10 L280,15 L300,8 L300,64 L0,64 Z" fill="var(--purple)" opacity="0.12"/>
+          <path d="M0,44 L20,40 L40,42 L60,30 L80,34 L100,24 L120,28 L140,18 L160,22 L180,14 L200,20 L220,12 L240,16 L260,10 L280,15 L300,8" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="300" cy="8" r="3.4" fill="var(--purple)"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="section-label">Recent promotions</div>
+    <div class="panel" id="promoPanel">
+      <div class="panel-head"><h3>Promotions this cycle</h3><button class="btn-ghost" style="font-size:12.5px; font-weight:700; color:var(--purple);" data-toast="Promotion list opens here in the full product">View all</button></div>
+      <div class="promo-row">
+        <div><div class="name">Weekend Brunch Special</div><div class="sub">Ends Aug 18</div></div>
+        <div class="badge badge-success">Active</div>
+        <div class="num mono">812 SWESS</div>
+        <div class="sub">Created Aug 1</div>
+      </div>
+      <div class="promo-row">
+        <div><div class="name">Happy Hour 4–6PM</div><div class="sub">Ongoing</div></div>
+        <div class="badge badge-success">Active</div>
+        <div class="num mono">340 SWESS</div>
+        <div class="sub">Created Jul 22</div>
+      </div>
+      <div class="promo-row">
+        <div><div class="name">Back to School Combo</div><div class="sub">Starts Aug 20</div></div>
+        <div class="badge badge-warning">Scheduled</div>
+        <div class="num mono">— SWESS</div>
+        <div class="sub">Created Aug 5</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     6. CREATE PROMOTION
+     ============================================================ -->
+<section class="screen" id="screen-promo">
+  <header class="app-header">
+    <div class="brand"><svg class="mark" style="color:var(--purple);"><use href="#i-ring"/></svg>
+      <div class="brand-text"><b>hula<em>hoot</em></b><span>Partner Portal</span></div>
+    </div>
+    <div class="header-right" style="margin-left:auto;">
+      <button class="user-chip"><span class="avatar">TO</span><span class="who"><b>Tobi Okafor</b><span>Marketing Agent</span></span></button>
+    </div>
+  </header>
+  <div class="content">
+    <button class="back-link" data-nav="screen-wallet"><svg><use href="#i-arrow-left"/></svg>SWESS Wallet</button>
+    <div class="hero" style="margin-top:8px;">
+      <span class="eyebrow">Step 3 of 3</span>
+      <h1>Create Promotion</h1>
+      <p class="sub">This promotion will publish to Hulahoot once submitted.</p>
+    </div>
+
+    <div class="promo-grid">
+      <form id="promoForm">
+        <div class="field">
+          <label for="promoTitle">Promotion title</label>
+          <input id="promoTitle" type="text" placeholder="e.g. Weekend Brunch Special" maxlength="60">
+        </div>
+        <div class="field">
+          <label for="promoDesc">Description</label>
+          <textarea id="promoDesc" rows="4" placeholder="Tell diners what makes this offer worth visiting for."></textarea>
+        </div>
+        <div class="field">
+          <label>Promotion image</label>
+          <div class="upload-box" id="uploadBox">
+            <svg><use href="#i-image"/></svg>
+            <div class="u-title">Click to upload an image</div>
+            <div class="u-sub">PNG or JPG, up to 8MB</div>
+          </div>
+          <input type="file" id="uploadInput" accept="image/*" style="display:none;">
+          <div class="upload-preview" id="uploadPreview"><img id="uploadPreviewImg" alt=""></div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="promoDestination">Destination</label>
+            <select id="promoDestination">
+              <option>Hulahoot Home Feed</option>
+              <option>Restaurant Category Page</option>
+              <option>Search Results</option>
+              <option>Map &amp; Nearby</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="promoDate">Schedule date</label>
+            <input id="promoDate" type="date">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="publishBtn" style="margin-top:24px;">
+          <span class="spinner"></span><span class="btn-label">Publish to Hulahoot</span>
+        </button>
+      </form>
+
+      <div class="promo-preview-card">
+        <div class="pp-media" id="ppMedia"><svg><use href="#i-image"/></svg></div>
+        <div class="pp-body">
+          <div class="pp-tag" id="ppDestination">Hulahoot Home Feed</div>
+          <div class="pp-title" id="ppTitle">Your promotion title</div>
+          <p class="pp-desc" id="ppDesc">Your description will appear here as you type.</p>
+          <div class="pp-meta"><span>Restaurant · Elite</span><span id="ppDate">No date set</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast"><svg><use href="#i-check"/></svg><span id="toastMsg"></span></div>
+
+<div class="success-overlay" id="successOverlay">
+  <div class="success-card">
+    <div class="success-ring"><svg><use href="#i-check-lg"/></svg></div>
+    <h3 id="successTitle">Payment confirmed</h3>
+    <p id="successSub">Your SWESS Wallet is ready.</p>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
