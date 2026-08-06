@@ -112,6 +112,7 @@ class Install extends App\App
         $this->admincp_menu = [
             _p('hulahoot_admin_profile_types') => 'hulahoot.profiletype',
             _p('hulahoot_admin_profile_categories') => 'hulahoot.profilecategory',
+            _p('hulahoot_admin_industries') => 'hulahoot.industry',
             _p('hulahoot_admin_subscription_packages') => 'hulahoot.subscriptionpackage',
         ];
 

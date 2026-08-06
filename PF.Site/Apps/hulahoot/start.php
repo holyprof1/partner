@@ -321,6 +321,12 @@ group('/my-profiles', function () {
         // SubscriptionPackageAddController's own docblock.
         'hulahoot.admincp.subscriptionpackage-add' => \Apps\Hulahoot\Controller\Admin\SubscriptionPackageAddController::class,
 
+        // Phase 2: Industry CRUD - see Service/IndustryAdmin.php and
+        // Installation/Database/Industry.php.
+        'hulahoot.admincp.industry' => \Apps\Hulahoot\Controller\Admin\IndustryController::class,
+        'hulahoot.admincp.industry-add' => \Apps\Hulahoot\Controller\Admin\IndustryAddController::class,
+        'hulahoot.admincp.industry-delete' => \Apps\Hulahoot\Controller\Admin\IndustryDeleteController::class,
+
         // Backs the "SWESS Wallet" profile tab (/username/hulahoot),
         // reached via the standard {module}.profile sub-section dispatch
         // in Profile_Component_Controller_Index. Phase 1: renders real
@@ -416,6 +422,32 @@ group('/admincp/hulahoot', function () {
     route('/subscriptionpackage/edit', function () {
         auth()->isAdmin(true);
         \Phpfox::getLib('module')->dispatch('hulahoot.admincp.subscriptionpackage-add');
+
+        return 'controller';
+    });
+
+    // GET /admincp/hulahoot/industry - browse every Industry (active and
+    // inactive), with package-link counts.
+    route('/industry', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.industry');
+
+        return 'controller';
+    });
+
+    // GET/POST /admincp/hulahoot/industry/add?id=X - add (no id) or edit
+    // (id present), same form for both.
+    route('/industry/add', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.industry-add');
+
+        return 'controller';
+    });
+
+    // GET (confirm) / POST (execute) /admincp/hulahoot/industry/delete?id=X
+    route('/industry/delete', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.industry-delete');
 
         return 'controller';
     });

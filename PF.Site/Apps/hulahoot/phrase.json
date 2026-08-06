@@ -176,5 +176,7 @@
     "hulahoot_field_thumbnail": "Thumbnail",
     "hulahoot_industry_name_placeholder": "e.g. Restaurants",
     "hulahoot_industry_slug_help": "Lowercase letters, numbers, and hyphens only. Leave blank to auto-generate from the name.",
-    "hulahoot_field_package_count": "# Packages"
+    "hulahoot_field_package_count": "# Packages",
+    "hulahoot_image_upload_invalid": "That file isn't a valid image. We only accept: {support}.",
+    "hulahoot_image_upload_failed": "Something went wrong uploading that file - please try again."
 }

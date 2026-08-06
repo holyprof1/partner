@@ -43,4 +43,25 @@ class Ajax extends Phpfox_Ajax
             'values' => $aVals['ordering'],
         ]);
     }
+
+    /**
+     * Drag-and-drop reordering for Industries. Not routed through
+     * core.process:updateOrdering() like the two methods above - that
+     * native helper hardcodes the column name to 'ordering'
+     * (PF.Base/module/core/include/service/process.class.php), but
+     * hulahoot_industry's column is named sort_order (an explicit,
+     * deliberate naming choice - see Industry.php's docblock), so this
+     * does the same per-row update directly instead.
+     */
+    public function industryOrdering()
+    {
+        Phpfox::isAdmin(true);
+        $aVals = $this->get('val');
+
+        $iCount = 0;
+        foreach ((array)$aVals['ordering'] as $iIndustryId => $mIgnored) {
+            $iCount++;
+            db()->update(':hulahoot_industry', ['sort_order' => $iCount], ['industry_id' => (int)$iIndustryId]);
+        }
+    }
 }
