@@ -10,10 +10,16 @@ defined('PHPFOX') or exit('NO DICE!');
 
 /**
  * AdminCP "Edit Rules" form for one native subscription package. Only ever
- * writes to hulahoot_subscription_package / hulahoot_subscription_package_category
+ * writes to hulahoot_subscription_package / hulahoot_subscription_package_industry
  * (via Service/SubscriptionPackageAdmin::saveRules()) - never touches
  * subscribe_package itself, so the native package's own title/price/billing
  * screen (Core Subscriptions' AdminCP) remains the only place those change.
+ *
+ * Still the Phase 2 foundation cut of this form (limits + Industry
+ * checkboxes only) - the presentation fields (subtitle, image, badge,
+ * etc.) and Feature list added to the schema alongside hulahoot_industry
+ * get their own admin UI in a later milestone. See
+ * docs/PHASE_2_SUBSCRIPTION.md.
  *
  * Named "Add" (not "Edit") to match the "{resource}-add" -> "{resource}-form"
  * component/template naming convention already established by
@@ -68,7 +74,7 @@ class SubscriptionPackageAddController extends Phpfox_Component
         // template pipeline (see the other admincp templates - equality
         // checks are always precomputed, never left to inline function
         // calls) - a lookup map lets the template do
-        // {if $selected_industry_map[$industry.category_id]} instead.
+        // {if $selected_industry_map[$industry.industry_id]} instead.
         $selectedIndustryMap = array_fill_keys($selectedIndustryIds, true);
 
         $this->template()->setTitle(_p('hulahoot_edit_subscription_package_rules'))

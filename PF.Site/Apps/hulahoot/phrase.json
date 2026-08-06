@@ -160,5 +160,21 @@
     "hulahoot_field_monthly_credits": "Monthly Credits",
     "hulahoot_monthly_credits_help": "Configured amount only - display purposes for now. Credits are not yet earned, spent, or enforced.",
     "hulahoot_industries_help": "Which Hulahoot industries this package is intended for. Leave all unchecked to make it available to every industry.",
-    "hulahoot_no_industries_found": "No industries (Profile Categories) have been added yet."
+    "hulahoot_no_industries_found": "No industries have been added yet. Add one on the Industries page first.",
+    "hulahoot_admin_industries": "Industries",
+    "hulahoot_add_industry": "Add Industry",
+    "hulahoot_edit_industry": "Edit Industry",
+    "hulahoot_delete_industry": "Delete Industry",
+    "hulahoot_industry_not_found": "That industry could not be found.",
+    "hulahoot_industry_created": "Industry created successfully.",
+    "hulahoot_industry_updated": "Industry updated successfully.",
+    "hulahoot_industry_deleted": "Industry deleted successfully.",
+    "hulahoot_back_to_industries": "Back to Industries",
+    "hulahoot_no_industries_found_admin": "No industries have been added yet.",
+    "hulahoot_confirm_delete_industry": "Are you sure you want to delete the industry \"{name}\"? This cannot be undone.",
+    "hulahoot_field_banner": "Banner Image",
+    "hulahoot_field_thumbnail": "Thumbnail",
+    "hulahoot_industry_name_placeholder": "e.g. Restaurants",
+    "hulahoot_industry_slug_help": "Lowercase letters, numbers, and hyphens only. Leave blank to auto-generate from the name.",
+    "hulahoot_field_package_count": "# Packages"
 }

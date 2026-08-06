@@ -119,16 +119,28 @@ class Install extends App\App
         // time processInstall() runs - idempotent create-or-diff-upgrade.
         // See docs/MigrationPlan.md "Implementation order".
         //
-        // SubscriptionPackage / SubscriptionPackageCategory (Phase 2):
-        // companion overlay tables for Core Subscriptions' native
-        // subscribe_package - no core table touched, no price/title/
-        // billing data duplicated. See docs/PHASE_2_SUBSCRIPTION.md.
+        // Industry (Phase 2): the post-login marketplace users browse -
+        // deliberately independent of ProfileType/ProfileCategory, which
+        // exist only for registration/profile classification. See
+        // Installation/Database/Industry.php's docblock and
+        // docs/PHASE_2_SUBSCRIPTION.md.
+        //
+        // SubscriptionPackage / SubscriptionPackageIndustry /
+        // SubscriptionPackageFeature (Phase 2): companion overlay tables
+        // for Core Subscriptions' native subscribe_package - no core
+        // table touched, no price/title/billing data duplicated.
+        // SubscriptionPackageIndustry replaces the earlier
+        // SubscriptionPackageCategory (retired - see git history; it
+        // pointed at ProfileCategory, which is the wrong concept for a
+        // package's storefront scoping).
         $this->database = [
             'ProfileType',
             'ProfileCategory',
             'Profile',
+            'Industry',
             'SubscriptionPackage',
-            'SubscriptionPackageCategory',
+            'SubscriptionPackageIndustry',
+            'SubscriptionPackageFeature',
         ];
 
         // Registers a real phpfox_menu row via the sanctioned App

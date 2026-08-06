@@ -8,12 +8,13 @@ use Phpfox;
  * Class SubscriptionPackageAdmin
  *
  * AdminCP-only read/write for the Phase 2 companion overlay
- * (hulahoot_subscription_package, hulahoot_subscription_package_category)
- * - never for subscribe_package/subscribe_purchase themselves. Package
- * creation, price, billing period, and renewal all stay exclusively in
+ * (hulahoot_subscription_package, hulahoot_subscription_package_industry,
+ * hulahoot_subscription_package_feature) - never for
+ * subscribe_package/subscribe_purchase themselves. Package creation,
+ * price, billing period, and renewal all stay exclusively in
  * Core Subscriptions' own AdminCP (subscribe.admincp.*) - this service
  * only ever reads the native package list for reference and writes to
- * the two new companion tables. See docs/PHASE_2_SUBSCRIPTION.md.
+ * the Hulahoot companion tables. See docs/PHASE_2_SUBSCRIPTION.md.
  *
  * Every public method here is meant to be called only from an
  * admincp/hulahoot/* route, after the caller has already checked
@@ -52,7 +53,7 @@ class SubscriptionPackageAdmin
             $iPackageId = (int)$aPackage['package_id'];
             $aPackage['hulahoot_rules'] = $aRulesByPackageId[$iPackageId] ?? null;
             $aPackage['hulahoot_industry_count'] = (int)db()->select('COUNT(*)')
-                ->from(':hulahoot_subscription_package_category')
+                ->from(':hulahoot_subscription_package_industry')
                 ->where(['package_id' => $iPackageId])
                 ->execute('getSlaveField');
         }
@@ -82,7 +83,8 @@ class SubscriptionPackageAdmin
      * The Hulahoot companion rules row for a package, or the documented
      * defaults (unlimited / zero / inactive-until-configured) if none
      * exists yet - a package with no row here has no Hulahoot-specific
-     * limits at all, which is the correct default, not an error state.
+     * configuration at all, which is the correct default, not an error
+     * state.
      *
      * @param int $iPackageId
      *
@@ -101,7 +103,15 @@ class SubscriptionPackageAdmin
 
         return [
             'package_id' => (int)$iPackageId,
+            'subtitle' => '',
+            'description' => '',
+            'badge_text' => '',
+            'image' => '',
+            'accent_color' => '',
+            'button_text' => '',
+            'ordering' => 0,
             'purchase_limit' => null,
+            'campaign_limit' => null,
             'posting_limit_per_day' => null,
             'posting_limit_per_month' => null,
             'monthly_credits' => 0,
@@ -110,24 +120,29 @@ class SubscriptionPackageAdmin
     }
 
     /**
-     * category_id => name for every Hulahoot Profile Category
-     * ("Industry"), across every Profile Type - not restricted to
-     * Business/Organization, so a future vertical's own categories are
-     * automatically available here with no code change.
+     * Every active Industry, for the package-edit checkbox list and any
+     * other admin picker. Includes inactive ones too when $bActiveOnly is
+     * false, so an admin editing a package that's linked to an Industry
+     * they've since deactivated can still see (and unlink) it.
+     *
+     * @param bool $bActiveOnly
      *
      * @return array
      */
-    public function getAllIndustries()
+    public function getAllIndustries($bActiveOnly = false)
     {
-        return (array)db()->select('category_id, name, profile_type_id')
-            ->from(':hulahoot_profile_category')
-            ->where(['parent_id' => 0])
-            ->order('name ASC')
-            ->execute('getSlaveRows');
+        $oQuery = db()->select('industry_id, name, slug, is_active')
+            ->from(':hulahoot_industry');
+
+        if ($bActiveOnly) {
+            $oQuery->where(['is_active' => 1]);
+        }
+
+        return (array)$oQuery->order('sort_order ASC, name ASC')->execute('getSlaveRows');
     }
 
     /**
-     * category_id list currently linked to a package.
+     * industry_id list currently linked to a package.
      *
      * @param int $iPackageId
      *
@@ -135,32 +150,53 @@ class SubscriptionPackageAdmin
      */
     public function getIndustryIdsForPackage($iPackageId)
     {
-        $aRows = (array)db()->select('category_id')
-            ->from(':hulahoot_subscription_package_category')
+        $aRows = (array)db()->select('industry_id')
+            ->from(':hulahoot_subscription_package_industry')
             ->where(['package_id' => (int)$iPackageId])
             ->execute('getSlaveRows');
 
-        return array_map('intval', array_column($aRows, 'category_id'));
+        return array_map('intval', array_column($aRows, 'industry_id'));
     }
 
     /**
-     * Upserts the companion rules row and replaces the package's industry
-     * links wholesale (delete-then-reinsert the set - simplest correct
-     * approach for a small, admin-only, low-frequency multi-select; no
-     * table has a hard FK constraint - see the migration class docblocks -
-     * so uniqueness of (package_id, category_id) is enforced here, before
+     * Every feature row for a package, in display order.
+     *
+     * @param int $iPackageId
+     *
+     * @return array
+     */
+    public function getFeaturesForPackage($iPackageId)
+    {
+        return (array)db()->select('*')
+            ->from(':hulahoot_subscription_package_feature')
+            ->where(['package_id' => (int)$iPackageId])
+            ->order('ordering ASC, id ASC')
+            ->execute('getSlaveRows');
+    }
+
+    /**
+     * Upserts the companion rules row, replaces the package's Industry
+     * links wholesale, and replaces its feature list wholesale
+     * (delete-then-reinsert the set - simplest correct approach for a
+     * small, admin-only, low-frequency multi-select/list; no table has a
+     * hard FK constraint - see the migration class docblocks - so
+     * uniqueness of (package_id, industry_id) is enforced here, before
      * insert, same convention as ProfileTypeAdmin's is_default handling).
      *
      * @param int $iPackageId must already exist in subscribe_package
-     * @param array $aData purchase_limit, posting_limit_per_day,
-     *        posting_limit_per_month, monthly_credits, is_active
-     * @param int[] $aIndustryCategoryIds
+     * @param array $aData subtitle, description, badge_text, image,
+     *        accent_color, button_text, ordering, purchase_limit,
+     *        campaign_limit, posting_limit_per_day, posting_limit_per_month,
+     *        monthly_credits, is_active
+     * @param int[] $aIndustryIds
+     * @param string[] $aFeatureTexts in display order - blank entries are
+     *        dropped, order in the array becomes the stored ordering
      *
      * @return bool
      *
      * @throws \InvalidArgumentException if the native package doesn't exist
      */
-    public function saveRules($iPackageId, array $aData, array $aIndustryCategoryIds)
+    public function saveRules($iPackageId, array $aData, array $aIndustryIds, array $aFeatureTexts = [])
     {
         $iPackageId = (int)$iPackageId;
 
@@ -169,7 +205,10 @@ class SubscriptionPackageAdmin
         }
 
         $aClean = $this->_validate($aData);
-        $aIndustryCategoryIds = array_values(array_unique(array_map('intval', $aIndustryCategoryIds)));
+        $aIndustryIds = array_values(array_unique(array_map('intval', $aIndustryIds)));
+        $aFeatureTexts = array_values(array_filter(array_map('trim', $aFeatureTexts), function ($sText) {
+            return $sText !== '';
+        }));
 
         db()->beginTransaction();
 
@@ -191,12 +230,22 @@ class SubscriptionPackageAdmin
                 ]));
             }
 
-            db()->delete(':hulahoot_subscription_package_category', ['package_id' => $iPackageId]);
+            db()->delete(':hulahoot_subscription_package_industry', ['package_id' => $iPackageId]);
 
-            foreach ($aIndustryCategoryIds as $iCategoryId) {
-                db()->insert(':hulahoot_subscription_package_category', [
+            foreach ($aIndustryIds as $iIndustryId) {
+                db()->insert(':hulahoot_subscription_package_industry', [
                     'package_id' => $iPackageId,
-                    'category_id' => $iCategoryId,
+                    'industry_id' => $iIndustryId,
+                ]);
+            }
+
+            db()->delete(':hulahoot_subscription_package_feature', ['package_id' => $iPackageId]);
+
+            foreach ($aFeatureTexts as $iOrder => $sFeatureText) {
+                db()->insert(':hulahoot_subscription_package_feature', [
+                    'package_id' => $iPackageId,
+                    'feature_text' => $sFeatureText,
+                    'ordering' => $iOrder,
                 ]);
             }
 
@@ -233,8 +282,21 @@ class SubscriptionPackageAdmin
             return (int)$sValue;
         };
 
+        $sAccentColor = trim((string)($aData['accent_color'] ?? ''));
+        if ($sAccentColor !== '' && !preg_match('/^#[0-9a-fA-F]{3,8}$/', $sAccentColor)) {
+            throw new \InvalidArgumentException('Accent color must be a hex value (e.g. #2C7BE5), or left blank.');
+        }
+
         return [
+            'subtitle' => trim((string)($aData['subtitle'] ?? '')),
+            'description' => trim((string)($aData['description'] ?? '')),
+            'badge_text' => trim((string)($aData['badge_text'] ?? '')),
+            'image' => trim((string)($aData['image'] ?? '')),
+            'accent_color' => $sAccentColor,
+            'button_text' => trim((string)($aData['button_text'] ?? '')),
+            'ordering' => max(0, (int)($aData['ordering'] ?? 0)),
             'purchase_limit' => $fParseLimit($aData['purchase_limit'] ?? null),
+            'campaign_limit' => $fParseLimit($aData['campaign_limit'] ?? null),
             'posting_limit_per_day' => $fParseLimit($aData['posting_limit_per_day'] ?? null),
             'posting_limit_per_month' => $fParseLimit($aData['posting_limit_per_month'] ?? null),
             'monthly_credits' => max(0, (int)($aData['monthly_credits'] ?? 0)),

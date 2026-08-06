@@ -98,9 +98,9 @@ defined('PHPFOX') or exit('NO DICE!');
             <label class="col-sm-3 control-label">{_p var='hulahoot_field_industries'}</label>
             <div class="col-sm-9">
                 {foreach from=$industries item=aIndustry}
-                    {assign var="hulahootCategoryId" value=$aIndustry.category_id}
+                    {assign var="hulahootIndustryId" value=$aIndustry.industry_id}
                     <label class="checkbox-inline hulahoot-industry-checkbox">
-                        <input type="checkbox" name="industry_ids[]" value="{$hulahootCategoryId}" {if $selected_industry_map[$hulahootCategoryId]}checked{/if}> {_p var=$aIndustry.name}
+                        <input type="checkbox" name="industry_ids[]" value="{$hulahootIndustryId}" {if $selected_industry_map[$hulahootIndustryId]}checked{/if}> {_p var=$aIndustry.name}
                     </label>
                 {foreachelse}
                     <p class="form-control-static">{_p var='hulahoot_no_industries_found'}</p>
