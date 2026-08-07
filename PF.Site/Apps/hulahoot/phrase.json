@@ -184,6 +184,9 @@
     "hulahoot_image_upload_failed": "Something went wrong uploading that file - please try again.",
 
     "hulahoot_section_presentation": "Presentation",
+    "hulahoot_field_display_name": "Display Name",
+    "hulahoot_display_name_placeholder": "e.g. Lite",
+    "hulahoot_display_name_help": "What customers see on the public package card. Leave blank to just show this package's own native name above.",
     "hulahoot_field_subtitle": "Subtitle",
     "hulahoot_subtitle_placeholder": "e.g. Best for solo creators",
     "hulahoot_field_badge_text": "Badge Text",

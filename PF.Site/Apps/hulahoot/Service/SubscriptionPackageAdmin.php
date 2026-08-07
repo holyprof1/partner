@@ -103,6 +103,7 @@ class SubscriptionPackageAdmin
 
         return [
             'package_id' => (int)$iPackageId,
+            'display_name' => '',
             'subtitle' => '',
             'description' => '',
             'badge_text' => '',
@@ -411,7 +412,10 @@ class SubscriptionPackageAdmin
             throw new \InvalidArgumentException('Accent color must be a hex value (e.g. #2C7BE5), or left blank.');
         }
 
+        $sDisplayName = trim((string)($aData['display_name'] ?? ''));
+
         return [
+            'display_name' => $sDisplayName !== '' ? $sDisplayName : null,
             'subtitle' => trim((string)($aData['subtitle'] ?? '')),
             'description' => trim((string)($aData['description'] ?? '')),
             'badge_text' => trim((string)($aData['badge_text'] ?? '')),

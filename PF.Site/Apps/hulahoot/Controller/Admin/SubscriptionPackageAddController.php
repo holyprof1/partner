@@ -51,6 +51,7 @@ class SubscriptionPackageAddController extends Phpfox_Component
                 $error = _p('hulahoot_invalid_token');
             } else {
                 $rules = [
+                    'display_name' => $req->get('display_name'),
                     'subtitle' => $req->get('subtitle'),
                     'description' => $req->get('description'),
                     'badge_text' => $req->get('badge_text'),

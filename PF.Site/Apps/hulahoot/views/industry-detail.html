@@ -25,7 +25,7 @@
                     <img class="hulahoot-package-image" src="/PF.Base/file/pic/hulahoot/{{ package.image|replace({'%s': ''}) }}" alt="">
                 {% endif %}
 
-                <div class="hulahoot-package-name">{{ _p(package.title)|e }}</div>
+                <div class="hulahoot-package-name">{{ package.display_name|e }}</div>
                 {% if package.subtitle %}
                     <div class="hulahoot-package-subtitle">{{ package.subtitle|e }}</div>
                 {% endif %}

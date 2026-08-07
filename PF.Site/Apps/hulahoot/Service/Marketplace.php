@@ -105,6 +105,14 @@ class Marketplace
             $aRow['package_id'] = (int)$aRow['package_id'];
             $aRow['features'] = array_column($oFeatureService->getFeaturesForPackage($aRow['package_id']), 'feature_text');
 
+            // display_name is plain text (set once by an admin, not a
+            // phrase key) - resolved here, not in the template, so the
+            // template never has to know whether a given package has an
+            // override or needs the usual _p(package.title) phrase lookup.
+            $aRow['display_name'] = $aRow['display_name'] !== null && $aRow['display_name'] !== ''
+                ? $aRow['display_name']
+                : _p($aRow['title']);
+
             $aCosts = Phpfox::getLib('parse.format')->isSerialized($aRow['cost']) ? unserialize($aRow['cost']) : [];
             $aRow['default_cost'] = $aCosts[$sDefaultCurrencyId] ?? 0;
             $aRow['default_currency_id'] = $sDefaultCurrencyId;

@@ -49,6 +49,21 @@ class SubscriptionPackage extends Table
                 Field::FIELD_PARAM_OTHER => 'UNSIGNED NOT NULL',
                 Field::FIELD_PARAM_PRIMARY_KEY => true,
             ],
+            // Overrides the native subscribe_package.title on the public
+            // Industry/Package browse page only - AdminCP's own
+            // Subscription Packages list still shows the native title
+            // unchanged. Exists so the same tier name (e.g. "Lite") can be
+            // shown to every customer while each Industry has its own
+            // independently-editable native package underneath, titled
+            // distinctly for the admin (e.g. "Automotive - Lite") so the
+            // flat AdminCP list stays distinguishable. NULL falls back to
+            // the native title, unchanged from every package created
+            // before this column existed.
+            'display_name' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_VARCHAR,
+                Field::FIELD_PARAM_TYPE_VALUE => 100,
+                Field::FIELD_PARAM_OTHER => 'NULL',
+            ],
             // Short marketing subtitle shown under the native title on the
             // public browse page - e.g. "Best for solo creators".
             'subtitle' => [
