@@ -650,17 +650,29 @@ group('/industry', function () {
 // guests replaces the bare native visitor page with the Founding
 // Industry Partnership marketing page (hero + video walkthrough + CTA).
 //
-// guest-landing.html is a content-only Twig partial - no <html>/<head>/
-// <body> of its own - returned the same way every other page in this app
-// is (view()->the active flavor's layout.html wraps it with the real
-// site header/nav/footer). An earlier version of this route echoed a
-// byte-for-byte copy of the flavor's own static layout.html override
-// directly and exited, bypassing theme-wrapping entirely to work around
-// what looked like a broken flavor override - that was the wrong fix:
-// the header loss was the bug, not something to route around.
+// The page content itself is admin-editable HTML, not hardcoded here -
+// see Service/GuestLandingContent.php for exactly where that content
+// lives and how to edit it (a native Custom HTML block, edited through
+// AdminCP's own Block Manager - a real, already-existing screen, not
+// something built for this). guest-landing.html (this app's own bundled
+// copy) is only the fallback for the unlikely case that block has no
+// content at all, so the homepage never renders empty. Either way it's
+// returned the same way every other page in this app is (view() -> the
+// active flavor's layout.html wraps it with the real site header/nav/
+// footer) - an earlier version of this route echoed a byte-for-byte copy
+// of the flavor's own static layout.html override directly and exited,
+// bypassing theme-wrapping entirely to work around what looked like a
+// broken flavor override - that was the wrong fix: the header loss was
+// the bug, not something to route around.
 route('/', function () {
     if (!auth()->isLoggedIn()) {
         title('Hulahoot Founding Industry Partnership');
+
+        $sEditableHtml = (new \Apps\Hulahoot\Service\GuestLandingContent())->getHtml();
+
+        if ($sEditableHtml !== null) {
+            return view('guest-landing-editable.html', ['content' => $sEditableHtml]);
+        }
 
         return view('guest-landing.html');
     }
