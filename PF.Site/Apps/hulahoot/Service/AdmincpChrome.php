@@ -22,6 +22,21 @@ namespace Apps\Hulahoot\Service;
  * Call apply() from every Hulahoot AdminCP controller's process(), the
  * same five files Admincp_Component_Controller_Index::process() enqueues,
  * so every Hulahoot AdminCP page gets identical chrome to every native one.
+ *
+ * apply() also assigns aSectionAppMenus - the horizontal "Profile Types
+ * | Profile Categories | Industries | Subscription Packages" tab strip
+ * (theme/adminpanel/default/template/template.html.php renders it
+ * whenever aSectionAppMenus is non-empty, in a <div class="acp-header-
+ * section">). That variable is normally built from menu.xml config
+ * inside the same Index::process() this app's routes bypass, so - same
+ * as the missing CSS/JS above - it was never assigned, meaning the tab
+ * strip has never appeared on any Hulahoot AdminCP page, not just the
+ * drill-down ones (confirmed live 2026-08-07 by reading
+ * template.html.php's own {if !empty($aSectionAppMenus)} guard - not
+ * something a fresh cache clear or per-page fix could touch). Since
+ * Hulahoot's set of AdminCP sections is fixed and small, this hard-
+ * codes the same four entries rather than reimplementing the XML-
+ * driven menu builder for one four-item list.
  */
 class AdmincpChrome
 {
@@ -38,5 +53,24 @@ class AdmincpChrome
             'drag.js' => 'static_script',
             'jquery/plugin/jquery.mosaicflow.min.js' => 'static_script',
         ]);
+
+        $sPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+
+        $aLinks = [
+            _p('hulahoot_admin_profile_types') => '/admincp/hulahoot/profiletype',
+            _p('hulahoot_admin_profile_categories') => '/admincp/hulahoot/profilecategory',
+            _p('hulahoot_admin_industries') => '/admincp/hulahoot/industry',
+            _p('hulahoot_admin_subscription_packages') => '/admincp/hulahoot/subscriptionpackage',
+        ];
+
+        $aSectionAppMenus = [];
+        foreach ($aLinks as $sPhrase => $sUrl) {
+            $aSectionAppMenus[$sPhrase] = [
+                'url' => $sUrl,
+                'is_active' => ($sPath === $sUrl || strpos((string)$sPath, $sUrl . '/') === 0),
+            ];
+        }
+
+        $template->assign(['aSectionAppMenus' => $aSectionAppMenus]);
     }
 }

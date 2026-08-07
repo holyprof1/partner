@@ -71,7 +71,16 @@ $aOldPackageIds = array_map('intval', array_column($aOldPackageIds, 'package_id'
 foreach ($aOldPackageIds as $iOldId) {
     db()->update(':subscribe_package', ['is_active' => 0], 'package_id = ' . $iOldId);
     db()->update(':hulahoot_subscription_package', ['is_active' => 0], 'package_id = ' . $iOldId);
-    $out('Deactivated old package id ' . $iOldId);
+    // Also strips every explicit hulahoot_subscription_package_industry
+    // link the old package held - deactivating alone already hides it
+    // from the public storefront, but left the per-industry "Manage
+    // Packages" screen still listing it (as "Inactive"/"Not Configured")
+    // under whichever Industries it used to belong to, which is exactly
+    // the clutter this whole restructure was meant to remove. Uses the
+    // same delete SubscriptionPackageAdmin::removeIndustryFromPackage()
+    // does, just for every industry_id at once instead of one at a time.
+    db()->delete(':hulahoot_subscription_package_industry', ['package_id' => $iOldId]);
+    $out('Deactivated old package id ' . $iOldId . ' and cleared its industry links');
 }
 
 // ---------------------------------------------------------------------
@@ -79,10 +88,21 @@ foreach ($aOldPackageIds as $iOldId) {
 //    docblock; same helper shape as seed-demo-data.php).
 // ---------------------------------------------------------------------
 
+// is_active = 1 only - a deactivated package (e.g. an old duplicate
+// left over from a title-phrase collision, see this file's own git
+// history) must never be found by the idempotency check below. Two
+// active packages can never legitimately share one title (Core
+// Subscriptions' own Add Package form doesn't allow saving a duplicate
+// title through the UI), so filtering to active rows is what actually
+// makes this check unambiguous - checked once by title text alone,
+// two same-named packages (one active, one a deactivated leftover)
+// made the check pick whichever happened to sort first, which isn't
+// guaranteed to be the real one.
 $fGetPackageTitles = function () {
     $aRows = (array)db()->select('sp.package_id, lp.text')
         ->from(':subscribe_package', 'sp')
         ->join(':language_phrase', 'lp', 'lp.var_name = sp.title')
+        ->where(['sp.is_active' => 1])
         ->execute('getSlaveRows');
 
     $aTitles = [];
