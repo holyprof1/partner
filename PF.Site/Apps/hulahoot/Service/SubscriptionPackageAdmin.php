@@ -159,6 +159,123 @@ class SubscriptionPackageAdmin
     }
 
     /**
+     * Every native package currently assigned to one Industry, active or
+     * not (an admin managing an Industry's lineup needs to see everything
+     * assigned to it, same reasoning as listAll()), with its companion
+     * rules merged in. Backs the "click an Industry, see its packages"
+     * AdminCP screen.
+     *
+     * @param int $iIndustryId
+     *
+     * @return array
+     */
+    public function getPackagesForIndustryAdmin($iIndustryId)
+    {
+        if (!Phpfox::isAppActive('Core_Subscriptions')) {
+            return [];
+        }
+
+        $aPackageIds = (array)db()->select('package_id')
+            ->from(':hulahoot_subscription_package_industry')
+            ->where(['industry_id' => (int)$iIndustryId])
+            ->execute('getSlaveRows');
+        $aPackageIds = array_map('intval', array_column($aPackageIds, 'package_id'));
+
+        if (!$aPackageIds) {
+            return [];
+        }
+
+        $aPackages = [];
+        foreach ($aPackageIds as $iPackageId) {
+            $aNative = $this->getNativePackage($iPackageId);
+            if ($aNative) {
+                $aNative['hulahoot_rules'] = $this->getRules($iPackageId);
+                $aPackages[] = $aNative;
+            }
+        }
+
+        return $aPackages;
+    }
+
+    /**
+     * Every native package NOT currently assigned to this Industry - the
+     * candidate list for a quick "assign an existing package" picker, so
+     * an admin doesn't have to open each package's full Edit Rules form
+     * just to add one Industry link.
+     *
+     * @param int $iIndustryId
+     *
+     * @return array
+     */
+    public function getUnassignedPackages($iIndustryId)
+    {
+        if (!Phpfox::isAppActive('Core_Subscriptions')) {
+            return [];
+        }
+
+        $aAssignedIds = (array)db()->select('package_id')
+            ->from(':hulahoot_subscription_package_industry')
+            ->where(['industry_id' => (int)$iIndustryId])
+            ->execute('getSlaveRows');
+        $aAssignedIds = array_map('intval', array_column($aAssignedIds, 'package_id'));
+
+        $aAllPackages = (array)Phpfox::getService('subscribe')->getPackages(false, true, true);
+
+        return array_values(array_filter($aAllPackages, function ($aPackage) use ($aAssignedIds) {
+            return !in_array((int)$aPackage['package_id'], $aAssignedIds, true);
+        }));
+    }
+
+    /**
+     * Links one existing package to one Industry without touching any of
+     * its other configuration - the "Assign" side of the quick picker.
+     * No-ops (rather than erroring) if the link already exists, since a
+     * double-click or a stale page shouldn't produce a duplicate row (no
+     * table here has a hard unique constraint - see the migration class
+     * docblocks - so this check is what keeps it a true no-op).
+     *
+     * @param int $iPackageId
+     * @param int $iIndustryId
+     *
+     * @return void
+     */
+    public function assignIndustryToPackage($iPackageId, $iIndustryId)
+    {
+        $iPackageId = (int)$iPackageId;
+        $iIndustryId = (int)$iIndustryId;
+
+        $bExists = (bool)db()->select('id')
+            ->from(':hulahoot_subscription_package_industry')
+            ->where(['package_id' => $iPackageId, 'industry_id' => $iIndustryId])
+            ->execute('getSlaveField');
+
+        if (!$bExists) {
+            db()->insert(':hulahoot_subscription_package_industry', [
+                'package_id' => $iPackageId,
+                'industry_id' => $iIndustryId,
+            ]);
+        }
+    }
+
+    /**
+     * The inverse of assignIndustryToPackage() - unlinks one package from
+     * one Industry only. Never touches the package's rules, its other
+     * Industry links, or the native package itself.
+     *
+     * @param int $iPackageId
+     * @param int $iIndustryId
+     *
+     * @return void
+     */
+    public function removeIndustryFromPackage($iPackageId, $iIndustryId)
+    {
+        db()->delete(':hulahoot_subscription_package_industry', [
+            'package_id' => (int)$iPackageId,
+            'industry_id' => (int)$iIndustryId,
+        ]);
+    }
+
+    /**
      * Every feature row for a package, in display order.
      *
      * @param int $iPackageId

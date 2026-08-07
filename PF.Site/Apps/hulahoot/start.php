@@ -326,6 +326,9 @@ group('/my-profiles', function () {
         'hulahoot.admincp.industry' => \Apps\Hulahoot\Controller\Admin\IndustryController::class,
         'hulahoot.admincp.industry-add' => \Apps\Hulahoot\Controller\Admin\IndustryAddController::class,
         'hulahoot.admincp.industry-delete' => \Apps\Hulahoot\Controller\Admin\IndustryDeleteController::class,
+        // "Click an Industry, see its packages" - see
+        // Controller/Admin/IndustryPackagesController.php.
+        'hulahoot.admincp.industry-packages' => \Apps\Hulahoot\Controller\Admin\IndustryPackagesController::class,
 
         // Backs the "SWESS Wallet" profile tab (/username/hulahoot),
         // reached via the standard {module}.profile sub-section dispatch
@@ -440,6 +443,17 @@ group('/admincp/hulahoot', function () {
     route('/industry/add', function () {
         auth()->isAdmin(true);
         \Phpfox::getLib('module')->dispatch('hulahoot.admincp.industry-add');
+
+        return 'controller';
+    });
+
+    // GET /admincp/hulahoot/industry/packages?id=X - every package
+    // assigned to this Industry, plus a quick assign/unassign picker.
+    // POST assigns or unassigns one package (see
+    // IndustryPackagesController for which field drives which action).
+    route('/industry/packages', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.industry-packages');
 
         return 'controller';
     });

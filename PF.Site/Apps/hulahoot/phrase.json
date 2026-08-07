@@ -210,5 +210,18 @@
     "hulahoot_per_billing_cycle": "billing cycle",
 
     "hulahoot_no_entitlement": "You need an active subscription before you can create a promotion. Choose a plan to get started.",
-    "hulahoot_your_entitlement": "Your Plan"
+    "hulahoot_your_entitlement": "Your Plan",
+
+    "hulahoot_manage_packages": "Manage Packages",
+    "hulahoot_industry_packages_title": "Packages for {name}",
+    "hulahoot_create_new_package": "Create New Package",
+    "hulahoot_no_packages_assigned": "No packages are assigned to this Industry yet.",
+    "hulahoot_unassign": "Unassign",
+    "hulahoot_confirm_unassign_package": "Remove this package from this Industry? The package itself and its rules are not affected.",
+    "hulahoot_package_unassigned": "Package removed from this Industry.",
+    "hulahoot_package_assigned": "Package assigned to this Industry.",
+    "hulahoot_assign_existing_package": "Assign an Existing Package",
+    "hulahoot_no_unassigned_packages": "Every native package is already assigned to this Industry.",
+    "hulahoot_select_a_package": "Select a package...",
+    "hulahoot_assign": "Assign"
 }

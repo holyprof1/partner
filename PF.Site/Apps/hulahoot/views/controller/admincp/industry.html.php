@@ -60,8 +60,9 @@ defined('PHPFOX') or exit('NO DICE!');
                     </td>
                     <td>{_p var=$aIndustry.name}</td>
                     <td>{if $aIndustry.is_active}<span class="label label-success">{_p var='hulahoot_active'}</span>{else}<span class="label label-default">{_p var='hulahoot_inactive'}</span>{/if}</td>
-                    <td>{$aIndustry.package_count}</td>
+                    <td><a href="/admincp/hulahoot/industry/packages?id={$aIndustry.industry_id}">{$aIndustry.package_count}</a></td>
                     <td class="hulahoot-admin-actions">
+                        <a href="/admincp/hulahoot/industry/packages?id={$aIndustry.industry_id}" class="btn btn-default btn-sm">{_p var='hulahoot_manage_packages'}</a>
                         <a href="/admincp/hulahoot/industry/add?id={$aIndustry.industry_id}" class="btn btn-default btn-sm">{_p var='hulahoot_edit'}</a>
                         <a href="/admincp/hulahoot/industry/delete?id={$aIndustry.industry_id}" class="btn btn-danger btn-sm">{_p var='hulahoot_delete'}</a>
                     </td>
