@@ -18,6 +18,12 @@ defined('PHPFOX') or exit('NO DICE!');
         display: block; max-width: 240px; max-height: 120px; margin-bottom: 8px;
         border-radius: 4px; border: 1px solid #e2e2e2;
     }
+    .hulahoot-icon-preview-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .hulahoot-icon-preview {
+        width: 40px; height: 40px; border-radius: 50%; background: #f3f3f3;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; color: #333; flex-shrink: 0;
+    }
 {/literal}
 </style>
 <div class="hulahoot-admin">
@@ -80,7 +86,14 @@ defined('PHPFOX') or exit('NO DICE!');
         <div class="form-group">
             <label for="hulahoot_industry_icon" class="col-sm-3 control-label">{_p var='hulahoot_field_icon'}</label>
             <div class="col-sm-9">
-                <input type="text" name="icon" id="hulahoot_industry_icon" class="form-control" maxlength="100" value="{$values.icon|clean}">
+                <input type="text" name="icon" id="hulahoot_industry_icon" class="form-control" maxlength="100" value="{$values.icon|clean}" placeholder="fa-car">
+                <div class="hulahoot-icon-preview-row">
+                    <span class="hulahoot-icon-preview"><i id="js_hulahoot_icon_preview" class="fa {$values.icon|clean}"></i></span>
+                    <span class="help-block" style="margin:0;">
+                        {_p var='hulahoot_icon_help'}
+                        <a href="https://fontawesome.com/v4/icons/" target="_blank" rel="noopener">{_p var='hulahoot_icon_help_link'}</a>
+                    </span>
+                </div>
             </div>
         </div>
 
@@ -108,3 +121,17 @@ defined('PHPFOX') or exit('NO DICE!');
         </div>
     </form>
 </div>
+<script>
+{literal}
+(function () {
+    var input = document.getElementById('hulahoot_industry_icon');
+    var preview = document.getElementById('js_hulahoot_icon_preview');
+    if (!input || !preview) {
+        return;
+    }
+    input.addEventListener('input', function () {
+        preview.className = 'fa ' + input.value.trim();
+    });
+})();
+{/literal}
+</script>

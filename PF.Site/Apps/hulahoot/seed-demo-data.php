@@ -222,7 +222,7 @@ $aPackagePlans = [
         'description' => 'For businesses ready to run always-on promotions.',
         'cost' => '49', 'recurring_cost' => '49', 'recurring_period' => 1, 'is_free' => false,
         'subtitle' => 'Most popular for growing brands',
-        'badge' => 'Most Popular', 'accent_color' => '#7C3AED', 'button_text' => 'Choose Growth',
+        'badge' => 'Most Popular', 'accent_color' => '#000000', 'button_text' => 'Choose Growth',
         'credits' => 150, 'purchase_limit' => 5, 'campaign_limit' => 3, 'posting_per_day' => 3, 'posting_per_month' => 60,
         'features' => ['5 active promotions', '150 monthly credits', 'Enhanced placement', 'Priority support', 'Basic analytics'],
         'industries' => ['Automotive', 'Restaurants', 'Real Estate', 'Retail', 'Fitness', 'Technology'],

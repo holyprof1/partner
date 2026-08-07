@@ -7,9 +7,10 @@
     font-size: 34px;
     font-weight: 800;
     margin: 0 0 10px;
+    color: #000;
 }
 .hulahoot-marketplace-hero p {
-    color: #666;
+    color: #797979;
     font-size: 16px;
     margin: 0 auto 24px;
     max-width: 480px;
@@ -22,20 +23,21 @@
 .hulahoot-industry-search input {
     width: 100%;
     padding: 14px 20px 14px 44px;
-    border: 2px solid #222;
+    border: 2px solid #000;
     border-radius: 999px;
     font-size: 16px;
 }
 .hulahoot-industry-search input:focus {
     outline: none;
-    border-color: #7C3AED;
+    border-color: #000;
+    box-shadow: 0 0 0 3px rgba(0,0,0,.08);
 }
 .hulahoot-industry-search .fa {
     position: absolute;
     left: 18px;
     top: 50%;
     transform: translateY(-50%);
-    color: #999;
+    color: #797979;
 }
 .hulahoot-industry-grid {
     display: grid;
@@ -55,7 +57,7 @@
 }
 .hulahoot-industry-card:hover {
     box-shadow: 0 4px 14px rgba(0,0,0,.08);
-    border-color: #7C3AED;
+    border-color: #000;
     text-decoration: none;
     color: inherit;
 }
@@ -76,17 +78,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f3eefe;
-    color: #7C3AED;
+    background: #f0f0f0;
+    color: #000;
     font-size: 22px;
 }
 .hulahoot-industry-card-name {
     font-weight: 600;
     font-size: 15px;
+    color: #000;
 }
 .hulahoot-industry-empty {
     text-align: center;
-    color: #888;
+    color: #797979;
     padding: 40px 20px;
 }
 
@@ -101,16 +104,18 @@
     font-size: 30px;
     font-weight: 800;
     margin: 0 0 8px;
+    color: #000;
 }
 .hulahoot-industry-detail-header p {
-    color: #666;
+    color: #797979;
     font-size: 15px;
     max-width: 640px;
 }
 .hulahoot-back-link {
     display: inline-block;
     margin-bottom: 16px;
-    color: #7C3AED;
+    color: #000;
+    font-weight: 600;
 }
 
 .hulahoot-package-grid {
@@ -133,7 +138,7 @@
     top: -12px;
     left: 50%;
     transform: translateX(-50%);
-    background: #7C3AED;
+    background: #000;
     color: #fff;
     font-size: 11px;
     font-weight: 700;
@@ -154,9 +159,10 @@
     font-size: 19px;
     font-weight: 700;
     margin: 0 0 4px;
+    color: #000;
 }
 .hulahoot-package-subtitle {
-    color: #777;
+    color: #797979;
     font-size: 13.5px;
     margin-bottom: 14px;
 }
@@ -164,15 +170,16 @@
     font-size: 30px;
     font-weight: 800;
     margin-bottom: 4px;
+    color: #000;
 }
 .hulahoot-package-price small {
     font-size: 13px;
     font-weight: 500;
-    color: #888;
+    color: #797979;
 }
 .hulahoot-package-description {
     font-size: 13.5px;
-    color: #555;
+    color: #797979;
     margin-bottom: 16px;
 }
 .hulahoot-package-features {
@@ -185,17 +192,18 @@
     font-size: 13.5px;
     padding: 5px 0 5px 24px;
     position: relative;
+    color: #333;
 }
 .hulahoot-package-features li:before {
     content: "\2713";
     position: absolute;
     left: 0;
-    color: #22c55e;
+    color: #000;
     font-weight: 700;
 }
 .hulahoot-package-meta {
     font-size: 12.5px;
-    color: #888;
+    color: #797979;
     margin-bottom: 16px;
 }
 .hulahoot-package-meta span {
@@ -207,5 +215,12 @@
     padding: 11px;
     border-radius: 6px;
     font-weight: 700;
+    background: #000;
+    color: #fff;
+    border: 1px solid #000;
+}
+.hulahoot-package-cta:hover {
+    background: #222;
+    color: #fff;
 }
 </style>

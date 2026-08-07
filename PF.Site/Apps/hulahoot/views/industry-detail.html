@@ -57,7 +57,7 @@
                     {% if package.campaign_limit %}<span>{{ _p('hulahoot_field_campaign_limit') }}: {{ package.campaign_limit }}</span>{% endif %}
                 </div>
 
-                <a href="#" class="btn btn-primary hulahoot-package-cta"{% if package.accent_color %} style="background-color: {{ package.accent_color|e }}; border-color: {{ package.accent_color|e }};"{% endif %}
+                <a href="#" class="btn hulahoot-package-cta"{% if package.accent_color %} style="background-color: {{ package.accent_color|e }}; border-color: {{ package.accent_color|e }};"{% endif %}
                    onclick="tb_show('{{ _p('select_payment_gateway') }}', $.ajaxBox('subscribe.upgrade', 'height=400&width=400&id={{ package.package_id }}')); return false;">
                     {{ package.button_text|default(_p('hulahoot_choose_plan')) }}
                 </a>
