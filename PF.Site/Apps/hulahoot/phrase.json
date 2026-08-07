@@ -185,6 +185,7 @@
     "hulahoot_subscription_package_not_found": "That subscription package could not be found.",
     "hulahoot_no_payment_gateway_active": "Payment processing isn't set up yet for paid plans. Please check back soon, or choose a free plan for now.",
     "hulahoot_package_sold_out": "This plan is fully booked - every slot has been claimed.",
+    "hulahoot_purchase_busy": "This plan is busy processing another purchase right now - please try again in a moment.",
     "hulahoot_package_not_limited": "This plan has no slot limit, so there's nothing to buy out.",
     "hulahoot_slots_remaining": "{remaining} of {total} slots left",
     "hulahoot_slots_sold_out": "Sold out",

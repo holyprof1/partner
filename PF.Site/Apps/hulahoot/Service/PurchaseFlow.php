@@ -97,40 +97,81 @@ class PurchaseFlow
             throw new \InvalidArgumentException(_p('hulahoot_subscription_package_not_found'));
         }
 
-        $this->assertSlotAvailable((int)$iPackageId);
-
-        $bFree = ((float)$aPackage['default_cost'] === 0.0);
-        $bHasGateway = $this->hasActiveGateway();
-
-        if (!$bFree && !$bHasGateway && !Phpfox::isAdmin()) {
-            throw new \InvalidArgumentException(_p('hulahoot_no_payment_gateway_active'));
-        }
-
-        $aUser = db()->select('user_group_id')
-            ->from(':user')
-            ->where(['user_id' => (int)$iUserId])
+        // Hulahoot's own kill switch (hulahoot_subscription_package.is_active)
+        // is independent of the native package's own is_active - an admin
+        // can deactivate a package on the Hulahoot side while the native
+        // row stays active underneath (see that table's own docblock).
+        // Marketplace::getPackagesForIndustry() already hides such a
+        // package from the storefront, but without this check here, a
+        // direct POST to /industry/subscribe with its package_id would
+        // still complete a purchase - the storefront hiding it is not a
+        // real access control by itself.
+        $aRules = db()->select('purchase_limit')
+            ->from(':hulahoot_subscription_package')
+            ->where(['package_id' => (int)$iPackageId, 'is_active' => 1])
             ->execute('getSlaveRow');
-        $iCurrentGroupId = (int)($aUser['user_group_id'] ?? 0);
 
-        $iPurchaseId = Phpfox::getService('subscribe.purchase.process')->add([
-            'package_id' => (int)$iPackageId,
-            'currency_id' => $aPackage['default_currency_id'],
-            'price' => $aPackage['default_cost'],
-            'renew_type' => 0,
-        ], (int)$iUserId);
-
-        if ($bFree || (!$bHasGateway && Phpfox::isAdmin())) {
-            $this->completeAsHulahoot($iPurchaseId, (int)$iPackageId, (int)$iUserId, $iCurrentGroupId, $aPackage);
-
-            return ['completed' => true, 'purchase_id' => $iPurchaseId];
+        if (!$aRules) {
+            throw new \InvalidArgumentException(_p('hulahoot_subscription_package_not_found'));
         }
 
-        // Paid: leave status as-is (pending) and hand off to the native
-        // gateway-selection page - same bookkeeping call UpgradeBlock
-        // makes before doing that handoff itself.
-        Phpfox::getService('subscribe.purchase.process')->changePurchaseForSigningUp($iPurchaseId, (int)$iUserId);
+        // Named lock scoped to this one package - serializes every
+        // concurrent purchase attempt (single buys and Buy Out alike)
+        // against the exact same package_id, closing the check-then-insert
+        // race that a plain "count existing rows, then insert" would
+        // otherwise have: two simultaneous requests could both read the
+        // same "2 of 3 taken" count and both proceed, overselling by one.
+        // Scoped per package_id (not global) so purchases of DIFFERENT
+        // packages never block each other. 10s wait is generous for how
+        // fast this critical section actually runs (a handful of small
+        // writes, no network calls) - a real wait here would only ever
+        // happen under a genuine burst of concurrent buyers on the same
+        // package, which is exactly the case this exists to protect.
+        $sLockName = 'hulahoot_purchase_pkg_' . (int)$iPackageId;
+        $aLockResult = db()->select("GET_LOCK('" . $sLockName . "', 10) AS locked")->from('DUAL')->execute('getSlaveRow');
 
-        return ['completed' => false, 'purchase_id' => $iPurchaseId];
+        if (empty($aLockResult['locked'])) {
+            throw new \InvalidArgumentException(_p('hulahoot_purchase_busy'));
+        }
+
+        try {
+            $this->assertSlotAvailable((int)$iPackageId);
+
+            $bFree = ((float)$aPackage['default_cost'] === 0.0);
+            $bHasGateway = $this->hasActiveGateway();
+
+            if (!$bFree && !$bHasGateway && !Phpfox::isAdmin()) {
+                throw new \InvalidArgumentException(_p('hulahoot_no_payment_gateway_active'));
+            }
+
+            $aUser = db()->select('user_group_id')
+                ->from(':user')
+                ->where(['user_id' => (int)$iUserId])
+                ->execute('getSlaveRow');
+            $iCurrentGroupId = (int)($aUser['user_group_id'] ?? 0);
+
+            $iPurchaseId = Phpfox::getService('subscribe.purchase.process')->add([
+                'package_id' => (int)$iPackageId,
+                'currency_id' => $aPackage['default_currency_id'],
+                'price' => $aPackage['default_cost'],
+                'renew_type' => 0,
+            ], (int)$iUserId);
+
+            if ($bFree || (!$bHasGateway && Phpfox::isAdmin())) {
+                $this->completeAsHulahoot($iPurchaseId, (int)$iPackageId, (int)$iUserId, $iCurrentGroupId, $aPackage);
+
+                return ['completed' => true, 'purchase_id' => $iPurchaseId];
+            }
+
+            // Paid: leave status as-is (pending) and hand off to the native
+            // gateway-selection page - same bookkeeping call UpgradeBlock
+            // makes before doing that handoff itself.
+            Phpfox::getService('subscribe.purchase.process')->changePurchaseForSigningUp($iPurchaseId, (int)$iUserId);
+
+            return ['completed' => false, 'purchase_id' => $iPurchaseId];
+        } finally {
+            db()->select("RELEASE_LOCK('" . $sLockName . "') AS released")->from('DUAL')->execute('getSlaveRow');
+        }
     }
 
     /**
@@ -174,10 +215,27 @@ class PurchaseFlow
             throw new \InvalidArgumentException(_p('hulahoot_package_sold_out'));
         }
 
+        // Each initiate() call re-checks availability fresh under its own
+        // per-package lock, so a concurrent purchase racing this loop
+        // (another buyer, or another Buy Out) can legitimately make a
+        // later iteration here fail with "sold out" even though $iRemaining
+        // looked fine when this loop started - that's correct, not a bug
+        // (it's exactly what stops this loop from overselling). Catching
+        // it here means a buyer who asked for 5 and got 3 before someone
+        // else took the rest still sees "you got 3", not a bare error
+        // that hides the 3 purchases that already went through.
         $aPurchaseIds = [];
         for ($i = 0; $i < $iRemaining; $i++) {
-            $aResult = $this->initiate($iUserId, $iPackageId);
-            $aPurchaseIds[] = $aResult['purchase_id'];
+            try {
+                $aResult = $this->initiate($iUserId, $iPackageId);
+                $aPurchaseIds[] = $aResult['purchase_id'];
+            } catch (\InvalidArgumentException $e) {
+                break;
+            }
+        }
+
+        if (!$aPurchaseIds) {
+            throw new \InvalidArgumentException(_p('hulahoot_package_sold_out'));
         }
 
         return ['completed_count' => count($aPurchaseIds), 'purchase_ids' => $aPurchaseIds];
