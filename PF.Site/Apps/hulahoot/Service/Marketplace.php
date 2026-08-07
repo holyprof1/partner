@@ -22,6 +22,23 @@ use Phpfox;
 class Marketplace
 {
     /**
+     * A completed purchase's partnership term - see PurchaseFlow's
+     * completion step, which stamps expiry_date = purchase time + this
+     * many days (native recurring-billing fields aren't in play here,
+     * since Hulahoot completes purchases itself rather than through a
+     * real payment gateway's recurring cycle).
+     */
+    const SUBSCRIPTION_TERM_DAYS = 365;
+
+    /**
+     * After a purchase's term ends, its slot doesn't return to the
+     * market immediately - the holder gets this many extra days (with
+     * renewal reminder emails going out, see Service\ExpiryReminders) to
+     * renew before someone else can buy it.
+     */
+    const GRACE_PERIOD_DAYS = 30;
+
+    /**
      * Every active Industry, for the "Find Your Industry" browse/search
      * page - in the same order priorities.
      *
@@ -116,9 +133,45 @@ class Marketplace
             $aCosts = Phpfox::getLib('parse.format')->isSerialized($aRow['cost']) ? unserialize($aRow['cost']) : [];
             $aRow['default_cost'] = $aCosts[$sDefaultCurrencyId] ?? 0;
             $aRow['default_currency_id'] = $sDefaultCurrencyId;
+
+            $iLimit = $aRow['purchase_limit'] !== null ? (int)$aRow['purchase_limit'] : null;
+            $aRow['slots_remaining'] = $iLimit !== null
+                ? max(0, $iLimit - $this->getOccupiedSlotCount($aRow['package_id']))
+                : null;
+            $aRow['is_sold_out'] = $iLimit !== null && $aRow['slots_remaining'] <= 0;
         }
         unset($aRow);
 
         return $aRows;
+    }
+
+    /**
+     * How many of a package's slots are currently spoken for: completed
+     * purchases still inside their 1-year term, OR inside the extra
+     * GRACE_PERIOD_DAYS renewal window after that. A purchase whose term
+     * AND grace period have both fully lapsed no longer counts - its
+     * slot is back on the market, even though the purchase row itself
+     * still exists (native purchase history is never deleted).
+     *
+     * A purchase with expiry_date = 0 (native's "never expires" marker)
+     * always counts - matches how native Core Subscriptions itself
+     * treats a zero expiry_date.
+     *
+     * @param int $iPackageId
+     *
+     * @return int
+     */
+    public function getOccupiedSlotCount($iPackageId)
+    {
+        $iGraceCutoff = time() - (self::GRACE_PERIOD_DAYS * 86400);
+
+        return (int)db()->select('COUNT(*)')
+            ->from(':subscribe_purchase')
+            ->where(
+                'package_id = ' . (int)$iPackageId
+                . ' AND status = "completed"'
+                . ' AND (expiry_date = 0 OR expiry_date > ' . $iGraceCutoff . ')'
+            )
+            ->execute('getSlaveField');
     }
 }

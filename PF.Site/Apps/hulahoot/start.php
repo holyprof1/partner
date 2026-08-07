@@ -614,6 +614,34 @@ group('/industry', function () {
         return url()->send('subscribe.register', ['id' => $aResult['purchase_id']]);
     });
 
+    // POST /industry/buy-out - "Buy Out Remaining Slots" on a limited
+    // package's card. Only meaningful today for the same free/admin-
+    // preview completion path /subscribe itself supports without a real
+    // gateway - see PurchaseFlow::buyOutRemainingSlots()'s own docblock.
+    route('/buy-out', function () {
+        auth()->membersOnly();
+
+        if (request()->method() !== 'POST') {
+            return url()->send('/find-your-industry');
+        }
+
+        if (request()->get('hulahoot_token') !== \Phpfox::getService('log.session')->getToken()) {
+            return url()->send('/find-your-industry', [], _p('hulahoot_invalid_token'));
+        }
+
+        $iPackageId = (int)request()->get('package_id');
+        $sIndustrySlug = (string)request()->get('industry_slug');
+        $service = new \Apps\Hulahoot\Service\PurchaseFlow();
+
+        try {
+            $aResult = $service->buyOutRemainingSlots(\Phpfox::getUserId(), $iPackageId);
+        } catch (\InvalidArgumentException $e) {
+            return url()->send('/industry', ['slug' => $sIndustrySlug], $e->getMessage());
+        }
+
+        return url()->send('/industry', ['slug' => $sIndustrySlug], _p('hulahoot_buy_out_success', ['count' => $aResult['completed_count']]));
+    });
+
 });
 
 // The Portal is a backend for finding an Industry and buying a package,

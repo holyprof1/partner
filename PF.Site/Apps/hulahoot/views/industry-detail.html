@@ -57,14 +57,41 @@
                     {% if package.campaign_limit %}<span>{{ _p('hulahoot_field_campaign_limit') }}: {{ package.campaign_limit }}</span>{% endif %}
                 </div>
 
-                <form method="post" action="{{ url('/industry/subscribe') }}">
-                    <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
-                    <input type="hidden" name="package_id" value="{{ package.package_id }}">
-                    <input type="hidden" name="industry_slug" value="{{ industry.slug }}">
-                    <button type="submit" class="btn hulahoot-package-cta"{% if package.accent_color %} style="background-color: {{ package.accent_color|e }}; border-color: {{ package.accent_color|e }};"{% endif %}>
-                        {{ package.button_text|default(_p('hulahoot_choose_plan')) }}
+                {% if package.slots_remaining is not null %}
+                    <div class="hulahoot-package-slots{% if package.is_sold_out %} hulahoot-package-slots-sold-out{% endif %}">
+                        {% if package.is_sold_out %}
+                            {{ _p('hulahoot_slots_sold_out') }}
+                        {% else %}
+                            {{ _p('hulahoot_slots_remaining', {'remaining': package.slots_remaining, 'total': package.purchase_limit}) }}
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {% if package.is_sold_out %}
+                    <button type="button" class="btn hulahoot-package-cta hulahoot-package-cta-current" disabled>
+                        {{ _p('hulahoot_slots_sold_out') }}
                     </button>
-                </form>
+                {% else %}
+                    <form method="post" action="{{ url('/industry/subscribe') }}">
+                        <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="package_id" value="{{ package.package_id }}">
+                        <input type="hidden" name="industry_slug" value="{{ industry.slug }}">
+                        <button type="submit" class="btn hulahoot-package-cta"{% if package.accent_color %} style="background-color: {{ package.accent_color|e }}; border-color: {{ package.accent_color|e }};"{% endif %}>
+                            {{ package.button_text|default(_p('hulahoot_choose_plan')) }}
+                        </button>
+                    </form>
+
+                    {% if package.slots_remaining is not null and package.slots_remaining > 1 %}
+                        <form method="post" action="{{ url('/industry/buy-out') }}" class="hulahoot-package-buyout-form" onsubmit="return confirm('{{ _p('hulahoot_buy_out_confirm_body', {'remaining': package.slots_remaining})|e('js') }}');">
+                            <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
+                            <input type="hidden" name="package_id" value="{{ package.package_id }}">
+                            <input type="hidden" name="industry_slug" value="{{ industry.slug }}">
+                            <button type="submit" class="hulahoot-package-buyout-btn">
+                                {{ _p('hulahoot_buy_out_remaining') }}
+                            </button>
+                        </form>
+                    {% endif %}
+                {% endif %}
             </div>
         {% endfor %}
     </div>

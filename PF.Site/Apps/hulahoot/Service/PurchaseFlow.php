@@ -52,6 +52,22 @@ use Phpfox;
  * waiting on a real gateway to go live. An ordinary member always gets
  * the real block above, gateway or not.
  *
+ * Completion deliberately does NOT call native Purchase\Process::update()
+ * for the 'completed' transition - that method unconditionally cancels
+ * every OTHER completed purchase the same user holds (any package, same
+ * or different tier) the moment one purchase completes, as a side effect
+ * of its own bookkeeping. That's correct for a classic "one membership
+ * tier at a time" site, but wrong here: a Founding Industry Partner can
+ * hold more than one package (repeat-buying the same tier, holding two
+ * different tiers, or buying out several remaining slots at once all
+ * need to coexist as separate completed purchases). completeAsHulahoot()
+ * below replicates update()'s other useful effects - account group
+ * update (a no-op, see class docblock), purchase history logging, the
+ * package's total_active counter, and the confirmation email - while
+ * skipping only the auto-cancel step. See Marketplace::getOccupiedSlotCount()
+ * for how a package's remaining slots are actually counted, independent
+ * of whether the user holds one purchase or several.
+ *
  * @package Apps\Hulahoot\Service
  */
 class PurchaseFlow
@@ -66,8 +82,8 @@ class PurchaseFlow
      *         buyer to subscribe.register for gateway selection.
      *
      * @throws \InvalidArgumentException if the package doesn't exist,
-     *         isn't currently purchasable, or (for a paid package) no
-     *         payment gateway is active yet
+     *         isn't currently purchasable, has no slots left, or (for a
+     *         paid package) no payment gateway is active yet
      */
     public function initiate($iUserId, $iPackageId)
     {
@@ -80,6 +96,8 @@ class PurchaseFlow
         if (!$aPackage || !$aPackage['is_active'] || !empty($aPackage['is_removed'])) {
             throw new \InvalidArgumentException(_p('hulahoot_subscription_package_not_found'));
         }
+
+        $this->assertSlotAvailable((int)$iPackageId);
 
         $bFree = ((float)$aPackage['default_cost'] === 0.0);
         $bHasGateway = $this->hasActiveGateway();
@@ -102,16 +120,7 @@ class PurchaseFlow
         ], (int)$iUserId);
 
         if ($bFree || (!$bHasGateway && Phpfox::isAdmin())) {
-            // Same call UpgradeBlock makes for a free package, with one
-            // difference: the current group, not the package's
-            // configured one, so this can never change it.
-            Phpfox::getService('subscribe.purchase.process')->update(
-                $iPurchaseId,
-                (int)$iPackageId,
-                'completed',
-                (int)$iUserId,
-                $iCurrentGroupId
-            );
+            $this->completeAsHulahoot($iPurchaseId, (int)$iPackageId, (int)$iUserId, $iCurrentGroupId, $aPackage);
 
             return ['completed' => true, 'purchase_id' => $iPurchaseId];
         }
@@ -122,6 +131,135 @@ class PurchaseFlow
         Phpfox::getService('subscribe.purchase.process')->changePurchaseForSigningUp($iPurchaseId, (int)$iUserId);
 
         return ['completed' => false, 'purchase_id' => $iPurchaseId];
+    }
+
+    /**
+     * Buys every remaining slot of a limited package in one go, all
+     * under the same buyer - each slot becomes its own independent
+     * completed purchase (same reasoning as completeAsHulahoot()). Only
+     * meaningful for a package with a real purchase_limit; refuses an
+     * unlimited package (nothing to "buy out") or one already at zero.
+     *
+     * Only usable today for the same completion path initiate() itself
+     * supports without a real gateway (free, or admin preview) - buying
+     * out several PAID slots through a real payment gateway in one
+     * checkout is a separate, larger feature for whenever a gateway
+     * actually goes live.
+     *
+     * @param int $iUserId
+     * @param int $iPackageId
+     *
+     * @return array{completed_count: int, purchase_ids: int[]}
+     *
+     * @throws \InvalidArgumentException if the package doesn't exist,
+     *         is unlimited, has zero slots left, or (for a paid package)
+     *         no payment gateway is active and the buyer isn't an admin
+     */
+    public function buyOutRemainingSlots($iUserId, $iPackageId)
+    {
+        $iPackageId = (int)$iPackageId;
+
+        $aRules = db()->select('purchase_limit')
+            ->from(':hulahoot_subscription_package')
+            ->where(['package_id' => $iPackageId, 'is_active' => 1])
+            ->execute('getSlaveRow');
+
+        if (!$aRules || $aRules['purchase_limit'] === null) {
+            throw new \InvalidArgumentException(_p('hulahoot_package_not_limited'));
+        }
+
+        $iRemaining = max(0, (int)$aRules['purchase_limit'] - (new Marketplace())->getOccupiedSlotCount($iPackageId));
+
+        if ($iRemaining < 1) {
+            throw new \InvalidArgumentException(_p('hulahoot_package_sold_out'));
+        }
+
+        $aPurchaseIds = [];
+        for ($i = 0; $i < $iRemaining; $i++) {
+            $aResult = $this->initiate($iUserId, $iPackageId);
+            $aPurchaseIds[] = $aResult['purchase_id'];
+        }
+
+        return ['completed_count' => count($aPurchaseIds), 'purchase_ids' => $aPurchaseIds];
+    }
+
+    /**
+     * @param int $iPackageId
+     *
+     * @throws \InvalidArgumentException if the package has a purchase_limit
+     *         and it's already been reached
+     */
+    private function assertSlotAvailable($iPackageId)
+    {
+        $aRules = db()->select('purchase_limit')
+            ->from(':hulahoot_subscription_package')
+            ->where(['package_id' => $iPackageId, 'is_active' => 1])
+            ->execute('getSlaveRow');
+
+        if (!$aRules || $aRules['purchase_limit'] === null) {
+            return;
+        }
+
+        $iOccupied = (new Marketplace())->getOccupiedSlotCount($iPackageId);
+
+        if ($iOccupied >= (int)$aRules['purchase_limit']) {
+            throw new \InvalidArgumentException(_p('hulahoot_package_sold_out'));
+        }
+    }
+
+    /**
+     * Finishes a purchase without native update()'s auto-cancel side
+     * effect (see class docblock). Sets expiry_date to now +
+     * Marketplace::SUBSCRIPTION_TERM_DAYS - native update() never
+     * actually computes this for a paid/recurring package on this
+     * completion path (confirmed by reading Purchase\Process::update()
+     * directly: its expiry_date-setting branch only fires for a package
+     * that's both free AND non-recurring), so leaving that to native
+     * code would have meant every purchase silently never expired.
+     *
+     * @param int $iPurchaseId
+     * @param int $iPackageId
+     * @param int $iUserId
+     * @param int $iUserGroupId
+     * @param array $aPackage
+     */
+    private function completeAsHulahoot($iPurchaseId, $iPackageId, $iUserId, $iUserGroupId, array $aPackage)
+    {
+        Phpfox::getService('user.process')->updateUserGroup($iUserId, $iUserGroupId);
+
+        db()->update(':user_field', ['subscribe_id' => '0'], 'user_id = ' . $iUserId);
+
+        $sTransactionId = Phpfox::getService('subscribe.helper')->generateTransactionId();
+        $iExpiryDate = time() + (Marketplace::SUBSCRIPTION_TERM_DAYS * 86400);
+
+        Phpfox::getService('subscribe.purchase.process')->addRecentPurchase([
+            'purchase_id' => $iPurchaseId,
+            'status' => 'completed',
+            'time_stamp' => PHPFOX_TIME,
+            'currency_id' => $aPackage['default_currency_id'],
+            'payment_method' => '',
+            'transaction_id' => $sTransactionId,
+            'total_paid' => $aPackage['default_cost'],
+        ]);
+
+        db()->update(':subscribe_purchase', [
+            'status' => 'completed',
+            'time_stamp' => PHPFOX_TIME,
+            'transaction_id' => $sTransactionId,
+            'expiry_date' => $iExpiryDate,
+        ], 'purchase_id = ' . (int)$iPurchaseId);
+
+        db()->updateCount('subscribe_purchase', 'package_id = ' . $iPackageId . ' AND status = "completed"', 'total_active', 'subscribe_package', 'package_id = ' . $iPackageId);
+
+        Phpfox::getLib('mail')
+            ->to($iUserId)
+            ->subject(['subscribe.membership_successfully_updated_site_title', ['site_title' => Phpfox::getParam('core.site_title')]])
+            ->message(['subscribe.your_membership_on_site_title_has_successfully_been_updated', [
+                'site_title' => Phpfox::getParam('core.site_title'),
+                'link' => \Phpfox_Url::instance()->makeUrl('subscribe.view', ['id' => $iPurchaseId]),
+            ]])
+            ->notification('subscribe.subscribe_notifications')
+            ->send();
     }
 
     /**
