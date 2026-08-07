@@ -1,0 +1,808 @@
+<style>
+  :root{
+    --white:#fff;
+    --black:#000;
+    --chrome:#797979;
+    --chrome-light:#ededed;
+    --chrome-mid:#d2d2d2;
+    --text:#000;
+    --muted:#5f5f5f;
+    --radius:28px;
+    --max:1160px;
+    --shadow:0 18px 48px rgba(0,0,0,.08);
+  }
+
+  .hh-page{
+    width:100%;
+    background:#fff;
+    font-family:Arial,Helvetica,sans-serif;
+    overflow-x:hidden;
+  }
+
+  .hh-page a{
+    color:inherit;
+  }
+
+  .hh-container{
+    width:min(var(--max),calc(100% - 32px));
+    margin:0 auto;
+  }
+
+  .hh-section{
+    position:relative;
+    padding:64px 0;
+    background:#fff;
+  }
+
+  .hh-section + .hh-section::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(var(--max),calc(100% - 32px));
+    height:1px;
+    background:#797979;
+    opacity:.32;
+  }
+
+  .hh-eyebrow{
+    margin:0 0 14px;
+    color:#797979;
+    text-transform:uppercase;
+    letter-spacing:.26em;
+    font-size:.78rem;
+    font-weight:800;
+  }
+
+  .hh-page h1,
+  .hh-page h2,
+  .hh-page h3{
+    margin-top:0;
+    color:#000;
+    line-height:1.04;
+    letter-spacing:-.04em;
+  }
+
+  .hh-page h1{
+    max-width:980px;
+    margin:0 auto 20px;
+    font-size:clamp(3rem,8vw,6.6rem);
+  }
+
+  .hh-page h2{
+    margin-bottom:16px;
+    font-size:clamp(2.2rem,5vw,4.3rem);
+  }
+
+  .hh-page h3{
+    margin-bottom:10px;
+    font-size:clamp(1.45rem,2.3vw,2rem);
+  }
+
+  .hh-page p{
+    margin:0;
+    line-height:1.7;
+  }
+
+  .hh-lead{
+    max-width:820px;
+    color:#5f5f5f;
+    font-size:clamp(1.05rem,2vw,1.22rem);
+  }
+
+  .hh-hero{
+    padding:20px 0 58px;
+    text-align:center;
+    background:#fff;
+  }
+
+  .hh-hero p{
+    max-width:860px;
+    margin:0 auto;
+    color:#5f5f5f;
+    font-size:clamp(1.08rem,2.1vw,1.34rem);
+    font-weight:600;
+  }
+
+  .hh-video{
+    width:100%;
+    margin-top:28px;
+    overflow:hidden;
+    border:1px solid #d2d2d2;
+    border-radius:24px;
+    background:#fff;
+    box-shadow:var(--shadow);
+  }
+
+  .hh-video iframe{
+    display:block;
+  }
+
+  .hh-button-row{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:12px;
+    margin-top:24px;
+  }
+
+  .hh-btn{
+    min-height:52px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 24px;
+    border-radius:999px;
+    text-decoration:none;
+    font-weight:800;
+    transition:transform .22s ease,background .22s ease,box-shadow .22s ease;
+  }
+
+  .hh-btn:hover{
+    transform:translateY(-2px);
+  }
+
+  .hh-btn-black{
+    color:#fff;
+    background:#000;
+    box-shadow:0 12px 24px rgba(0,0,0,.14);
+  }
+
+  .hh-btn-black:hover{
+    background:#797979;
+    color:#fff;
+  }
+
+  .hh-btn-outline{
+    color:#000;
+    background:#fff;
+    border:1px solid #000;
+  }
+
+  .hh-timing-grid{
+    display:grid;
+    grid-template-columns:.92fr 1.08fr;
+    gap:42px;
+    align-items:start;
+  }
+
+  .hh-timing-list{
+    display:grid;
+    gap:14px;
+    margin:0;
+    padding:0;
+    list-style:none;
+  }
+
+  .hh-timing-list li{
+    position:relative;
+    padding:18px 20px 18px 48px;
+    border:1px solid #d2d2d2;
+    border-radius:18px;
+    background:#fff;
+    color:#000;
+    font-size:1.04rem;
+    font-weight:700;
+  }
+
+  .hh-timing-list li::before{
+    content:"";
+    position:absolute;
+    top:23px;
+    left:20px;
+    width:11px;
+    height:11px;
+    border-radius:50%;
+    background:#797979;
+  }
+
+  #partnership-video-2{
+    scroll-margin-top:100px;
+  }
+
+  .hh-how-header{
+    max-width:760px;
+    margin-bottom:28px;
+  }
+
+  .hh-how-subtitle{
+    margin-top:-4px;
+    color:#797979;
+    text-transform:uppercase;
+    letter-spacing:.18em;
+    font-size:.95rem;
+    font-weight:800;
+  }
+
+  .hh-cards{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:18px;
+  }
+
+  .hh-card{
+    min-height:280px;
+    position:relative;
+    overflow:hidden;
+    padding:32px;
+    border-radius:28px;
+    box-shadow:var(--shadow);
+    transition:transform .32s ease,box-shadow .32s ease;
+  }
+
+  .hh-card:hover{
+    transform:translateY(-7px);
+    box-shadow:0 26px 60px rgba(0,0,0,.13);
+  }
+
+  .hh-card.chrome{
+    color:#000;
+    border:1px solid #c8c8c8;
+    background:linear-gradient(145deg,#f4f4f4,#dcdcdc);
+  }
+
+  .hh-card.black{
+    color:#fff;
+    border:1px solid #222;
+    background:linear-gradient(145deg,#171717,#000);
+  }
+
+  .hh-card.wide{
+    grid-column:1/-1;
+  }
+
+  .hh-card::after{
+    content:attr(data-step);
+    position:absolute;
+    right:18px;
+    bottom:-16px;
+    font-size:clamp(7rem,14vw,11rem);
+    font-weight:900;
+    line-height:.82;
+    letter-spacing:-.08em;
+    pointer-events:none;
+    user-select:none;
+  }
+
+  .hh-card.chrome::after{
+    color:rgba(0,0,0,.07);
+  }
+
+  .hh-card.black::after{
+    color:rgba(255,255,255,.08);
+  }
+
+  .hh-card > *{
+    position:relative;
+    z-index:1;
+  }
+
+  .hh-step{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:46px;
+    height:32px;
+    margin-bottom:28px;
+    padding:0 12px;
+    border-radius:999px;
+    font-size:.86rem;
+    font-weight:900;
+    letter-spacing:.08em;
+  }
+
+  .hh-card.chrome .hh-step{
+    color:#fff;
+    background:#000;
+  }
+
+  .hh-card.black .hh-step{
+    color:#000;
+    background:#fff;
+  }
+
+  .hh-card.black h3{
+    color:#fff;
+  }
+
+  .hh-card p{
+    max-width:80%;
+    font-size:1.05rem;
+  }
+
+  .hh-card.chrome p{
+    color:#595959;
+  }
+
+  .hh-card.black p{
+    color:#d5d5d5;
+  }
+
+  .hh-swess-grid{
+    display:grid;
+    grid-template-columns:.92fr 1.08fr;
+    gap:42px;
+    align-items:start;
+  }
+
+  .hh-swess-card{
+    padding:28px;
+    border-radius:24px;
+    background:linear-gradient(145deg,#f2f2f2,#dcdcdc);
+    border:1px solid #c8c8c8;
+    box-shadow:var(--shadow);
+  }
+
+  .hh-swess-list{
+    display:grid;
+    gap:12px;
+    margin:0;
+    padding:0;
+    list-style:none;
+  }
+
+  .hh-swess-list li{
+    padding:16px 18px;
+    border-radius:15px;
+    border:1px solid #cfcfcf;
+    background:rgba(255,255,255,.6);
+    color:#000;
+    font-weight:700;
+  }
+
+  .hh-pricing{
+    margin-top:24px;
+    padding:24px 26px;
+    border-left:5px solid #797979;
+    border-radius:0 18px 18px 0;
+    background:#f2f2f2;
+    color:#000;
+    font-size:clamp(1.15rem,2.2vw,1.55rem);
+    font-weight:850;
+    line-height:1.45;
+  }
+
+  .hh-cta{
+    text-align:center;
+  }
+
+  .hh-cta-card{
+    padding:42px 30px;
+    border:1px solid #1f1f1f;
+    border-radius:30px;
+    background:#000;
+    color:#fff;
+    box-shadow:var(--shadow);
+  }
+
+  .hh-cta-card h2{
+    color:#fff;
+  }
+
+  .hh-cta-card p{
+    max-width:760px;
+    margin:0 auto;
+    color:#d0d0d0;
+    font-size:1.08rem;
+  }
+
+  .hh-reveal{
+    opacity:1;
+    transform:none;
+    transition:opacity .8s ease,transform .8s cubic-bezier(.16,1,.3,1);
+  }
+
+  .hh-motion-ready .hh-reveal{
+    opacity:0;
+    transform:translateY(42px);
+  }
+
+  .hh-motion-ready .hh-reveal.visible{
+    opacity:1;
+    transform:translateY(0);
+  }
+
+  .hh-motion-ready .hh-card{
+    opacity:0;
+    transform:translateY(58px) scale(.985);
+  }
+
+  .hh-motion-ready .hh-card.visible{
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+
+  .hh-cards .hh-card:nth-child(2){
+    transition-delay:.08s;
+  }
+
+  .hh-cards .hh-card:nth-child(3){
+    transition-delay:.16s;
+  }
+
+  .hh-cards .hh-card:nth-child(4){
+    transition-delay:.24s;
+  }
+
+  .hh-cards .hh-card:nth-child(5){
+    transition-delay:.32s;
+  }
+
+  @media(max-width:860px){
+    .hh-section{
+      padding:52px 0;
+    }
+
+    .hh-timing-grid,
+    .hh-swess-grid{
+      grid-template-columns:1fr;
+    }
+
+    .hh-cards{
+      grid-template-columns:1fr;
+    }
+
+    .hh-card.wide{
+      grid-column:auto;
+    }
+
+    .hh-card p{
+      max-width:100%;
+    }
+  }
+
+  @media(max-width:560px){
+    .hh-container{
+      width:min(var(--max),calc(100% - 24px));
+    }
+
+    .hh-hero{
+      padding:18px 0 42px;
+    }
+
+    .hh-section{
+      padding:44px 0;
+    }
+
+    .hh-card{
+      min-height:250px;
+      padding:26px;
+    }
+
+    .hh-card::after{
+      right:12px;
+      font-size:7rem;
+    }
+
+    .hh-btn{
+      width:100%;
+    }
+
+    .hh-cta-card{
+      padding:32px 20px;
+    }
+  }
+
+  @media(prefers-reduced-motion:reduce){
+    .hh-reveal,
+    .hh-card{
+      opacity:1!important;
+      transform:none!important;
+      transition:none!important;
+    }
+  }
+</style>
+
+<main class="hh-page">
+
+  <section class="hh-hero">
+    <div class="hh-container">
+
+      <p class="hh-eyebrow hh-reveal">
+        Hulahoot Founding Industry Partnership
+      </p>
+
+      <h1 class="hh-reveal">
+        Become a Founding Industry Partner
+      </h1>
+
+      <p class="hh-reveal">
+        Reserve your place before Hulahoot launches and secure one of the limited partnership positions available within your industry.
+      </p>
+
+      <div class="hh-video hh-reveal">
+        <div style="position:relative;width:100%;height:0;padding-bottom:102.047%">
+          <iframe
+            allow="fullscreen;autoplay"
+            allowfullscreen
+            src="https://streamable.com/e/1puy8i?autoplay=1&amp;loop=0"
+            style="border:none;width:100%;height:100%;position:absolute;left:0;top:0;overflow:hidden">
+          </iframe>
+        </div>
+      </div>
+
+      <div class="hh-button-row hh-reveal">
+        <a
+          class="hh-btn hh-btn-black"
+          href="#partnership-video-2">
+          Learn More
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="hh-section">
+    <div class="hh-container hh-timing-grid">
+
+      <div>
+        <p class="hh-eyebrow hh-reveal">
+          Partnership Timing
+        </p>
+
+        <h2 class="hh-reveal">
+          Reserve now. Begin on launch day.
+        </h2>
+
+        <p class="hh-lead hh-reveal">
+          Purchasing reserves your partnership before launch. Your one-year partnership begins when Hulahoot officially launches.
+        </p>
+
+        <div
+          class="hh-button-row hh-reveal"
+          style="justify-content:flex-start">
+          <a
+            class="hh-btn hh-btn-outline"
+            href="#partnership-video-2">
+            Learn More
+          </a>
+        </div>
+      </div>
+
+      <ul class="hh-timing-list">
+        <li class="hh-reveal">
+          Purchasing reserves your partnership before launch.
+        </li>
+
+        <li class="hh-reveal">
+          Your partnership begins on Hulahoot's official launch day.
+        </li>
+
+        <li class="hh-reveal">
+          Every Founding Industry Partner begins at the same time.
+        </li>
+
+        <li class="hh-reveal">
+          Current partners receive the first right to renew.
+        </li>
+
+        <li class="hh-reveal">
+          Packages return to the market only when a partner does not renew or the renewal period and any configured grace period expires.
+        </li>
+      </ul>
+
+    </div>
+
+    <div
+      class="hh-container"
+      id="partnership-video-2">
+
+      <div class="hh-video hh-reveal">
+        <div style="position:relative;width:100%;height:0;padding-bottom:56.434%">
+          <iframe
+            allow="fullscreen"
+            allowfullscreen
+            src="https://streamable.com/e/8y72qj?loop=0"
+            style="border:none;width:100%;height:100%;position:absolute;left:0;top:0;overflow:hidden">
+          </iframe>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="hh-section">
+    <div class="hh-container">
+
+      <div class="hh-how-header">
+        <p class="hh-eyebrow hh-reveal">
+          From Reservation to Launch Day
+        </p>
+
+        <h2 class="hh-reveal">
+          How It Works
+        </h2>
+
+        <p class="hh-how-subtitle hh-reveal">
+          Simple steps. Clear timing.
+        </p>
+      </div>
+
+      <div class="hh-cards">
+
+        <article
+          class="hh-card chrome"
+          data-step="01">
+          <span class="hh-step">01</span>
+          <h3>Choose Your Industry</h3>
+          <p>Select the industry your business represents.</p>
+        </article>
+
+        <article
+          class="hh-card black"
+          data-step="02">
+          <span class="hh-step">02</span>
+          <h3>Choose Your Partnership</h3>
+          <p>Select the partnership package that best fits your business.</p>
+        </article>
+
+        <article
+          class="hh-card chrome"
+          data-step="03">
+          <span class="hh-step">03</span>
+          <h3>Complete Your Reservation</h3>
+          <p>Your partnership is reserved immediately after successful purchase.</p>
+        </article>
+
+        <article
+          class="hh-card black"
+          data-step="04">
+          <span class="hh-step">04</span>
+          <h3>Build Your Presence</h3>
+          <p>Create your account, prepare your content, and get ready before launch.</p>
+        </article>
+
+        <article
+          class="hh-card chrome wide"
+          data-step="05">
+          <span class="hh-step">05</span>
+          <h3>Launch Day</h3>
+          <p>Your one-year Founding Industry Partnership begins on Hulahoot's official launch day.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="hh-section">
+    <div class="hh-container hh-swess-grid">
+
+      <div>
+        <p class="hh-eyebrow hh-reveal">
+          SWESS
+        </p>
+
+        <h2 class="hh-reveal">
+          Site-Wide Echo Spreading System
+        </h2>
+
+        <p class="hh-lead hh-reveal">
+          SWESS is Hulahoot's platform-wide content distribution system for Founding Industry Partners.
+        </p>
+      </div>
+
+      <div class="hh-swess-card hh-reveal">
+        <ul class="hh-swess-list">
+
+          <li>
+            Founding Industry Partners publish through SWESS using the annual post credits included with their partnership package.
+          </li>
+
+          <li>
+            SWESS distributes partnership content platform-wide across Hulahoot.
+          </li>
+
+          <li>
+            SWESS does not operate on a price-per-click workflow.
+          </li>
+
+          <li>
+            SWESS does not operate on a price-per-impression workflow.
+          </li>
+
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="hh-section">
+    <div class="hh-container">
+
+      <p class="hh-eyebrow hh-reveal">
+        Partnership Post Pricing
+      </p>
+
+      <h2 class="hh-reveal">
+        No click charges. No impression charges.
+      </h2>
+
+      <p class="hh-lead hh-reveal">
+        Each partnership package includes an annual allocation of publishing credits.
+      </p>
+
+      <div class="hh-pricing hh-reveal">
+        Partnership posts are never charged on a price-per-click basis and are never charged on a price-per-impression basis.
+      </div>
+
+    </div>
+  </section>
+
+  <section class="hh-section hh-cta">
+    <div class="hh-container">
+
+      <div class="hh-cta-card hh-reveal">
+
+        <p
+          class="hh-eyebrow"
+          style="color:#bdbdbd">
+          Founding Industry Partnership
+        </p>
+
+        <h2>
+          Find your industry and reserve your place.
+        </h2>
+
+        <p>
+          Partnership opportunities are limited by industry and package type.
+        </p>
+
+        <div class="hh-button-row">
+          <a
+            class="hh-btn hh-btn-outline"
+            href="/user/register/"
+            style="background:#fff;color:#000">
+            Sign Up Now
+          </a>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<script>
+  (function(){
+
+    document.documentElement.classList.add('hh-motion-ready');
+
+    const items = document.querySelectorAll('.hh-reveal,.hh-card');
+
+    if(!('IntersectionObserver' in window)){
+      items.forEach(function(item){
+        item.classList.add('visible');
+      });
+      return;
+    }
+
+    const observer = new IntersectionObserver(function(entries){
+
+      entries.forEach(function(entry){
+
+        if(entry.isIntersecting){
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+
+      });
+
+    },{
+      threshold:.1,
+      rootMargin:'0px 0px -24px 0px'
+    });
+
+    items.forEach(function(item){
+      observer.observe(item);
+    });
+
+    window.setTimeout(function(){
+      items.forEach(function(item){
+        item.classList.add('visible');
+      });
+    },1800);
+
+  })();
+</script>

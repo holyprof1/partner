@@ -586,25 +586,23 @@ group('/industry', function () {
 
 // The Portal is a backend for finding an Industry and buying a package,
 // not a social network - the native feed should never be a logged-in
-// user's home screen. Overrides the bare "/" for members only.
+// user's home screen. Overrides the bare "/" for members only, and for
+// guests replaces the bare native visitor page with the Founding
+// Industry Partnership marketing page (hero + video walkthrough + CTA).
 //
-// IMPORTANT (learned by breaking the guest homepage first try): once
-// Core\Route::match() finds a registered pattern, that route owns the
-// entire response - Core\Route\Controller::get() calls exit on an empty
-// return value instead of falling through to the legacy resolver (see
-// PF.Src/Core/Route/Controller.php - `if (empty($content) || ...) { exit; }`
-// runs unconditionally, no fallback path exists). So this route cannot
-// just "do nothing" for guests; it has to explicitly render what the
-// legacy resolver would have rendered - the exact same dispatch+'controller'
-// pattern already used for every admincp route in this file
-// (Phpfox_Module::setController() picks 'core.index-visitor' vs
-// 'core.index-member' by the same Phpfox::isUser() check when there's no
-// Core\Route match at all; this reproduces the guest half of that by hand).
+// guest-landing.html is a content-only Twig partial - no <html>/<head>/
+// <body> of its own - returned the same way every other page in this app
+// is (view()->the active flavor's layout.html wraps it with the real
+// site header/nav/footer). An earlier version of this route echoed a
+// byte-for-byte copy of the flavor's own static layout.html override
+// directly and exited, bypassing theme-wrapping entirely to work around
+// what looked like a broken flavor override - that was the wrong fix:
+// the header loss was the bug, not something to route around.
 route('/', function () {
     if (!auth()->isLoggedIn()) {
-        \Phpfox::getLib('module')->dispatch('core.index-visitor');
+        title('Hulahoot Founding Industry Partnership');
 
-        return 'controller';
+        return view('guest-landing.html');
     }
 
     $service = new \Apps\Hulahoot\Service\Marketplace();
