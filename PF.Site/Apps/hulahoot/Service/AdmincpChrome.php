@@ -62,14 +62,12 @@ class AdmincpChrome
             _p('hulahoot_admin_industries') => '/admincp/hulahoot/industry',
             _p('hulahoot_admin_subscription_packages') => '/admincp/hulahoot/subscriptionpackage',
             _p('hulahoot_admin_package_templates') => '/admincp/hulahoot/packagetemplate',
-            // Points straight at the native Custom HTML block that
-            // actually renders the guest homepage (see Service/
-            // GuestLandingContent.php) - a real, native AdminCP screen
-            // (Block Manager), not something built for this app, but it
-            // was only reachable before by knowing its exact block_id in
-            // the URL. Landing here in the same tab strip as everything
-            // else Hulahoot-admin-related fixes that.
-            _p('hulahoot_admin_landing_page') => '/admincp/block/add/?id=' . \Apps\Hulahoot\Service\GuestLandingContent::GUEST_LANDING_BLOCK_ID,
+            // A dedicated single-textarea screen (Controller/Admin/
+            // LandingPageController.php) over the same native Custom
+            // HTML block GuestLandingContent.php reads from - the native
+            // Block Manager form works too, but is cluttered with fields
+            // (title, placement, access) this doesn't need.
+            _p('hulahoot_admin_landing_page') => '/admincp/hulahoot/landingpage',
         ];
 
         $aSectionAppMenus = [];

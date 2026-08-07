@@ -337,6 +337,13 @@ group('/my-profiles', function () {
         'hulahoot.admincp.packagetemplate-add' => \Apps\Hulahoot\Controller\Admin\PackageTemplateAddController::class,
         'hulahoot.admincp.packagetemplate-delete' => \Apps\Hulahoot\Controller\Admin\PackageTemplateDeleteController::class,
 
+        // AdminCP "Landing Page" - a single big HTML textarea over the
+        // exact same native Custom HTML block GuestLandingContent.php
+        // reads from, without the native Block Manager form's unrelated
+        // fields (title, placement, access). See LandingPageController's
+        // own docblock.
+        'hulahoot.admincp.landingpage' => \Apps\Hulahoot\Controller\Admin\LandingPageController::class,
+
         // Backs the "SWESS Wallet" profile tab (/username/hulahoot),
         // reached via the standard {module}.profile sub-section dispatch
         // in Profile_Component_Controller_Index. Phase 1: renders real
@@ -486,6 +493,15 @@ group('/admincp/hulahoot', function () {
     route('/packagetemplate/delete', function () {
         auth()->isAdmin(true);
         \Phpfox::getLib('module')->dispatch('hulahoot.admincp.packagetemplate-delete');
+
+        return 'controller';
+    });
+
+    // GET/POST /admincp/hulahoot/landingpage - the guest homepage's raw
+    // HTML, one big textarea.
+    route('/landingpage', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.landingpage');
 
         return 'controller';
     });

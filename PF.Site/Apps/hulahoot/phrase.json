@@ -133,6 +133,8 @@
 
     "hulahoot_admin_package_templates": "Default Packages",
     "hulahoot_admin_landing_page": "Landing Page",
+    "hulahoot_landing_page_hint": "This is the raw HTML for the homepage guests see before they sign up. Edit it directly and save - changes go live immediately.",
+    "hulahoot_landing_page_saved": "Landing page updated successfully.",
     "hulahoot_package_templates_intro": "A library of reusable package templates. Create a package for any Industry in one click from Manage Packages → Create from Template - editing a template never changes packages already created from it, and editing one of those packages never changes the template.",
     "hulahoot_add_template": "Add Default Package",
     "hulahoot_edit_template": "Edit Default Package",

@@ -51,4 +51,26 @@ class GuestLandingContent
 
         return $sHtml !== false && trim((string)$sHtml) !== '' ? $sHtml : null;
     }
+
+    /**
+     * Only ever touches :block_source.source_code - the block's own
+     * title/placement/access/active-state (native :block table) are
+     * deliberately never written here, so this can't accidentally change
+     * anything about the block other than its content.
+     *
+     * @param string $sHtml
+     */
+    public function setHtml($sHtml)
+    {
+        $bExists = (bool)db()->select('block_id')
+            ->from(':block_source')
+            ->where(['block_id' => self::GUEST_LANDING_BLOCK_ID])
+            ->execute('getSlaveField');
+
+        if ($bExists) {
+            db()->update(':block_source', ['source_code' => $sHtml], 'block_id = ' . self::GUEST_LANDING_BLOCK_ID);
+        } else {
+            db()->insert(':block_source', ['block_id' => self::GUEST_LANDING_BLOCK_ID, 'source_code' => $sHtml]);
+        }
+    }
 }
