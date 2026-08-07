@@ -12,13 +12,16 @@ defined('PHPFOX') or exit('NO DICE!');
  * AdminCP "click an Industry, see its packages" screen - lists every
  * package currently assigned to one Industry (with a link into the full
  * Edit Rules form for each), a quick picker to assign an existing
- * package without opening its full form, a quick unassign per row, and a
- * link out to Core Subscriptions' own AdminCP to create a brand new
- * native package (price/billing can only ever be created there - see
+ * package without opening its full form, a quick unassign per row, a
+ * "Create from Template" picker (Service\PackageTemplateAdmin::
+ * createPackageFromTemplate() - a brand new, fully independent package
+ * seeded from one of AdminCP's Default Packages), and a link out to
+ * Core Subscriptions' own AdminCP to create a package completely from
+ * scratch (price/billing can only ever be created there - see
  * Service/SubscriptionPackageAdmin.php's own class docblock).
  *
- * Only ever writes to hulahoot_subscription_package_industry via
- * Service/SubscriptionPackageAdmin::assignIndustryToPackage() /
+ * Assign/unassign only ever writes to hulahoot_subscription_package_industry
+ * via Service/SubscriptionPackageAdmin::assignIndustryToPackage() /
  * removeIndustryFromPackage() - never touches a package's rules, its
  * other Industry links, or the native package itself.
  */
@@ -30,6 +33,7 @@ class IndustryPackagesController extends Phpfox_Component
 
         $industryService = new \Apps\Hulahoot\Service\IndustryAdmin();
         $packageService = new \Apps\Hulahoot\Service\SubscriptionPackageAdmin();
+        $templateService = new \Apps\Hulahoot\Service\PackageTemplateAdmin();
         $req = $this->request();
         $error = null;
 
@@ -46,6 +50,7 @@ class IndustryPackagesController extends Phpfox_Component
             } else {
                 $iRemovePackageId = (int)$req->get('remove_package_id');
                 $iAssignPackageId = (int)$req->get('assign_package_id');
+                $iTemplateId = (int)$req->get('create_from_template_id');
 
                 if ($iRemovePackageId) {
                     $packageService->removeIndustryFromPackage($iRemovePackageId, $industryId);
@@ -53,6 +58,13 @@ class IndustryPackagesController extends Phpfox_Component
                 } elseif ($iAssignPackageId) {
                     $packageService->assignIndustryToPackage($iAssignPackageId, $industryId);
                     $this->url()->send('/admincp/hulahoot/industry/packages', ['id' => $industryId], _p('hulahoot_package_assigned'));
+                } elseif ($iTemplateId) {
+                    try {
+                        $templateService->createPackageFromTemplate($iTemplateId, $industryId);
+                        $this->url()->send('/admincp/hulahoot/industry/packages', ['id' => $industryId], _p('hulahoot_package_created_from_template'));
+                    } catch (\InvalidArgumentException $e) {
+                        $error = $e->getMessage();
+                    }
                 }
             }
         }
@@ -64,6 +76,7 @@ class IndustryPackagesController extends Phpfox_Component
                 'industry' => $industry,
                 'packages' => $packageService->getPackagesForIndustryAdmin($industryId),
                 'unassigned_packages' => $packageService->getUnassignedPackages($industryId),
+                'templates' => $templateService->listActive(),
                 'error' => $error,
                 'csrf_token' => Phpfox::getService('log.session')->getToken(),
             ]);

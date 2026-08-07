@@ -330,6 +330,13 @@ group('/my-profiles', function () {
         // Controller/Admin/IndustryPackagesController.php.
         'hulahoot.admincp.industry-packages' => \Apps\Hulahoot\Controller\Admin\IndustryPackagesController::class,
 
+        // "Default Packages" - the reusable template library an
+        // Industry's "Create from Template" picker draws from. See
+        // Service/PackageTemplateAdmin.php.
+        'hulahoot.admincp.packagetemplate' => \Apps\Hulahoot\Controller\Admin\PackageTemplateController::class,
+        'hulahoot.admincp.packagetemplate-add' => \Apps\Hulahoot\Controller\Admin\PackageTemplateAddController::class,
+        'hulahoot.admincp.packagetemplate-delete' => \Apps\Hulahoot\Controller\Admin\PackageTemplateDeleteController::class,
+
         // Backs the "SWESS Wallet" profile tab (/username/hulahoot),
         // reached via the standard {module}.profile sub-section dispatch
         // in Profile_Component_Controller_Index. Phase 1: renders real
@@ -462,6 +469,31 @@ group('/admincp/hulahoot', function () {
     route('/industry/delete', function () {
         auth()->isAdmin(true);
         \Phpfox::getLib('module')->dispatch('hulahoot.admincp.industry-delete');
+
+        return 'controller';
+    });
+
+    // GET /admincp/hulahoot/packagetemplate - the Default Packages library.
+    route('/packagetemplate', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.packagetemplate');
+
+        return 'controller';
+    });
+
+    // GET/POST /admincp/hulahoot/packagetemplate/add?id=X - add (no id) or
+    // edit (id present), same form for both.
+    route('/packagetemplate/add', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.packagetemplate-add');
+
+        return 'controller';
+    });
+
+    // GET (confirm) / POST (execute) /admincp/hulahoot/packagetemplate/delete?id=X
+    route('/packagetemplate/delete', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.packagetemplate-delete');
 
         return 'controller';
     });
