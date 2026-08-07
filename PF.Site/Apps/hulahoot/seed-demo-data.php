@@ -153,8 +153,20 @@ $fCreateNativePackage = function ($sTitle, $sDescription, $sCostUsd, $sRecurring
         'is_active' => '1',
         'is_registration' => '0',
         'show_price' => '1',
-        'user_group_id' => '0',
-        'fail_user_group' => '0',
+        // NORMAL_USER_ID (Registered Member) - deliberately NOT 0. These
+        // are business promotion plans, not phpFox membership upgrades:
+        // purchasing/expiring one must never change the buyer's account
+        // group. 0 is not a native "no-op" sentinel - Purchase\Process::update()
+        // unconditionally calls user.process:updateUserGroup() with
+        // whatever's here, so 0 actually sets the group to 0 (invalid).
+        // 2 is a real no-op for any ordinary registered customer (their
+        // existing group), which is the only case that matters in
+        // production; it is NOT a no-op for an already-elevated account
+        // (e.g. admin) completing a purchase - never complete a real
+        // purchase against an admin/staff account for that reason (this
+        // was learned the expensive way - see git history).
+        'user_group_id' => '2',
+        'fail_user_group' => '2',
         'number_day_notify_before_expiration' => '0',
         'allow_payment_methods' => ['auto' => '1', 'manual' => '2'],
         // Required - a real bug in Core Subscriptions' own
