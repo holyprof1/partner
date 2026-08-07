@@ -62,13 +62,27 @@ class AdmincpChrome
             _p('hulahoot_admin_industries') => '/admincp/hulahoot/industry',
             _p('hulahoot_admin_subscription_packages') => '/admincp/hulahoot/subscriptionpackage',
             _p('hulahoot_admin_package_templates') => '/admincp/hulahoot/packagetemplate',
+            // Points straight at the native Custom HTML block that
+            // actually renders the guest homepage (see Service/
+            // GuestLandingContent.php) - a real, native AdminCP screen
+            // (Block Manager), not something built for this app, but it
+            // was only reachable before by knowing its exact block_id in
+            // the URL. Landing here in the same tab strip as everything
+            // else Hulahoot-admin-related fixes that.
+            _p('hulahoot_admin_landing_page') => '/admincp/block/add/?id=' . \Apps\Hulahoot\Service\GuestLandingContent::GUEST_LANDING_BLOCK_ID,
         ];
 
         $aSectionAppMenus = [];
         foreach ($aLinks as $sPhrase => $sUrl) {
+            // Active-tab matching only ever needs the path portion - a
+            // link like the Landing Page one above carries a query
+            // string, which $sPath (already stripped of its own query
+            // string by parse_url() above) would never equal.
+            $sUrlPath = parse_url($sUrl, PHP_URL_PATH);
+
             $aSectionAppMenus[$sPhrase] = [
                 'url' => $sUrl,
-                'is_active' => ($sPath === $sUrl || strpos((string)$sPath, $sUrl . '/') === 0),
+                'is_active' => ($sPath === $sUrlPath || strpos((string)$sPath, $sUrlPath . '/') === 0),
             ];
         }
 
