@@ -532,3 +532,35 @@ group('/industry', function () {
     });
 
 });
+
+// The Portal is a backend for finding an Industry and buying a package,
+// not a social network - the native feed should never be a logged-in
+// user's home screen. Overrides the bare "/" for members only.
+//
+// IMPORTANT (learned by breaking the guest homepage first try): once
+// Core\Route::match() finds a registered pattern, that route owns the
+// entire response - Core\Route\Controller::get() calls exit on an empty
+// return value instead of falling through to the legacy resolver (see
+// PF.Src/Core/Route/Controller.php - `if (empty($content) || ...) { exit; }`
+// runs unconditionally, no fallback path exists). So this route cannot
+// just "do nothing" for guests; it has to explicitly render what the
+// legacy resolver would have rendered - the exact same dispatch+'controller'
+// pattern already used for every admincp route in this file
+// (Phpfox_Module::setController() picks 'core.index-visitor' vs
+// 'core.index-member' by the same Phpfox::isUser() check when there's no
+// Core\Route match at all; this reproduces the guest half of that by hand).
+route('/', function () {
+    if (!auth()->isLoggedIn()) {
+        \Phpfox::getLib('module')->dispatch('core.index-visitor');
+
+        return 'controller';
+    }
+
+    $service = new \Apps\Hulahoot\Service\Marketplace();
+
+    title(_p('hulahoot_find_your_industry'));
+
+    return view('find-your-industry.html', [
+        'industries' => $service->getActiveIndustries(),
+    ]);
+});
