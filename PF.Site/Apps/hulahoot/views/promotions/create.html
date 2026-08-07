@@ -4,8 +4,22 @@
             <h1 style="margin:0; font-size:20px;">{{ _p('hulahoot_create_promotion') }}</h1>
         </div>
         <div class="panel-body">
-            <p>{{ _p('hulahoot_promotion_composer_coming_soon') }}</p>
-            <a href="{{ url('') }}" class="btn btn-default">{{ _p('hulahoot_back_to_profile') }}</a>
+            {% if entitlement is null %}
+                <p>{{ _p('hulahoot_no_entitlement') }}</p>
+                <a href="{{ url('/find-your-industry') }}" class="btn btn-primary">{{ _p('hulahoot_choose_plan') }}</a>
+            {% else %}
+                <p>{{ _p('hulahoot_promotion_composer_coming_soon') }}</p>
+                <div class="alert alert-info" style="margin-top:16px;">
+                    <strong>{{ _p('hulahoot_your_entitlement') }}</strong>
+                    <ul style="margin:8px 0 0; padding-left:20px;">
+                        <li>{{ _p('hulahoot_field_native_package') }}: {{ _p(entitlement.package_title) }}</li>
+                        <li>{{ _p('hulahoot_credits') }}: {{ entitlement.monthly_credits }}</li>
+                        <li>{{ _p('hulahoot_field_purchase_limit') }}: {{ entitlement.purchase_limit|default(_p('hulahoot_unlimited_placeholder')) }}</li>
+                        <li>{{ _p('hulahoot_field_campaign_limit') }}: {{ entitlement.campaign_limit|default(_p('hulahoot_unlimited_placeholder')) }}</li>
+                    </ul>
+                </div>
+                <a href="{{ url('') }}" class="btn btn-default" style="margin-top:12px;">{{ _p('hulahoot_back_to_profile') }}</a>
+            {% endif %}
         </div>
     </div>
 </div>

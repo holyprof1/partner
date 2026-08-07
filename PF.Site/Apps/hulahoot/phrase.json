@@ -205,5 +205,8 @@
     "hulahoot_no_industries_available": "No industries are available yet - check back soon.",
     "hulahoot_no_matching_industries": "No industries match your search.",
     "hulahoot_no_packages_for_industry": "No packages are available for this industry yet - check back soon.",
-    "hulahoot_per_billing_cycle": "billing cycle"
+    "hulahoot_per_billing_cycle": "billing cycle",
+
+    "hulahoot_no_entitlement": "You need an active subscription before you can create a promotion. Choose a plan to get started.",
+    "hulahoot_your_entitlement": "Your Plan"
 }

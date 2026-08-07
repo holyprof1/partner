@@ -461,12 +461,23 @@ group('/admincp/hulahoot', function () {
 // it don't need to change when that happens.
 group('/hulahoot/promotions', function () {
 
+    // Phase 2 adds the entitlement gate ahead of the still-placeholder
+    // composer: a promotion can only be started with an active,
+    // completed subscription purchase. See Service/Entitlement.php and
+    // docs/HULAHOOT_INTEGRATION.md - this is the seam the main Hulahoot
+    // application's publishing integration will eventually sit behind
+    // (Service/HulahootPublisher.php, not implemented yet on purpose).
     route('/create', function () {
         auth()->membersOnly();
 
+        $entitlementService = new \Apps\Hulahoot\Service\Entitlement();
+        $aEntitlement = $entitlementService->getActiveEntitlement(\Phpfox::getUserId());
+
         title(_p('hulahoot_create_promotion'));
 
-        return view('promotions/create.html', []);
+        return view('promotions/create.html', [
+            'entitlement' => $aEntitlement,
+        ]);
     });
 
 });
