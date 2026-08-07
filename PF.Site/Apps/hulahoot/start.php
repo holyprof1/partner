@@ -470,3 +470,54 @@ group('/hulahoot/promotions', function () {
     });
 
 });
+
+/**
+ * Phase 2: the post-login marketplace. Find Your Industry (search/browse
+ * every active Industry) -> Industry detail (every active package
+ * assigned to it, fully dynamic - see Service/Marketplace.php). Purchase
+ * itself is never reimplemented here: each package's CTA opens the same
+ * native subscribe.upgrade ajax modal Core Subscriptions' own package
+ * list uses (see views/block/entry-package.html.php in that app) - phpFox
+ * remains fully responsible for billing, gateways, renewal, and user
+ * group assignment.
+ */
+group('/find-your-industry', function () {
+
+    route('/', function () {
+        auth()->membersOnly();
+
+        $service = new \Apps\Hulahoot\Service\Marketplace();
+
+        title(_p('hulahoot_find_your_industry'));
+
+        return view('find-your-industry.html', [
+            'industries' => $service->getActiveIndustries(),
+        ]);
+    });
+
+});
+
+group('/industry', function () {
+
+    route('/', function () {
+        auth()->membersOnly();
+
+        $service = new \Apps\Hulahoot\Service\Marketplace();
+        $sSlug = (string)request()->get('slug');
+        $aIndustry = $sSlug ? $service->getActiveIndustryBySlug($sSlug) : false;
+
+        if (!$aIndustry) {
+            return url()->send('/find-your-industry', [], _p('hulahoot_industry_not_found'));
+        }
+
+        $aPackages = $service->getPackagesForIndustry((int)$aIndustry['industry_id']);
+
+        title(_p($aIndustry['name']));
+
+        return view('industry-detail.html', [
+            'industry' => $aIndustry,
+            'packages' => $aPackages,
+        ]);
+    });
+
+});

@@ -197,5 +197,13 @@
     "hulahoot_section_features": "Features",
     "hulahoot_field_features": "Feature List",
     "hulahoot_features_placeholder": "One feature per line, e.g.:\nUnlimited promotions\nPriority support\nCustom branding",
-    "hulahoot_features_help": "One feature per line. The order here is the display order - reorder by moving lines."
+    "hulahoot_features_help": "One feature per line. The order here is the display order - reorder by moving lines.",
+
+    "hulahoot_find_your_industry": "Find Your Industry",
+    "hulahoot_find_your_industry_subtitle": "Search below. Matching sectors appear instantly.",
+    "hulahoot_search_industry_placeholder": "Search for your industry...",
+    "hulahoot_no_industries_available": "No industries are available yet - check back soon.",
+    "hulahoot_no_matching_industries": "No industries match your search.",
+    "hulahoot_no_packages_for_industry": "No packages are available for this industry yet - check back soon.",
+    "hulahoot_per_billing_cycle": "billing cycle"
 }

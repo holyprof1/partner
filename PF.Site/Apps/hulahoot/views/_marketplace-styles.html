@@ -1,0 +1,211 @@
+<style>
+.hulahoot-marketplace-hero {
+    text-align: center;
+    padding: 30px 15px 20px;
+}
+.hulahoot-marketplace-hero h1 {
+    font-size: 34px;
+    font-weight: 800;
+    margin: 0 0 10px;
+}
+.hulahoot-marketplace-hero p {
+    color: #666;
+    font-size: 16px;
+    margin: 0 auto 24px;
+    max-width: 480px;
+}
+.hulahoot-industry-search {
+    max-width: 560px;
+    margin: 0 auto 30px;
+    position: relative;
+}
+.hulahoot-industry-search input {
+    width: 100%;
+    padding: 14px 20px 14px 44px;
+    border: 2px solid #222;
+    border-radius: 999px;
+    font-size: 16px;
+}
+.hulahoot-industry-search input:focus {
+    outline: none;
+    border-color: #7C3AED;
+}
+.hulahoot-industry-search .fa {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+.hulahoot-industry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+}
+.hulahoot-industry-card {
+    display: block;
+    text-align: center;
+    padding: 22px 14px;
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+    background: #fff;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow .15s ease, border-color .15s ease;
+}
+.hulahoot-industry-card:hover {
+    box-shadow: 0 4px 14px rgba(0,0,0,.08);
+    border-color: #7C3AED;
+    text-decoration: none;
+    color: inherit;
+}
+.hulahoot-industry-card-thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 12px;
+    display: block;
+    background: #f0f0f0;
+}
+.hulahoot-industry-card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3eefe;
+    color: #7C3AED;
+    font-size: 22px;
+}
+.hulahoot-industry-card-name {
+    font-weight: 600;
+    font-size: 15px;
+}
+.hulahoot-industry-empty {
+    text-align: center;
+    color: #888;
+    padding: 40px 20px;
+}
+
+.hulahoot-industry-banner {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+.hulahoot-industry-detail-header h1 {
+    font-size: 30px;
+    font-weight: 800;
+    margin: 0 0 8px;
+}
+.hulahoot-industry-detail-header p {
+    color: #666;
+    font-size: 15px;
+    max-width: 640px;
+}
+.hulahoot-back-link {
+    display: inline-block;
+    margin-bottom: 16px;
+    color: #7C3AED;
+}
+
+.hulahoot-package-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    margin-top: 28px;
+}
+.hulahoot-package-card {
+    position: relative;
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+    background: #fff;
+    padding: 26px 22px 22px;
+    display: flex;
+    flex-direction: column;
+}
+.hulahoot-package-card-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #7C3AED;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: 5px 14px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.hulahoot-package-image {
+    width: 100%;
+    max-height: 120px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 14px;
+}
+.hulahoot-package-name {
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0 0 4px;
+}
+.hulahoot-package-subtitle {
+    color: #777;
+    font-size: 13.5px;
+    margin-bottom: 14px;
+}
+.hulahoot-package-price {
+    font-size: 30px;
+    font-weight: 800;
+    margin-bottom: 4px;
+}
+.hulahoot-package-price small {
+    font-size: 13px;
+    font-weight: 500;
+    color: #888;
+}
+.hulahoot-package-description {
+    font-size: 13.5px;
+    color: #555;
+    margin-bottom: 16px;
+}
+.hulahoot-package-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 18px;
+    flex-grow: 1;
+}
+.hulahoot-package-features li {
+    font-size: 13.5px;
+    padding: 5px 0 5px 24px;
+    position: relative;
+}
+.hulahoot-package-features li:before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    color: #22c55e;
+    font-weight: 700;
+}
+.hulahoot-package-meta {
+    font-size: 12.5px;
+    color: #888;
+    margin-bottom: 16px;
+}
+.hulahoot-package-meta span {
+    display: block;
+}
+.hulahoot-package-cta {
+    display: block;
+    text-align: center;
+    padding: 11px;
+    border-radius: 6px;
+    font-weight: 700;
+}
+</style>

@@ -1,0 +1,67 @@
+{% include '_marketplace-styles.html' %}
+<a href="{{ url('/find-your-industry') }}" class="hulahoot-back-link"><i class="fa fa-arrow-left" aria-hidden="true"></i> {{ _p('hulahoot_back_to_industries') }}</a>
+
+<div class="hulahoot-industry-detail-header">
+    {% if industry.banner %}
+        <img class="hulahoot-industry-banner" src="/PF.Base/file/pic/hulahoot/{{ industry.banner|replace({'%s': ''}) }}" alt="">
+    {% endif %}
+    <h1>{{ _p(industry.name)|e }}</h1>
+    {% if industry.description %}
+        <p>{{ industry.description|e }}</p>
+    {% endif %}
+</div>
+
+{% if packages is empty %}
+    <div class="hulahoot-industry-empty">{{ _p('hulahoot_no_packages_for_industry') }}</div>
+{% else %}
+    <div class="hulahoot-package-grid">
+        {% for package in packages %}
+            <div class="hulahoot-package-card"{% if package.accent_color %} style="border-color: {{ package.accent_color|e }};"{% endif %}>
+                {% if package.badge_text %}
+                    <span class="hulahoot-package-card-badge"{% if package.accent_color %} style="background-color: {{ package.accent_color|e }};"{% endif %}>{{ package.badge_text|e }}</span>
+                {% endif %}
+
+                {% if package.image %}
+                    <img class="hulahoot-package-image" src="/PF.Base/file/pic/hulahoot/{{ package.image|replace({'%s': ''}) }}" alt="">
+                {% endif %}
+
+                <div class="hulahoot-package-name">{{ _p(package.title)|e }}</div>
+                {% if package.subtitle %}
+                    <div class="hulahoot-package-subtitle">{{ package.subtitle|e }}</div>
+                {% endif %}
+
+                <div class="hulahoot-package-price">
+                    {% if package.default_cost %}
+                        {{ package.default_cost }} {{ package.default_currency_id|e }}
+                        {% if package.recurring_period %}<small>/ {{ _p('hulahoot_per_billing_cycle') }}</small>{% endif %}
+                    {% else %}
+                        {{ _p('hulahoot_free') }}
+                    {% endif %}
+                </div>
+
+                {% if package.description %}
+                    <div class="hulahoot-package-description">{{ package.description|e }}</div>
+                {% endif %}
+
+                {% if package.features is not empty %}
+                    <ul class="hulahoot-package-features">
+                        {% for feature in package.features %}
+                            <li>{{ feature|e }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                <div class="hulahoot-package-meta">
+                    {% if package.monthly_credits %}<span>{{ _p('hulahoot_credits') }}: {{ package.monthly_credits }}</span>{% endif %}
+                    {% if package.purchase_limit %}<span>{{ _p('hulahoot_field_purchase_limit') }}: {{ package.purchase_limit }}</span>{% endif %}
+                    {% if package.campaign_limit %}<span>{{ _p('hulahoot_field_campaign_limit') }}: {{ package.campaign_limit }}</span>{% endif %}
+                </div>
+
+                <a href="#" class="btn btn-primary hulahoot-package-cta"{% if package.accent_color %} style="background-color: {{ package.accent_color|e }}; border-color: {{ package.accent_color|e }};"{% endif %}
+                   onclick="tb_show('{{ _p('select_payment_gateway') }}', $.ajaxBox('subscribe.upgrade', 'height=400&width=400&id={{ package.package_id }}')); return false;">
+                    {{ package.button_text|default(_p('hulahoot_choose_plan')) }}
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
