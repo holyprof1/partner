@@ -115,6 +115,7 @@ class Install extends App\App
             _p('hulahoot_admin_industries') => 'hulahoot.industry',
             _p('hulahoot_admin_subscription_packages') => 'hulahoot.subscriptionpackage',
             _p('hulahoot_admin_package_templates') => 'hulahoot.packagetemplate',
+            _p('hulahoot_admin_landing_page') => 'hulahoot.landingpage',
         ];
 
         // Table::install() runs for each of these, in this order, every
