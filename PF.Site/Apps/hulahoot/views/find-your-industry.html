@@ -1,31 +1,33 @@
 {% include '_marketplace-styles.html' %}
-<div class="hulahoot-marketplace-hero">
-    <h1>{{ _p('hulahoot_find_your_industry') }}</h1>
-    <p>{{ _p('hulahoot_find_your_industry_subtitle') }}</p>
+<div class="hulahoot-wide-wrapper">
+    <div class="hulahoot-marketplace-hero">
+        <h1>{{ _p('hulahoot_find_your_industry') }}</h1>
+        <p>{{ _p('hulahoot_find_your_industry_subtitle') }}</p>
 
-    <div class="hulahoot-industry-search">
-        <i class="fa fa-search" aria-hidden="true"></i>
-        <input type="text" id="js_hulahoot_industry_search" placeholder="{{ _p('hulahoot_search_industry_placeholder') }}" autofocus>
+        <div class="hulahoot-industry-search">
+            <i class="fa fa-search" aria-hidden="true"></i>
+            <input type="text" id="js_hulahoot_industry_search" placeholder="{{ _p('hulahoot_search_industry_placeholder') }}" autofocus>
+        </div>
     </div>
+
+    {% if industries is empty %}
+        <div class="hulahoot-industry-empty">{{ _p('hulahoot_no_industries_available') }}</div>
+    {% else %}
+        <div class="hulahoot-industry-grid" id="js_hulahoot_industry_grid">
+            {% for industry in industries %}
+                <a href="{{ url('/industry', {slug: industry.slug}) }}" class="hulahoot-industry-card" data-name="{{ industry.name|lower }}">
+                    {% if industry.thumbnail %}
+                        <img class="hulahoot-industry-card-thumb" src="/PF.Base/file/pic/hulahoot/{{ industry.thumbnail|replace({'%s': ''}) }}" alt="">
+                    {% else %}
+                        <span class="hulahoot-industry-card-icon"><i class="fa {{ industry.icon|default('fa-briefcase') }}" aria-hidden="true"></i></span>
+                    {% endif %}
+                    <div class="hulahoot-industry-card-name">{{ _p(industry.name)|e }}</div>
+                </a>
+            {% endfor %}
+        </div>
+        <p class="hulahoot-industry-empty" id="js_hulahoot_industry_no_match" style="display:none;">{{ _p('hulahoot_no_matching_industries') }}</p>
+    {% endif %}
 </div>
-
-{% if industries is empty %}
-    <div class="hulahoot-industry-empty">{{ _p('hulahoot_no_industries_available') }}</div>
-{% else %}
-    <div class="hulahoot-industry-grid" id="js_hulahoot_industry_grid">
-        {% for industry in industries %}
-            <a href="{{ url('/industry', {slug: industry.slug}) }}" class="hulahoot-industry-card" data-name="{{ industry.name|lower }}">
-                {% if industry.thumbnail %}
-                    <img class="hulahoot-industry-card-thumb" src="/PF.Base/file/pic/hulahoot/{{ industry.thumbnail|replace({'%s': ''}) }}" alt="">
-                {% else %}
-                    <span class="hulahoot-industry-card-icon"><i class="fa {{ industry.icon|default('fa-briefcase') }}" aria-hidden="true"></i></span>
-                {% endif %}
-                <div class="hulahoot-industry-card-name">{{ _p(industry.name)|e }}</div>
-            </a>
-        {% endfor %}
-    </div>
-    <p class="hulahoot-industry-empty" id="js_hulahoot_industry_no_match" style="display:none;">{{ _p('hulahoot_no_matching_industries') }}</p>
-{% endif %}
 
 <script>
 (function () {

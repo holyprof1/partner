@@ -1,4 +1,33 @@
 <style>
+/* Breaks out of the theme's fixed Bootstrap .container (750/970/1170px at
+   the standard breakpoints - confirmed from the theme's own compiled
+   bootstrap.min.css, not assumed) so these pages can use real laptop/
+   desktop width instead of being squeezed into the same column a text
+   post uses. Pure content-side technique (100vw + negative margins to
+   cancel the parent's own width, then a wider max-width to re-cap it) -
+   doesn't touch the site's actual .container CSS, so nothing else on
+   the site is affected. */
+.hulahoot-wide-wrapper {
+    box-sizing: border-box;
+}
+@media (min-width: 992px) {
+    .hulahoot-wide-wrapper {
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+        max-width: 1400px;
+        padding: 0 40px;
+    }
+}
+@media (min-width: 1500px) {
+    .hulahoot-wide-wrapper {
+        max-width: 1600px;
+    }
+}
+
 .hulahoot-marketplace-hero {
     text-align: center;
     padding: 30px 15px 20px;
@@ -222,5 +251,53 @@
 .hulahoot-package-cta:hover {
     background: #222;
     color: #fff;
+}
+
+/* Mobile: tighter padding, smaller headline, single-column grids feel
+   deliberate rather than just "the desktop layout, squeezed". */
+@media (max-width: 600px) {
+    .hulahoot-marketplace-hero {
+        padding: 16px 10px 12px;
+    }
+    .hulahoot-marketplace-hero h1 {
+        font-size: 24px;
+    }
+    .hulahoot-marketplace-hero p {
+        font-size: 14px;
+    }
+    .hulahoot-industry-search input {
+        padding: 11px 16px 11px 40px;
+        font-size: 15px;
+    }
+    .hulahoot-industry-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    .hulahoot-industry-card {
+        padding: 14px 8px;
+    }
+    .hulahoot-industry-card-thumb,
+    .hulahoot-industry-card-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+    .hulahoot-industry-card-name {
+        font-size: 13px;
+    }
+    .hulahoot-industry-detail-header h1 {
+        font-size: 22px;
+    }
+    .hulahoot-industry-banner {
+        max-height: 140px;
+    }
+    .hulahoot-package-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-top: 20px;
+    }
+    .hulahoot-package-card {
+        padding: 22px 16px 18px;
+    }
 }
 </style>
