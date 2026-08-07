@@ -57,14 +57,20 @@
                     {% if package.campaign_limit %}<span>{{ _p('hulahoot_field_campaign_limit') }}: {{ package.campaign_limit }}</span>{% endif %}
                 </div>
 
-                <form method="post" action="{{ url('/industry/subscribe') }}">
-                    <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
-                    <input type="hidden" name="package_id" value="{{ package.package_id }}">
-                    <input type="hidden" name="industry_slug" value="{{ industry.slug }}">
-                    <button type="submit" class="btn hulahoot-package-cta"{% if package.accent_color %} style="background-color: {{ package.accent_color|e }}; border-color: {{ package.accent_color|e }};"{% endif %}>
-                        {{ package.button_text|default(_p('hulahoot_choose_plan')) }}
+                {% if package.is_current_plan %}
+                    <button type="button" class="btn hulahoot-package-cta hulahoot-package-cta-current" disabled>
+                        {{ _p('hulahoot_current_plan') }}
                     </button>
-                </form>
+                {% else %}
+                    <form method="post" action="{{ url('/industry/subscribe') }}">
+                        <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="package_id" value="{{ package.package_id }}">
+                        <input type="hidden" name="industry_slug" value="{{ industry.slug }}">
+                        <button type="submit" class="btn hulahoot-package-cta"{% if package.accent_color %} style="background-color: {{ package.accent_color|e }}; border-color: {{ package.accent_color|e }};"{% endif %}>
+                            {{ package.button_text|default(_p('hulahoot_choose_plan')) }}
+                        </button>
+                    </form>
+                {% endif %}
             </div>
         {% endfor %}
     </div>

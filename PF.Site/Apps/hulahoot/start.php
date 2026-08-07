@@ -535,7 +535,7 @@ group('/industry', function () {
             return url()->send('/find-your-industry', [], _p('hulahoot_industry_not_found'));
         }
 
-        $aPackages = $service->getPackagesForIndustry((int)$aIndustry['industry_id']);
+        $aPackages = $service->getPackagesForIndustry((int)$aIndustry['industry_id'], \Phpfox::getUserId());
 
         title(_p($aIndustry['name']));
 

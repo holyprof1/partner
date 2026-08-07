@@ -52,6 +52,17 @@ use Phpfox;
  * waiting on a real gateway to go live. An ordinary member always gets
  * the real block above, gateway or not.
  *
+ * Also refuses to re-sell a buyer the exact package they already hold
+ * (Service\Subscription::getStatusForUser(), the same lookup the SWESS
+ * Wallet uses) - the Industry page already hides/disables that one
+ * package's button, but this is the backend half of that guard: without
+ * it, a paid re-purchase would send an already-subscribed buyer through
+ * checkout again and could charge them a second time for something they
+ * already have. Switching to a DIFFERENT package (upgrade/downgrade)
+ * is unaffected - Purchase\Process::update() already auto-cancels the
+ * old completed subscription when a new one completes, so that stays a
+ * normal, supported purchase.
+ *
  * @package Apps\Hulahoot\Service
  */
 class PurchaseFlow
@@ -79,6 +90,11 @@ class PurchaseFlow
 
         if (!$aPackage || !$aPackage['is_active'] || !empty($aPackage['is_removed'])) {
             throw new \InvalidArgumentException(_p('hulahoot_subscription_package_not_found'));
+        }
+
+        $aCurrentStatus = (new Subscription())->getStatusForUser((int)$iUserId);
+        if ($aCurrentStatus['has_plan'] && (int)$aCurrentStatus['package_id'] === (int)$iPackageId) {
+            throw new \InvalidArgumentException(_p('hulahoot_already_on_this_plan'));
         }
 
         $bFree = ((float)$aPackage['default_cost'] === 0.0);

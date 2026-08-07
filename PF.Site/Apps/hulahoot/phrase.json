@@ -126,6 +126,8 @@
     "hulahoot_upgrade_renew": "Upgrade / Renew",
     "hulahoot_no_active_plan": "No Active Plan",
     "hulahoot_choose_plan": "Choose Plan",
+    "hulahoot_current_plan": "Current Plan",
+    "hulahoot_already_on_this_plan": "You're already subscribed to this plan.",
     "hulahoot_credits": "Credits",
     "hulahoot_credits_placeholder": "Credits will appear here.",
 
