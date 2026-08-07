@@ -542,7 +542,44 @@ group('/industry', function () {
         return view('industry-detail.html', [
             'industry' => $aIndustry,
             'packages' => $aPackages,
+            'csrf_token' => \Phpfox::getService('log.session')->getToken(),
         ]);
+    });
+
+    // POST /industry/subscribe - the package card's "Choose Plan"/CTA
+    // button. Calls Service/PurchaseFlow.php, which uses the native
+    // purchase services directly (see that class's own docblock for
+    // exactly why this isn't just the native subscribe.upgrade ajax
+    // modal). Free packages land back on the Industry page with a
+    // success message; paid packages hand off to the native gateway-
+    // selection page (subscribe.register) - phpFox owns everything from
+    // that point on.
+    route('/subscribe', function () {
+        auth()->membersOnly();
+
+        if (request()->method() !== 'POST') {
+            return url()->send('/find-your-industry');
+        }
+
+        if (request()->get('hulahoot_token') !== \Phpfox::getService('log.session')->getToken()) {
+            return url()->send('/find-your-industry', [], _p('hulahoot_invalid_token'));
+        }
+
+        $iPackageId = (int)request()->get('package_id');
+        $sIndustrySlug = (string)request()->get('industry_slug');
+        $service = new \Apps\Hulahoot\Service\PurchaseFlow();
+
+        try {
+            $aResult = $service->initiate(\Phpfox::getUserId(), $iPackageId);
+        } catch (\InvalidArgumentException $e) {
+            return url()->send('/industry', ['slug' => $sIndustrySlug], $e->getMessage());
+        }
+
+        if ($aResult['free']) {
+            return url()->send('/industry', ['slug' => $sIndustrySlug], _p('hulahoot_subscribed_successfully'));
+        }
+
+        return url()->send('subscribe.register', ['id' => $aResult['purchase_id']]);
     });
 
 });

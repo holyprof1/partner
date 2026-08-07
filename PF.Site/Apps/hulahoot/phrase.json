@@ -223,5 +223,7 @@
     "hulahoot_assign_existing_package": "Assign an Existing Package",
     "hulahoot_no_unassigned_packages": "Every native package is already assigned to this Industry.",
     "hulahoot_select_a_package": "Select a package...",
-    "hulahoot_assign": "Assign"
+    "hulahoot_assign": "Assign",
+
+    "hulahoot_subscribed_successfully": "You're subscribed! Check your SWESS Wallet for your plan details."
 }
