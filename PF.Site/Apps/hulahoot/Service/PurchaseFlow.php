@@ -32,6 +32,19 @@ use Phpfox;
  * selection, payment processing, and completion all stay entirely
  * native from that point on.
  *
+ * Before doing that hand-off, a paid purchase also checks that at least
+ * one payment gateway (api_gateway.is_active = 1 - the same row set
+ * Apps\Core\Block\Gateway\Form reads via the api.gateway service) is
+ * actually active. With zero active gateways the native gateway-
+ * selection page has nothing to render - just an empty page - and a
+ * customer landing there has no way forward except wandering into
+ * native Core Subscriptions pages Hulahoot never wants them to see
+ * (confirmed live: no gateway was active, and a customer ended up on
+ * the raw native "Membership Packages" browse page). Failing here
+ * instead sends them back to the Industry page with a clear message,
+ * before a purchase row (or worse, a stray pending one) is even
+ * created.
+ *
  * @package Apps\Hulahoot\Service
  */
 class PurchaseFlow
@@ -42,8 +55,9 @@ class PurchaseFlow
      *
      * @return array{free: bool, purchase_id: int}
      *
-     * @throws \InvalidArgumentException if the package doesn't exist or
-     *         isn't currently purchasable
+     * @throws \InvalidArgumentException if the package doesn't exist,
+     *         isn't currently purchasable, or (for a paid package) no
+     *         payment gateway is active yet
      */
     public function initiate($iUserId, $iPackageId)
     {
@@ -55,6 +69,12 @@ class PurchaseFlow
 
         if (!$aPackage || !$aPackage['is_active'] || !empty($aPackage['is_removed'])) {
             throw new \InvalidArgumentException(_p('hulahoot_subscription_package_not_found'));
+        }
+
+        $bFree = ((float)$aPackage['default_cost'] === 0.0);
+
+        if (!$bFree && !$this->hasActiveGateway()) {
+            throw new \InvalidArgumentException(_p('hulahoot_no_payment_gateway_active'));
         }
 
         $aUser = db()->select('user_group_id')
@@ -69,8 +89,6 @@ class PurchaseFlow
             'price' => $aPackage['default_cost'],
             'renew_type' => 0,
         ], (int)$iUserId);
-
-        $bFree = ((float)$aPackage['default_cost'] === 0.0);
 
         if ($bFree) {
             // Same call UpgradeBlock makes for a free package, with one
@@ -93,5 +111,16 @@ class PurchaseFlow
         Phpfox::getService('subscribe.purchase.process')->changePurchaseForSigningUp($iPurchaseId, (int)$iUserId);
 
         return ['free' => false, 'purchase_id' => $iPurchaseId];
+    }
+
+    /**
+     * @return bool
+     */
+    private function hasActiveGateway()
+    {
+        return (bool)db()->select('COUNT(*)')
+            ->from(':api_gateway')
+            ->where(['is_active' => 1])
+            ->execute('getSlaveField');
     }
 }

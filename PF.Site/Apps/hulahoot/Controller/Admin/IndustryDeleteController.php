@@ -12,6 +12,8 @@ class IndustryDeleteController extends Phpfox_Component
 {
     public function process()
     {
+        \Apps\Hulahoot\Service\AdmincpChrome::apply($this->template());
+
         $service = new \Apps\Hulahoot\Service\IndustryAdmin();
         $req = $this->request();
         $industryId = (int)$req->get('id');

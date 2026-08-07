@@ -12,6 +12,8 @@ class ProfileTypeController extends Phpfox_Component
 {
     public function process()
     {
+        \Apps\Hulahoot\Service\AdmincpChrome::apply($this->template());
+
         $service = new \Apps\Hulahoot\Service\ProfileTypeAdmin();
 
         $this->template()->setTitle(_p('hulahoot_admin_profile_types'))

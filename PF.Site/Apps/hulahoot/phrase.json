@@ -147,6 +147,7 @@
     "hulahoot_edit_subscription_package_rules": "Edit Subscription Package Rules",
     "hulahoot_back_to_subscription_packages": "Back to Subscription Packages",
     "hulahoot_subscription_package_not_found": "That subscription package could not be found.",
+    "hulahoot_no_payment_gateway_active": "Payment processing isn't set up yet for paid plans. Please check back soon, or choose a free plan for now.",
     "hulahoot_subscription_package_rules_updated": "Subscription package rules updated successfully.",
     "hulahoot_field_native_package": "Package",
     "hulahoot_native_package_help": "Title, price, billing, and renewal are managed in Core Subscriptions' own AdminCP - not here.",

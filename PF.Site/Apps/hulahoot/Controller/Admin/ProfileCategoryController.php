@@ -12,6 +12,8 @@ class ProfileCategoryController extends Phpfox_Component
 {
     public function process()
     {
+        \Apps\Hulahoot\Service\AdmincpChrome::apply($this->template());
+
         $profileTypeService = new \Apps\Hulahoot\Service\ProfileTypeAdmin();
         $profileTypeId = (int)$this->request()->get('profile_type_id');
 

@@ -12,6 +12,8 @@ class IndustryAddController extends Phpfox_Component
 {
     public function process()
     {
+        \Apps\Hulahoot\Service\AdmincpChrome::apply($this->template());
+
         $service = new \Apps\Hulahoot\Service\IndustryAdmin();
         $uploadService = new \Apps\Hulahoot\Service\ImageUpload();
         $req = $this->request();

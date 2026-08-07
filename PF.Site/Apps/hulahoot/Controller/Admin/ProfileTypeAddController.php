@@ -12,6 +12,8 @@ class ProfileTypeAddController extends Phpfox_Component
 {
     public function process()
     {
+        \Apps\Hulahoot\Service\AdmincpChrome::apply($this->template());
+
         $service = new \Apps\Hulahoot\Service\ProfileTypeAdmin();
         $req = $this->request();
         $error = null;

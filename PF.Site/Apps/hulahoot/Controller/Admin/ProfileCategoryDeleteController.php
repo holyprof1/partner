@@ -12,6 +12,8 @@ class ProfileCategoryDeleteController extends Phpfox_Component
 {
     public function process()
     {
+        \Apps\Hulahoot\Service\AdmincpChrome::apply($this->template());
+
         $categoryService = new \Apps\Hulahoot\Service\ProfileCategoryAdmin();
         $req = $this->request();
         $categoryId = (int)$req->get('id');

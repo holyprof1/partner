@@ -615,3 +615,20 @@ route('/', function () {
         'industries' => $service->getActiveIndustries(),
     ]);
 });
+
+// Overrides Core_Subscriptions' own bare /subscribe route (Apps\Core_
+// Subscriptions\Controller\IndexController, component 'subscribe.index') -
+// the raw, unbranded native "Membership Packages" browse page. Package
+// browsing for Hulahoot only ever happens via Industry pages
+// (/find-your-industry -> /industry) - a customer landing on the native
+// page directly (e.g. after a dead-end during checkout, or a stale
+// bookmark) has no way to tell it's even part of Hulahoot. Safe to
+// override outright: Core\Route stores routes in a flat array keyed by
+// the normalized path (Core/Route.php's add()), and this app's start.php
+// loads after core-subscriptions', so this registration simply replaces
+// that one key - every other /subscribe/* route (register, complete,
+// list, compare, renew-method) has its own distinct key and is
+// completely untouched.
+route('/subscribe', function () {
+    return url()->send('/find-your-industry');
+});

@@ -26,6 +26,8 @@ class IndustryPackagesController extends Phpfox_Component
 {
     public function process()
     {
+        \Apps\Hulahoot\Service\AdmincpChrome::apply($this->template());
+
         $industryService = new \Apps\Hulahoot\Service\IndustryAdmin();
         $packageService = new \Apps\Hulahoot\Service\SubscriptionPackageAdmin();
         $req = $this->request();
