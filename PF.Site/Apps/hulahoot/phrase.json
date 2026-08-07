@@ -192,6 +192,8 @@
     "hulahoot_buy_out_confirm_title": "Buy out every remaining slot?",
     "hulahoot_buy_out_confirm_body": "This purchases all {remaining} remaining slots of this plan for your account in one go.",
     "hulahoot_buy_out_success": "Purchased all remaining slots ({count}) of this plan.",
+    "hulahoot_expiry_reminder_subject": "Your partnership on {site_title} has ended - renew to keep your slot",
+    "hulahoot_expiry_reminder_message": "Your Founding Industry Partnership on {site_title} has reached the end of its one-year term. You're still in your renewal window, but your slot returns to the market once that window closes. Renew now to keep it: {link}",
     "hulahoot_subscription_package_rules_updated": "Subscription package rules updated successfully.",
     "hulahoot_field_native_package": "Package",
     "hulahoot_native_package_help": "Title, price, billing, and renewal are managed in Core Subscriptions' own AdminCP - not here.",

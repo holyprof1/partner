@@ -144,6 +144,7 @@ class Install extends App\App
             'SubscriptionPackageIndustry',
             'SubscriptionPackageFeature',
             'PackageTemplate',
+            'ExpiryReminder',
         ];
 
         // Registers a real phpfox_menu row via the sanctioned App
