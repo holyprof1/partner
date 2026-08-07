@@ -77,16 +77,24 @@ class Marketplace
             return [];
         }
 
+        $iIndustryId = (int)$iIndustryId;
+
+        // LEFT JOIN scoped to this industry, rather than an INNER JOIN, so
+        // a package with zero rows in hulahoot_subscription_package_industry
+        // still matches - that's what makes "leave all unchecked" in the
+        // package edit form actually mean "available to every industry"
+        // (hulahoot_industries_help) instead of "available to none", which
+        // is what an INNER JOIN here silently did.
         $aRows = (array)db()->select('hsp.*, sp.title, sp.cost, sp.recurring_cost, sp.recurring_period')
             ->from(':hulahoot_subscription_package', 'hsp')
-            ->join(':hulahoot_subscription_package_industry', 'hspi', 'hspi.package_id = hsp.package_id')
+            ->leftJoin(':hulahoot_subscription_package_industry', 'hspi', 'hspi.package_id = hsp.package_id AND hspi.industry_id = ' . $iIndustryId)
             ->join(':subscribe_package', 'sp', 'sp.package_id = hsp.package_id')
-            ->where([
-                'hspi.industry_id' => (int)$iIndustryId,
-                'hsp.is_active' => 1,
-                'sp.is_active' => 1,
-                'sp.is_removed' => 0,
-            ])
+            ->where(
+                '(hspi.industry_id = ' . $iIndustryId . ' OR NOT EXISTS ('
+                . 'SELECT 1 FROM ' . Phpfox::getT('hulahoot_subscription_package_industry')
+                . ' x WHERE x.package_id = hsp.package_id'
+                . ')) AND hsp.is_active = 1 AND sp.is_active = 1 AND sp.is_removed = 0'
+            )
             ->order('hsp.ordering ASC, sp.ordering ASC')
             ->execute('getSlaveRows');
 

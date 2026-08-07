@@ -2,6 +2,8 @@
 
 namespace Apps\Hulahoot\Service;
 
+use Phpfox;
+
 /**
  * Class IndustryAdmin
  *
@@ -36,14 +38,42 @@ class IndustryAdmin
             ->execute('getSlaveRows');
 
         foreach ($aIndustries as &$aIndustry) {
-            $aIndustry['package_count'] = (int)db()->select('COUNT(*)')
-                ->from(':hulahoot_subscription_package_industry')
-                ->where(['industry_id' => (int)$aIndustry['industry_id']])
-                ->execute('getSlaveField');
+            $aIndustry['package_count'] = $this->countPackagesForIndustry((int)$aIndustry['industry_id']);
         }
         unset($aIndustry);
 
         return $aIndustries;
+    }
+
+    /**
+     * How many packages would actually show for this Industry on the
+     * storefront - matches Service\Marketplace::getPackagesForIndustry()'s
+     * result set exactly (explicitly linked to this industry, OR linked to
+     * no industry at all - "available to every industry" per
+     * hulahoot_industries_help - and active/not-removed on both companion
+     * and native rows), rather than a raw count of junction-table rows,
+     * which underweighted "universal" packages and ignored active/removed
+     * status entirely.
+     *
+     * @param int $iIndustryId
+     *
+     * @return int
+     */
+    public function countPackagesForIndustry($iIndustryId)
+    {
+        $iIndustryId = (int)$iIndustryId;
+
+        return (int)db()->select('COUNT(*)')
+            ->from(':hulahoot_subscription_package', 'hsp')
+            ->leftJoin(':hulahoot_subscription_package_industry', 'hspi', 'hspi.package_id = hsp.package_id AND hspi.industry_id = ' . $iIndustryId)
+            ->join(':subscribe_package', 'sp', 'sp.package_id = hsp.package_id')
+            ->where(
+                '(hspi.industry_id = ' . $iIndustryId . ' OR NOT EXISTS ('
+                . 'SELECT 1 FROM ' . Phpfox::getT('hulahoot_subscription_package_industry')
+                . ' x WHERE x.package_id = hsp.package_id'
+                . ')) AND hsp.is_active = 1 AND sp.is_active = 1 AND sp.is_removed = 0'
+            )
+            ->execute('getSlaveField');
     }
 
     /**
