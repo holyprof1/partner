@@ -59,6 +59,14 @@ class SubscriptionPackageAdmin
         }
         unset($aPackage);
 
+        // Active packages first (the ones an admin actually needs to
+        // manage day to day), inactive ones pushed below - a stable sort
+        // so packages within each group keep whatever order the native
+        // service returned them in.
+        usort($aPackages, function ($aLeft, $aRight) {
+            return (int)$aRight['is_active'] <=> (int)$aLeft['is_active'];
+        });
+
         return $aPackages;
     }
 
@@ -103,6 +111,7 @@ class SubscriptionPackageAdmin
 
         return [
             'package_id' => (int)$iPackageId,
+            'display_name' => '',
             'subtitle' => '',
             'description' => '',
             'badge_text' => '',
@@ -193,6 +202,10 @@ class SubscriptionPackageAdmin
                 $aPackages[] = $aNative;
             }
         }
+
+        usort($aPackages, function ($aLeft, $aRight) {
+            return (int)$aRight['is_active'] <=> (int)$aLeft['is_active'];
+        });
 
         return $aPackages;
     }
@@ -411,7 +424,10 @@ class SubscriptionPackageAdmin
             throw new \InvalidArgumentException('Accent color must be a hex value (e.g. #2C7BE5), or left blank.');
         }
 
+        $sDisplayName = trim((string)($aData['display_name'] ?? ''));
+
         return [
+            'display_name' => $sDisplayName !== '' ? $sDisplayName : null,
             'subtitle' => trim((string)($aData['subtitle'] ?? '')),
             'description' => trim((string)($aData['description'] ?? '')),
             'badge_text' => trim((string)($aData['badge_text'] ?? '')),
