@@ -575,7 +575,7 @@ group('/industry', function () {
             return url()->send('/industry', ['slug' => $sIndustrySlug], $e->getMessage());
         }
 
-        if ($aResult['free']) {
+        if ($aResult['completed']) {
             return url()->send('/industry', ['slug' => $sIndustrySlug], _p('hulahoot_subscribed_successfully'));
         }
 

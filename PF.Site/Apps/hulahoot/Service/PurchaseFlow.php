@@ -45,6 +45,13 @@ use Phpfox;
  * before a purchase row (or worse, a stray pending one) is even
  * created.
  *
+ * One exception: an admin buying with no gateway active gets the
+ * purchase completed immediately instead, the same no-op-group
+ * completion a free package gets - so staff can preview what a
+ * customer sees after a purchase (SWESS Wallet, etc.) today, without
+ * waiting on a real gateway to go live. An ordinary member always gets
+ * the real block above, gateway or not.
+ *
  * @package Apps\Hulahoot\Service
  */
 class PurchaseFlow
@@ -53,7 +60,10 @@ class PurchaseFlow
      * @param int $iUserId
      * @param int $iPackageId
      *
-     * @return array{free: bool, purchase_id: int}
+     * @return array{completed: bool, purchase_id: int} completed is true
+     *         for a free package, or a paid one an admin bypassed with no
+     *         gateway active; false means the caller must still hand the
+     *         buyer to subscribe.register for gateway selection.
      *
      * @throws \InvalidArgumentException if the package doesn't exist,
      *         isn't currently purchasable, or (for a paid package) no
@@ -72,8 +82,9 @@ class PurchaseFlow
         }
 
         $bFree = ((float)$aPackage['default_cost'] === 0.0);
+        $bHasGateway = $this->hasActiveGateway();
 
-        if (!$bFree && !$this->hasActiveGateway()) {
+        if (!$bFree && !$bHasGateway && !Phpfox::isAdmin()) {
             throw new \InvalidArgumentException(_p('hulahoot_no_payment_gateway_active'));
         }
 
@@ -90,7 +101,7 @@ class PurchaseFlow
             'renew_type' => 0,
         ], (int)$iUserId);
 
-        if ($bFree) {
+        if ($bFree || (!$bHasGateway && Phpfox::isAdmin())) {
             // Same call UpgradeBlock makes for a free package, with one
             // difference: the current group, not the package's
             // configured one, so this can never change it.
@@ -102,7 +113,7 @@ class PurchaseFlow
                 $iCurrentGroupId
             );
 
-            return ['free' => true, 'purchase_id' => $iPurchaseId];
+            return ['completed' => true, 'purchase_id' => $iPurchaseId];
         }
 
         // Paid: leave status as-is (pending) and hand off to the native
@@ -110,7 +121,7 @@ class PurchaseFlow
         // makes before doing that handoff itself.
         Phpfox::getService('subscribe.purchase.process')->changePurchaseForSigningUp($iPurchaseId, (int)$iUserId);
 
-        return ['free' => false, 'purchase_id' => $iPurchaseId];
+        return ['completed' => false, 'purchase_id' => $iPurchaseId];
     }
 
     /**
