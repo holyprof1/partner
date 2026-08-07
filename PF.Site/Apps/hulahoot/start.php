@@ -634,9 +634,30 @@ group('/industry', function () {
 // Core\Route match at all; this reproduces the guest half of that by hand).
 route('/', function () {
     if (!auth()->isLoggedIn()) {
-        \Phpfox::getLib('module')->dispatch('core.index-visitor');
-
-        return 'controller';
+        // Serves the marketing/"coming soon" guest landing page directly
+        // rather than through the site's active flavor (hula2) - that
+        // flavor's own override of this exact page (a native platform
+        // mechanism, Apps\Core_Flavors' template_gettemplate_pass hook)
+        // proved unreliable to invalidate live (Phpfox_Plugin caches
+        // every hook's combined source under cache key 'plugin_plugin'
+        // for ~24h, and even a forced clear didn't reliably propagate to
+        // every PHP-FPM worker for this specific route - confirmed
+        // 2026-08-07 after extensive live testing). views/guest-landing.html
+        // is a byte-for-byte copy of that flavor's own html/layout.html,
+        // one fix applied: its "View Available Industries" button had
+        // href="#" (dead - confirmed live, a real, pre-existing bug in
+        // the flavor itself), now pointing at /find-your-industry, which
+        // correctly bounces a guest to login first (auth()->membersOnly()
+        // there is unchanged) and lands them on the real page after.
+        //
+        // This is a genuinely standalone HTML document (own <html>/<head>,
+        // no phpFox chrome at all - same as the flavor page it replaces),
+        // so it's echoed directly and the request ends immediately,
+        // bypassing the normal view() theme-wrapping entirely - matching
+        // this route's own established rule that once Core\Route owns a
+        // response, it must supply the complete response itself.
+        echo view('@hulahoot/guest-landing.html');
+        exit;
     }
 
     $service = new \Apps\Hulahoot\Service\Marketplace();
