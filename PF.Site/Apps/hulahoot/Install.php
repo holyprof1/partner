@@ -114,7 +114,6 @@ class Install extends App\App
             _p('hulahoot_admin_profile_categories') => 'hulahoot.profilecategory',
             _p('hulahoot_admin_industries') => 'hulahoot.industry',
             _p('hulahoot_admin_subscription_packages') => 'hulahoot.subscriptionpackage',
-            _p('hulahoot_admin_package_templates') => 'hulahoot.packagetemplate',
         ];
 
         // Table::install() runs for each of these, in this order, every
@@ -143,7 +142,6 @@ class Install extends App\App
             'SubscriptionPackage',
             'SubscriptionPackageIndustry',
             'SubscriptionPackageFeature',
-            'PackageTemplate',
         ];
 
         // Registers a real phpfox_menu row via the sanctioned App

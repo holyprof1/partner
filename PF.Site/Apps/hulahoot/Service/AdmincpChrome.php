@@ -61,7 +61,6 @@ class AdmincpChrome
             _p('hulahoot_admin_profile_categories') => '/admincp/hulahoot/profilecategory',
             _p('hulahoot_admin_industries') => '/admincp/hulahoot/industry',
             _p('hulahoot_admin_subscription_packages') => '/admincp/hulahoot/subscriptionpackage',
-            _p('hulahoot_admin_package_templates') => '/admincp/hulahoot/packagetemplate',
         ];
 
         $aSectionAppMenus = [];

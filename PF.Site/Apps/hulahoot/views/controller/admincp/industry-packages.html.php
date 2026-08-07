@@ -88,25 +88,6 @@ defined('PHPFOX') or exit('NO DICE!');
     </table>
 
     <div class="hulahoot-assign-section">
-        <h2>{_p var='hulahoot_create_from_template'}</h2>
-        {if !count($templates)}
-            <p class="form-control-static">{_p var='hulahoot_no_templates'} <a href="/admincp/hulahoot/packagetemplate">{_p var='hulahoot_manage_default_packages'}</a></p>
-        {else}
-            <form method="post" action="/admincp/hulahoot/industry/packages?id={$industry.industry_id}" class="hulahoot-assign-form">
-                <input type="hidden" name="hulahoot_token" value="{$csrf_token}">
-                <select name="create_from_template_id" class="form-control" required>
-                    <option value="">{_p var='hulahoot_select_a_template'}</option>
-                    {foreach from=$templates item=aTemplate}
-                        <option value="{$aTemplate.template_id}">{$aTemplate.name|clean} &mdash; {$aTemplate.default_cost|clean} USD</option>
-                    {/foreach}
-                </select>
-                <button type="submit" class="btn btn-primary">{_p var='hulahoot_create'}</button>
-            </form>
-            <span class="help-block">{_p var='hulahoot_create_from_template_help' name=_p($industry.name)}</span>
-        {/if}
-    </div>
-
-    <div class="hulahoot-assign-section">
         <h2>{_p var='hulahoot_assign_existing_package'}</h2>
         {if !count($unassigned_packages)}
             <p class="form-control-static">{_p var='hulahoot_no_unassigned_packages'}</p>

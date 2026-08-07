@@ -84,14 +84,6 @@ defined('PHPFOX') or exit('NO DICE!');
             <p class="hulahoot-form-section-title">{_p var='hulahoot_section_presentation'}</p>
 
             <div class="form-group">
-                <label for="hulahoot_display_name" class="col-sm-3 control-label">{_p var='hulahoot_field_display_name'}</label>
-                <div class="col-sm-9">
-                    <input type="text" name="display_name" id="hulahoot_display_name" class="form-control" maxlength="100" value="{$rules.display_name|clean}" placeholder="{_p var='hulahoot_display_name_placeholder'}">
-                    <span class="help-block">{_p var='hulahoot_display_name_help'}</span>
-                </div>
-            </div>
-
-            <div class="form-group">
                 <label for="hulahoot_subtitle" class="col-sm-3 control-label">{_p var='hulahoot_field_subtitle'}</label>
                 <div class="col-sm-9">
                     <input type="text" name="subtitle" id="hulahoot_subtitle" class="form-control" maxlength="255" value="{$rules.subtitle|clean}" placeholder="{_p var='hulahoot_subtitle_placeholder'}">

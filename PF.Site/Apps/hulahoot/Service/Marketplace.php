@@ -65,34 +65,19 @@ class Marketplace
      * SubscriptionPackageAdmin::saveRules()).
      *
      * Each returned package includes its ordered feature list under
-     * 'features', and - when $iViewerUserId is given - 'is_current_plan':
-     * true for whichever package (at most one - Purchase\Process::update()
-     * already guarantees a user can hold only one completed subscription
-     * at a time, auto-cancelling the previous one) the viewer is currently
-     * subscribed to. The Industry page uses this to stop a subscribed
-     * customer from re-submitting the same plan they already hold - not
-     * just a UX nicety: for a paid plan, re-submitting sends them through
-     * checkout again, which can charge them a second time for something
-     * they already have.
+     * 'features'.
      *
      * @param int $iIndustryId
-     * @param int|null $iViewerUserId
      *
      * @return array in hulahoot_subscription_package.ordering order
      */
-    public function getPackagesForIndustry($iIndustryId, $iViewerUserId = null)
+    public function getPackagesForIndustry($iIndustryId)
     {
         if (!Phpfox::isAppActive('Core_Subscriptions')) {
             return [];
         }
 
         $iIndustryId = (int)$iIndustryId;
-
-        $iCurrentPackageId = null;
-        if ($iViewerUserId) {
-            $aStatus = (new Subscription())->getStatusForUser((int)$iViewerUserId);
-            $iCurrentPackageId = $aStatus['has_plan'] ? (int)$aStatus['package_id'] : null;
-        }
 
         // LEFT JOIN scoped to this industry, rather than an INNER JOIN, so
         // a package with zero rows in hulahoot_subscription_package_industry
@@ -119,15 +104,6 @@ class Marketplace
         foreach ($aRows as &$aRow) {
             $aRow['package_id'] = (int)$aRow['package_id'];
             $aRow['features'] = array_column($oFeatureService->getFeaturesForPackage($aRow['package_id']), 'feature_text');
-            $aRow['is_current_plan'] = $iCurrentPackageId !== null && $aRow['package_id'] === $iCurrentPackageId;
-
-            // display_name is plain text (set once by an admin, not a
-            // phrase key) - resolved here, not in the template, so the
-            // template never has to know whether a given package has an
-            // override or needs the usual _p(package.title) phrase lookup.
-            $aRow['display_name'] = $aRow['display_name'] !== null && $aRow['display_name'] !== ''
-                ? $aRow['display_name']
-                : _p($aRow['title']);
 
             $aCosts = Phpfox::getLib('parse.format')->isSerialized($aRow['cost']) ? unserialize($aRow['cost']) : [];
             $aRow['default_cost'] = $aCosts[$sDefaultCurrencyId] ?? 0;

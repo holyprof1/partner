@@ -9,13 +9,10 @@
  * starting point every Industry shows, that can be customized from
  * AdminCP afterward exactly like any hand-created package.
  *
- * The three new packages are explicitly linked to every active Industry
- * (not left "universal" with zero links) - functionally identical on
- * the public storefront either way (Marketplace::getPackagesForIndustry()
- * shows both), but an explicit link is what makes each Industry's own
- * "Manage Packages" AdminCP screen actually list them, rather than
- * showing "No packages are assigned to this Industry yet" - which
- * looked broken when seen live even though nothing was wrong.
+ * The three new packages are created "universal" - zero rows in
+ * hulahoot_subscription_package_industry - which, per the
+ * Marketplace::getPackagesForIndustry() fix, means "available to every
+ * Industry" rather than needing 10 explicit per-industry links.
  *
  * Reversible: the old packages are deactivated (is_active = 0 on both
  * the native subscribe_package row and its Hulahoot companion row),
@@ -50,12 +47,6 @@ if (!$sCookie) {
     $out('SEED_COOKIE not set - aborting.');
     exit(1);
 }
-
-$aAllIndustryIds = (array)db()->select('industry_id')
-    ->from(':hulahoot_industry')
-    ->where(['is_active' => 1])
-    ->execute('getSlaveRows');
-$aAllIndustryIds = array_map('intval', array_column($aAllIndustryIds, 'industry_id'));
 
 // ---------------------------------------------------------------------
 // 1. Deactivate the old lineup (native row + Hulahoot companion row).
@@ -225,12 +216,7 @@ foreach ($aNewPlans as $iOrder => $aPlan) {
         $iCreatedPackages++;
     }
 
-    // Explicitly linked to every Industry (not left universal/unchecked)
-    // - shows identically either way on the public storefront, but an
-    // explicit link is what makes each Industry's own "Manage Packages"
-    // screen actually list Lite/Elite/Dominance instead of showing "No
-    // packages are assigned to this Industry yet", which read as broken
-    // when seen live even though nothing was actually wrong.
+    // Empty industries array - universal, shows on every Industry.
     $packageService->saveRules(
         $iPackageId,
         [
@@ -247,11 +233,11 @@ foreach ($aNewPlans as $iOrder => $aPlan) {
             'monthly_credits' => $aPlan['credits'],
             'is_active' => 1,
         ],
-        $aAllIndustryIds,
+        [],
         $aPlan['features']
     );
 
-    $out('Applied Hulahoot rules: ' . $aPlan['title'] . ' (id ' . $iPackageId . ') -> explicitly assigned to ' . count($aAllIndustryIds) . ' Industries');
+    $out('Applied Hulahoot rules: ' . $aPlan['title'] . ' (id ' . $iPackageId . ') -> universal (every Industry)');
 }
 
 $out('Done. ' . $iCreatedPackages . ' new package(s) created, ' . count($aOldPackageIds) . ' old package(s) deactivated.');
