@@ -111,7 +111,13 @@ class ExpiryReminders
                     continue;
                 }
 
-                $this->sendReminderEmail($aPurchase);
+                // One buyer's flaky mailbox/SMTP hiccup must not stop the
+                // rest of this batch from getting their own due reminder.
+                try {
+                    $this->sendReminderEmail($aPurchase);
+                } catch (\Throwable $e) {
+                    continue;
+                }
 
                 if (isset($aReminderByPurchaseId[$iPurchaseId])) {
                     db()->update(':hulahoot_expiry_reminder', [

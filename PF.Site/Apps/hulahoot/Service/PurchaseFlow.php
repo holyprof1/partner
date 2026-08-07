@@ -200,12 +200,22 @@ class PurchaseFlow
     {
         $iPackageId = (int)$iPackageId;
 
+        $aPackage = Phpfox::getService('subscribe')->getPackage($iPackageId, true);
+
+        if (!$aPackage || !$aPackage['is_active'] || !empty($aPackage['is_removed'])) {
+            throw new \InvalidArgumentException(_p('hulahoot_subscription_package_not_found'));
+        }
+
         $aRules = db()->select('purchase_limit')
             ->from(':hulahoot_subscription_package')
             ->where(['package_id' => $iPackageId, 'is_active' => 1])
             ->execute('getSlaveRow');
 
-        if (!$aRules || $aRules['purchase_limit'] === null) {
+        if (!$aRules) {
+            throw new \InvalidArgumentException(_p('hulahoot_subscription_package_not_found'));
+        }
+
+        if ($aRules['purchase_limit'] === null) {
             throw new \InvalidArgumentException(_p('hulahoot_package_not_limited'));
         }
 
@@ -309,15 +319,25 @@ class PurchaseFlow
 
         db()->updateCount('subscribe_purchase', 'package_id = ' . $iPackageId . ' AND status = "completed"', 'total_active', 'subscribe_package', 'package_id = ' . $iPackageId);
 
-        Phpfox::getLib('mail')
-            ->to($iUserId)
-            ->subject(['subscribe.membership_successfully_updated_site_title', ['site_title' => Phpfox::getParam('core.site_title')]])
-            ->message(['subscribe.your_membership_on_site_title_has_successfully_been_updated', [
-                'site_title' => Phpfox::getParam('core.site_title'),
-                'link' => \Phpfox_Url::instance()->makeUrl('subscribe.view', ['id' => $iPurchaseId]),
-            ]])
-            ->notification('subscribe.subscribe_notifications')
-            ->send();
+        // The purchase is already fully committed above (status, expiry,
+        // history, counter) by this point - a transient failure sending
+        // the confirmation email must never turn into an apparent
+        // purchase failure for the buyer. Swallow it here rather than
+        // letting it propagate up through initiate()'s try/finally and
+        // surface as an error on a purchase that actually succeeded.
+        try {
+            Phpfox::getLib('mail')
+                ->to($iUserId)
+                ->subject(['subscribe.membership_successfully_updated_site_title', ['site_title' => Phpfox::getParam('core.site_title')]])
+                ->message(['subscribe.your_membership_on_site_title_has_successfully_been_updated', [
+                    'site_title' => Phpfox::getParam('core.site_title'),
+                    'link' => \Phpfox_Url::instance()->makeUrl('subscribe.view', ['id' => $iPurchaseId]),
+                ]])
+                ->notification('subscribe.subscribe_notifications')
+                ->send();
+        } catch (\Throwable $e) {
+            // Nothing else to do here - the purchase itself is not at risk.
+        }
     }
 
     /**
