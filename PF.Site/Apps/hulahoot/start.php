@@ -359,6 +359,15 @@ group('/my-profiles', function () {
         // same Core_drag + core.process:updateOrdering mechanism Photos,
         // Pages, and Videos already use for their AdminCP lists.
         'hulahoot.ajax' => \Apps\Hulahoot\Ajax\Ajax::class,
+    ])
+    ->addComponentNames('block', [
+        // Native block version of the Industry grid, placed above the
+        // native Feed block (block_id 267) on the member homepage via a
+        // :block row (m_connection core.index-member, location 2,
+        // ordering 0 - the Feed block itself is ordering 1, untouched).
+        // See Block/Industry.php's own docblock for why this exists
+        // instead of reusing find-your-industry.html directly.
+        'hulahoot.industry' => \Apps\Hulahoot\Block\Industry::class,
     ]);
 
 group('/admincp/hulahoot', function () {
@@ -660,10 +669,7 @@ group('/industry', function () {
 
 });
 
-// The Portal is a backend for finding an Industry and buying a package,
-// not a social network - the native feed should never be a logged-in
-// user's home screen. Overrides the bare "/" for members only, and for
-// guests replaces the bare native visitor page with the Founding
+// Guests only: replaces the bare native visitor page with the Founding
 // Industry Partnership marketing page (hero + video walkthrough + CTA).
 //
 // The page content itself is admin-editable HTML, not hardcoded here -
@@ -680,8 +686,24 @@ group('/industry', function () {
 // bypassing theme-wrapping entirely to work around what looked like a
 // broken flavor override - that was the wrong fix: the header loss was
 // the bug, not something to route around.
-route('/', function () {
-    if (!auth()->isLoggedIn()) {
+//
+// For logged-in members, "/" is intentionally left unregistered here.
+// An earlier version of this route unconditionally took over "/" for
+// members too and rendered find-your-industry.html in place of the
+// native Feed - Core\Route stores registrations in a flat array keyed by
+// path (see the /subscribe override below), so that registration simply
+// replaced phpFox's own handling of the member homepage outright, and
+// the native Feed (block_id 267, m_connection core.index-member) never
+// got a chance to render. Not calling route('/') at all for members lets
+// phpFox's own legacy dispatch resolve "/" the normal way again -
+// Route::match() (Core/Route.php) returns false when nothing is
+// registered for a path, which is exactly what makes that fall-through
+// happen. Industry now appears on that native page as its own block
+// instead (Block/Industry.php), ordered above the Feed block rather than
+// replacing it - see the :block row added for m_connection
+// core.index-member, location 2, ordering 0.
+if (!auth()->isLoggedIn()) {
+    route('/', function () {
         title('Hulahoot Founding Industry Partnership');
 
         $sEditableHtml = (new \Apps\Hulahoot\Service\GuestLandingContent())->getHtml();
@@ -691,16 +713,8 @@ route('/', function () {
         }
 
         return view('guest-landing.html');
-    }
-
-    $service = new \Apps\Hulahoot\Service\Marketplace();
-
-    title(_p('hulahoot_find_your_industry'));
-
-    return view('find-your-industry.html', [
-        'industries' => $service->getActiveIndustries(),
-    ]);
-});
+    });
+}
 
 // Overrides Core_Subscriptions' own bare /subscribe route (Apps\Core_
 // Subscriptions\Controller\IndexController, component 'subscribe.index') -
