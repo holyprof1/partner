@@ -116,6 +116,7 @@ class Install extends App\App
             _p('hulahoot_admin_subscription_packages') => 'hulahoot.subscriptionpackage',
             _p('hulahoot_admin_package_templates') => 'hulahoot.packagetemplate',
             _p('hulahoot_admin_landing_page') => 'hulahoot.landingpage',
+            _p('hulahoot_admin_swess') => 'hulahoot.swess-whitelist',
         ];
 
         // Table::install() runs for each of these, in this order, every
@@ -146,6 +147,18 @@ class Install extends App\App
             'SubscriptionPackageFeature',
             'PackageTemplate',
             'ExpiryReminder',
+            // SWESS foundation (Partner Portal architecture phase only -
+            // see Service/Swess.php's docblock). Whitelist before the
+            // tables that reference whitelist_id; Tag before the
+            // identity/tag junction; ApprovedIdentity before that same
+            // junction and before AuditLog (which merely references it,
+            // no hard FK either way, but keeping creation order sensible).
+            'Swess',
+            'SwessTag',
+            'SwessApprovedIdentity',
+            'SwessIdentityTag',
+            'SwessAuditLog',
+            'SwessPost',
         ];
 
         // Registers a real phpfox_menu row via the sanctioned App

@@ -344,6 +344,15 @@ group('/my-profiles', function () {
         // own docblock.
         'hulahoot.admincp.landingpage' => \Apps\Hulahoot\Controller\Admin\LandingPageController::class,
 
+        // SWESS foundation (Partner Portal architecture only - see
+        // Service/Swess.php's own docblock and docs/HULAHOOT_INTEGRATION.md).
+        'hulahoot.admincp.swess' => \Apps\Hulahoot\Controller\Admin\SwessController::class,
+        'hulahoot.admincp.swess-whitelist' => \Apps\Hulahoot\Controller\Admin\SwessWhitelistController::class,
+        'hulahoot.admincp.swess-whitelist-add' => \Apps\Hulahoot\Controller\Admin\SwessWhitelistAddController::class,
+        'hulahoot.admincp.swess-tag' => \Apps\Hulahoot\Controller\Admin\SwessTagController::class,
+        'hulahoot.admincp.swess-tag-add' => \Apps\Hulahoot\Controller\Admin\SwessTagAddController::class,
+        'hulahoot.admincp.swess-audit' => \Apps\Hulahoot\Controller\Admin\SwessAuditController::class,
+
         // Backs the "SWESS Wallet" profile tab (/username/hulahoot),
         // reached via the standard {module}.profile sub-section dispatch
         // in Profile_Component_Controller_Index. Phase 1: renders real
@@ -519,6 +528,58 @@ group('/admincp/hulahoot', function () {
     route('/industry/delete', function () {
         auth()->isAdmin(true);
         \Phpfox::getLib('module')->dispatch('hulahoot.admincp.industry-delete');
+
+        return 'controller';
+    });
+
+    // SWESS foundation (Partner Portal architecture phase - see
+    // docs/HULAHOOT_INTEGRATION.md for what this is and isn't yet: no
+    // composer, no feed hook, no publishing engine). /swess alone
+    // redirects to the whitelist, the same "bare group index" shape as
+    // /admincp/hulahoot itself above.
+    route('/swess', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.swess');
+
+        return 'controller';
+    });
+
+    route('/swess/whitelist', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.swess-whitelist');
+
+        return 'controller';
+    });
+
+    // GET/POST /admincp/hulahoot/swess/whitelist/add?id=X - create (no
+    // id) or manage (id present) one user's SWESS whitelist entry,
+    // approved identities, and per-identity disclosure tags, all on one
+    // screen - see Controller/Admin/SwessWhitelistAddController.php.
+    route('/swess/whitelist/add', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.swess-whitelist-add');
+
+        return 'controller';
+    });
+
+    route('/swess/tag', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.swess-tag');
+
+        return 'controller';
+    });
+
+    route('/swess/tag/add', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.swess-tag-add');
+
+        return 'controller';
+    });
+
+    // Read-only.
+    route('/swess/audit', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.swess-audit');
 
         return 'controller';
     });

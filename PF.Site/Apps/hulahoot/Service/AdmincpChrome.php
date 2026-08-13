@@ -68,6 +68,12 @@ class AdmincpChrome
             // Block Manager form works too, but is cluttered with fields
             // (title, placement, access) this doesn't need.
             _p('hulahoot_admin_landing_page') => '/admincp/hulahoot/landingpage',
+            // SWESS foundation (architecture/Admin phase only). Links to
+            // the whitelist screen - the Tags and Audit sub-screens are
+            // reached from there, not from this top-level tab strip,
+            // matching how Profile Categories is reached from Profile
+            // Types rather than getting its own top-level tab.
+            _p('hulahoot_admin_swess') => '/admincp/hulahoot/swess/whitelist',
         ];
 
         $aSectionAppMenus = [];
