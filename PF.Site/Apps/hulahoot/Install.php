@@ -116,7 +116,11 @@ class Install extends App\App
             _p('hulahoot_admin_subscription_packages') => 'hulahoot.subscriptionpackage',
             _p('hulahoot_admin_package_templates') => 'hulahoot.packagetemplate',
             _p('hulahoot_admin_landing_page') => 'hulahoot.landingpage',
-            _p('hulahoot_admin_swess') => 'hulahoot.swess-whitelist',
+            // SWESS is intentionally NOT listed here - it's registered as
+            // its own separate AdminCP app (PF.Site/Apps/hulahoot-swess/
+            // Install.php, apps_id 'HulahootSwess') precisely so it shows
+            // up as its own entry in /admincp/app/ instead of being a tab
+            // buried inside this one. See that file's own docblock.
         ];
 
         // Table::install() runs for each of these, in this order, every

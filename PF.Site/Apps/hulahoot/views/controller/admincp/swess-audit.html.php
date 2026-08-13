@@ -15,22 +15,20 @@ defined('PHPFOX') or exit('NO DICE!');
     }
     .hulahoot-admin-table td { vertical-align: middle !important; font-size: 13px; }
     .hulahoot-admin-empty { text-align: center; color: #888; padding: 28px 10px !important; }
-    .hulahoot-swess-nav { margin: 0 0 18px; }
-    .hulahoot-swess-nav a { margin-right: 6px; }
+    .hulahoot-swess-mark {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 26px; height: 26px; border-radius: 7px; background: #000; color: #fff;
+        font-size: 11px; font-weight: 800; letter-spacing: -.02em; margin-right: 8px;
+        vertical-align: middle;
+    }
     .hulahoot-swess-context { color: #888; font-size: 11.5px; word-break: break-all; }
     .label-allowed { background: #2e7d32; }
     .label-denied { background: #c62828; }
 {/literal}
 </style>
 <div class="hulahoot-admin">
-    <div class="hulahoot-swess-nav">
-        <a href="/admincp/hulahoot/swess/whitelist" class="btn btn-default btn-sm">{_p var='hulahoot_admin_swess_whitelist'}</a>
-        <a href="/admincp/hulahoot/swess/tag" class="btn btn-default btn-sm">{_p var='hulahoot_admin_swess_tags'}</a>
-        <a href="/admincp/hulahoot/swess/audit" class="btn btn-default btn-sm active">{_p var='hulahoot_admin_swess_audit'}</a>
-    </div>
-
     <div class="page-header hulahoot-page-header">
-        <h1>{_p var='hulahoot_admin_swess_audit'}</h1>
+        <h1><span class="hulahoot-swess-mark">SW</span>{_p var='hulahoot_admin_swess_audit'}</h1>
     </div>
 
     <table class="table table-bordered table-striped hulahoot-admin-table">

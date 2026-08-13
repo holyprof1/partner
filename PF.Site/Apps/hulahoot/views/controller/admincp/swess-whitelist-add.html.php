@@ -24,11 +24,17 @@ defined('PHPFOX') or exit('NO DICE!');
     .hulahoot-swess-tag-chip button { border: none; background: none; color: inherit; cursor: pointer; padding: 0; font-size: 11px; }
     .hulahoot-swess-inline-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
     .hulahoot-swess-inline-form select, .hulahoot-swess-inline-form input[type=text] { padding: 4px 8px; }
+    .hulahoot-swess-mark {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 26px; height: 26px; border-radius: 7px; background: #000; color: #fff;
+        font-size: 11px; font-weight: 800; letter-spacing: -.02em; margin-right: 8px;
+        vertical-align: middle;
+    }
 {/literal}
 </style>
 <div class="hulahoot-admin">
     <div class="page-header hulahoot-page-header">
-        <h1>{if $owner}{_p var='hulahoot_edit_swess_whitelist'}{else}{_p var='hulahoot_add_swess_whitelist'}{/if}</h1>
+        <h1><span class="hulahoot-swess-mark">SW</span>{if $owner}{_p var='hulahoot_edit_swess_whitelist'}{else}{_p var='hulahoot_add_swess_whitelist'}{/if}</h1>
         <div class="hulahoot-header-actions">
             <a href="/admincp/hulahoot/swess/whitelist" class="btn btn-default">{_p var='hulahoot_back_to_swess_whitelist'}</a>
         </div>

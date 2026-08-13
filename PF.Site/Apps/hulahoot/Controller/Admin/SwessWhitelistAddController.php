@@ -21,7 +21,7 @@ class SwessWhitelistAddController extends Phpfox_Component
 {
     public function process()
     {
-        \Apps\Hulahoot\Service\AdmincpChrome::apply($this->template());
+        \Apps\Hulahoot\Service\AdmincpChrome::apply($this->template(), \Apps\Hulahoot\Service\AdmincpChrome::swessLinks());
 
         $service = new \Apps\Hulahoot\Service\Swess();
         $req = $this->request();

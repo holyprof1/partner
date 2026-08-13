@@ -14,11 +14,17 @@ defined('PHPFOX') or exit('NO DICE!');
     .hulahoot-admin-form .form-group { margin-bottom: 16px; }
     .hulahoot-admin-form label.control-label { font-weight: 600; }
     .hulahoot-admin-form .help-block { margin-top: 4px; font-size: 12.5px; }
+    .hulahoot-swess-mark {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 26px; height: 26px; border-radius: 7px; background: #000; color: #fff;
+        font-size: 11px; font-weight: 800; letter-spacing: -.02em; margin-right: 8px;
+        vertical-align: middle;
+    }
 {/literal}
 </style>
 <div class="hulahoot-admin">
     <div class="page-header hulahoot-page-header">
-        <h1>{if $is_edit}{_p var='hulahoot_edit_swess_tag'}{else}{_p var='hulahoot_add_swess_tag'}{/if}</h1>
+        <h1><span class="hulahoot-swess-mark">SW</span>{if $is_edit}{_p var='hulahoot_edit_swess_tag'}{else}{_p var='hulahoot_add_swess_tag'}{/if}</h1>
         <div class="hulahoot-header-actions">
             <a href="/admincp/hulahoot/swess/tag" class="btn btn-default">{_p var='hulahoot_back_to_swess_tags'}</a>
         </div>

@@ -480,17 +480,18 @@ class Swess
 
         $aResult = ['allowed' => false, 'reason' => null, 'tags' => []];
 
-        if (!$aWhitelist || !(int)$aWhitelist['is_enabled']) {
+        // 'self' and 'page' are the only two identity types this
+        // architecture defines (see hulahoot_swess_approved_identity's
+        // own docblock) - checked symmetrically, no aliasing, since
+        // nothing anywhere ever produces a third value.
+        if (!in_array($sIdentityType, ['self', 'page'], true)) {
+            $aResult['reason'] = 'invalid_identity_type';
+        } elseif (!$aWhitelist || !(int)$aWhitelist['is_enabled']) {
             $aResult['reason'] = 'not_whitelisted';
         } elseif ($sIdentityType === 'self' && !(int)$aWhitelist['post_as_self']) {
             $aResult['reason'] = 'post_as_self_disabled';
-        } elseif ($sIdentityType === 'business' || $sIdentityType === 'page') {
-            $sIdentityType = 'page';
-            if (!(int)$aWhitelist['post_as_business']) {
-                $aResult['reason'] = 'post_as_business_disabled';
-            }
-        } elseif (!in_array($sIdentityType, ['self', 'page'], true)) {
-            $aResult['reason'] = 'invalid_identity_type';
+        } elseif ($sIdentityType === 'page' && !(int)$aWhitelist['post_as_business']) {
+            $aResult['reason'] = 'post_as_business_disabled';
         }
 
         if ($aResult['reason'] === null) {

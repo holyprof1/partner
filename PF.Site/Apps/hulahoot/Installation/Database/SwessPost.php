@@ -26,9 +26,11 @@ use Core\App\Install\Database\Table;
  * stored verbatim, never resolved or validated here.
  *
  * status is the publishing/status structure requested for this phase -
- * a plain string, not an enum, so a future status can be added without
- * a column change. No code transitions it yet; 'draft' is simply what a
- * row would start as once something creates one.
+ * a plain string, not an enum, so the full lifecycle can be supported
+ * without a column change: 'draft' | 'pending' | 'approved' |
+ * 'scheduled' | 'published' | 'failed' | 'rejected' | 'archived'.
+ * No code transitions it yet; 'draft' is simply what a row would start
+ * as once something creates one.
  *
  * identity_type/identity_id mirror hulahoot_swess_approved_identity's
  * shape (soft reference, 'self' | 'page') - which identity this post
@@ -96,8 +98,8 @@ class SwessPost extends Table
                 Field::FIELD_PARAM_TYPE_VALUE => 255,
                 Field::FIELD_PARAM_OTHER => 'NULL',
             ],
-            // 'draft' | 'scheduled' | 'published' | 'rejected' - plain
-            // string, see class docblock. Nothing transitions this yet.
+            // Full lifecycle - see class docblock. Plain string, nothing
+            // transitions this yet.
             'status' => [
                 Field::FIELD_PARAM_TYPE => Field::TYPE_VARCHAR,
                 Field::FIELD_PARAM_TYPE_VALUE => 20,

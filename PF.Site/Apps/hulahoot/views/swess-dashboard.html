@@ -22,6 +22,23 @@
     font-size: 26px;
     font-weight: 800;
     color: #000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.hulahoot-swess-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: #000;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    flex-shrink: 0;
 }
 .hulahoot-swess-header p {
     margin: 0;
@@ -171,14 +188,13 @@
     border: 1px solid #e2e2e2;
     border-radius: 10px;
 }
-.hulahoot-swess-locked .ico { font-size: 34px; color: #d8d8d8; margin-bottom: 14px; }
 .hulahoot-swess-locked h1 { font-size: 20px; font-weight: 800; margin: 0 0 8px; color: #000; }
 .hulahoot-swess-locked p { color: #797979; font-size: 14px; margin: 0 0 20px; }
 </style>
 
 {% if not is_authorized %}
     <div class="hulahoot-swess-locked">
-        <div class="ico"><i class="fa fa-lock" aria-hidden="true"></i></div>
+        <span class="hulahoot-swess-mark" style="margin-bottom:14px;">SW</span>
         <h1>{{ _p('hulahoot_swess_not_authorized_title') }}</h1>
         <p>{{ _p('hulahoot_swess_not_authorized_body') }}</p>
         <a href="{{ url('/find-your-industry') }}" class="btn btn-default">{{ _p('hulahoot_back_to_industries') }}</a>
@@ -187,7 +203,7 @@
     <div class="hulahoot-swess-app">
         <div class="hulahoot-swess-header">
             <div>
-                <h1>{{ _p('hulahoot_swess_dashboard') }}</h1>
+                <h1><span class="hulahoot-swess-mark">SW</span>{{ _p('hulahoot_swess_dashboard') }}</h1>
                 <p>{{ _p('hulahoot_swess_dashboard_subtitle') }}</p>
             </div>
             <span class="hulahoot-swess-status-pill is-on"><span class="dot"></span>{{ _p('hulahoot_swess_status_active') }}</span>

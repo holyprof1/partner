@@ -43,8 +43,15 @@ class AdmincpChrome
     /**
      * @param \Core\View|mixed $template Whatever $this->template() returns
      *        in a classic Phpfox_Component controller.
+     * @param array|null $aLinks Optional override of the tab strip's
+     *        [phrase => url] entries. Defaults to the "Hulahoot Profiles"
+     *        app's own sections. SWESS's controllers pass self::swessLinks()
+     *        instead - SWESS is registered as its own separate AdminCP app
+     *        (PF.Site/Apps/hulahoot-swess) precisely so it isn't a tab
+     *        buried inside Hulahoot Profiles' navigation, so it needs its
+     *        own tab strip here too rather than inheriting this one.
      */
-    public static function apply($template)
+    public static function apply($template, array $aLinks = null)
     {
         $template->setHeader([
             'menu.css' => 'style_css',
@@ -56,25 +63,21 @@ class AdmincpChrome
 
         $sPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
 
-        $aLinks = [
-            _p('hulahoot_admin_profile_types') => '/admincp/hulahoot/profiletype',
-            _p('hulahoot_admin_profile_categories') => '/admincp/hulahoot/profilecategory',
-            _p('hulahoot_admin_industries') => '/admincp/hulahoot/industry',
-            _p('hulahoot_admin_subscription_packages') => '/admincp/hulahoot/subscriptionpackage',
-            _p('hulahoot_admin_package_templates') => '/admincp/hulahoot/packagetemplate',
-            // A dedicated single-textarea screen (Controller/Admin/
-            // LandingPageController.php) over the same native Custom
-            // HTML block GuestLandingContent.php reads from - the native
-            // Block Manager form works too, but is cluttered with fields
-            // (title, placement, access) this doesn't need.
-            _p('hulahoot_admin_landing_page') => '/admincp/hulahoot/landingpage',
-            // SWESS foundation (architecture/Admin phase only). Links to
-            // the whitelist screen - the Tags and Audit sub-screens are
-            // reached from there, not from this top-level tab strip,
-            // matching how Profile Categories is reached from Profile
-            // Types rather than getting its own top-level tab.
-            _p('hulahoot_admin_swess') => '/admincp/hulahoot/swess/whitelist',
-        ];
+        if ($aLinks === null) {
+            $aLinks = [
+                _p('hulahoot_admin_profile_types') => '/admincp/hulahoot/profiletype',
+                _p('hulahoot_admin_profile_categories') => '/admincp/hulahoot/profilecategory',
+                _p('hulahoot_admin_industries') => '/admincp/hulahoot/industry',
+                _p('hulahoot_admin_subscription_packages') => '/admincp/hulahoot/subscriptionpackage',
+                _p('hulahoot_admin_package_templates') => '/admincp/hulahoot/packagetemplate',
+                // A dedicated single-textarea screen (Controller/Admin/
+                // LandingPageController.php) over the same native Custom
+                // HTML block GuestLandingContent.php reads from - the native
+                // Block Manager form works too, but is cluttered with fields
+                // (title, placement, access) this doesn't need.
+                _p('hulahoot_admin_landing_page') => '/admincp/hulahoot/landingpage',
+            ];
+        }
 
         $aSectionAppMenus = [];
         foreach ($aLinks as $sPhrase => $sUrl) {
@@ -91,5 +94,21 @@ class AdmincpChrome
         }
 
         $template->assign(['aSectionAppMenus' => $aSectionAppMenus]);
+    }
+
+    /**
+     * The SWESS app's own tab strip - pass to apply()'s second argument
+     * from every SWESS AdminCP controller instead of relying on the
+     * default (Hulahoot Profiles') links.
+     *
+     * @return array
+     */
+    public static function swessLinks()
+    {
+        return [
+            _p('hulahoot_admin_swess_whitelist') => '/admincp/hulahoot/swess/whitelist',
+            _p('hulahoot_admin_swess_tags') => '/admincp/hulahoot/swess/tag',
+            _p('hulahoot_admin_swess_audit') => '/admincp/hulahoot/swess/audit',
+        ];
     }
 }
