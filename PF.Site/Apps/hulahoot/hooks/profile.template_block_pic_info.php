@@ -8,11 +8,11 @@
  * hooks/ files already use (see hooks/user.template_default_block_
  * register_step1_4.php) - no core file touched to add this button.
  *
- * Placeholder only, per the current task scope: the button links to a
- * stub route (hooks/promotions/create) that renders a "coming soon"
- * page. No promotion logic lives here or there yet - swap the stub
- * route's content for the real Partnership Composer later; this hook
- * and its target URL don't need to change when that happens.
+ * Links to the SWESS dashboard (/hulahoot/swess) - the dashboard itself
+ * gates on Service\Swess (whitelist), not this button; an unauthorized
+ * user can still click through and will see a clear "not authorized"
+ * state there rather than a dead link. This hook only needs to change
+ * again if the entry point itself moves.
  *
  * Only rendered on the profile owner's own page (this block also renders
  * when viewing someone else's profile, where an action button to create
@@ -32,8 +32,8 @@
  */
 if (defined('PHPFOX_CURRENT_TIMELINE_PROFILE') && (int)PHPFOX_CURRENT_TIMELINE_PROFILE === (int)Phpfox::getUserId()) {
     echo '<div class="hulahoot-create-promotion">';
-    echo '<a href="/hulahoot/promotions/create" class="btn btn-primary btn-sm">';
-    echo htmlspecialchars(_p('hulahoot_create_promotion'));
+    echo '<a href="/hulahoot/swess" class="btn btn-primary btn-sm">';
+    echo htmlspecialchars(_p('hulahoot_swess_dashboard'));
     echo '</a>';
     echo '</div>';
 }

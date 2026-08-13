@@ -1,0 +1,296 @@
+<style>
+.hulahoot-swess-app {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+}
+.hulahoot-swess-app * { box-sizing: border-box; }
+
+/* ---- Header ---- */
+.hulahoot-swess-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e5e5e5;
+}
+.hulahoot-swess-header h1 {
+    margin: 0 0 4px;
+    font-size: 26px;
+    font-weight: 800;
+    color: #000;
+}
+.hulahoot-swess-header p {
+    margin: 0;
+    color: #797979;
+    font-size: 14px;
+}
+.hulahoot-swess-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    white-space: nowrap;
+}
+.hulahoot-swess-status-pill.is-on { background: #000; color: #fff; }
+.hulahoot-swess-status-pill.is-off { background: #f2f2f2; color: #9a9a9a; }
+.hulahoot-swess-status-pill .dot {
+    width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+    box-shadow: 0 0 0 3px rgba(255,255,255,.15);
+}
+
+/* ---- Grid ---- */
+.hulahoot-swess-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+.hulahoot-swess-grid .span-2 { grid-column: span 2; }
+@media (max-width: 720px) {
+    .hulahoot-swess-grid { grid-template-columns: 1fr; }
+    .hulahoot-swess-grid .span-2 { grid-column: span 1; }
+}
+
+/* ---- Card ---- */
+.hulahoot-swess-card {
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+    background: #fff;
+    padding: 20px 22px;
+}
+.hulahoot-swess-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.hulahoot-swess-card-head h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #000;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+.hulahoot-swess-card-head .hulahoot-swess-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #f2f2f2;
+    color: #676767;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+.hulahoot-swess-card-head .hulahoot-swess-badge.is-soon { background: #fff3cd; color: #8a6d00; }
+
+/* ---- Permission rows ---- */
+.hulahoot-swess-perm-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13.5px;
+}
+.hulahoot-swess-perm-row:last-child { border-bottom: none; }
+.hulahoot-swess-flag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+}
+.hulahoot-swess-flag.on { background: #000; color: #fff; }
+.hulahoot-swess-flag.off { background: #f2f2f2; color: #9a9a9a; }
+
+/* ---- Identity list ---- */
+.hulahoot-swess-identity {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.hulahoot-swess-identity:last-child { border-bottom: none; }
+.hulahoot-swess-identity-name { font-weight: 600; font-size: 13.5px; color: #000; }
+.hulahoot-swess-identity-type { font-size: 11.5px; color: #9a9a9a; text-transform: uppercase; letter-spacing: .02em; }
+.hulahoot-swess-identity-tags { margin-top: 6px; }
+.hulahoot-swess-tag-chip {
+    display: inline-block;
+    background: #f0f0f0;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 11.5px;
+    margin: 4px 6px 0 0;
+}
+.hulahoot-swess-tag-chip.is-default { background: #000; color: #fff; }
+
+/* ---- Entitlement rows ---- */
+.hulahoot-swess-ent-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13.5px; }
+.hulahoot-swess-ent-row .k { color: #797979; }
+.hulahoot-swess-ent-row .v { font-weight: 600; color: #000; }
+
+/* ---- Empty / soon states ---- */
+.hulahoot-swess-empty {
+    text-align: center;
+    color: #9a9a9a;
+    padding: 26px 10px;
+    font-size: 13.5px;
+}
+.hulahoot-swess-soon {
+    border: 1px dashed #d8d8d8;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    color: #9a9a9a;
+    font-size: 13px;
+}
+.hulahoot-swess-soon strong { display: block; color: #676767; font-size: 13.5px; margin-bottom: 4px; }
+
+/* ---- CTA ---- */
+.hulahoot-swess-cta { margin-top: 10px; }
+
+/* ---- Unauthorized state ---- */
+.hulahoot-swess-locked {
+    max-width: 520px;
+    margin: 60px auto;
+    text-align: center;
+    padding: 40px 30px;
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+}
+.hulahoot-swess-locked .ico { font-size: 34px; color: #d8d8d8; margin-bottom: 14px; }
+.hulahoot-swess-locked h1 { font-size: 20px; font-weight: 800; margin: 0 0 8px; color: #000; }
+.hulahoot-swess-locked p { color: #797979; font-size: 14px; margin: 0 0 20px; }
+</style>
+
+{% if not is_authorized %}
+    <div class="hulahoot-swess-locked">
+        <div class="ico"><i class="fa fa-lock" aria-hidden="true"></i></div>
+        <h1>{{ _p('hulahoot_swess_not_authorized_title') }}</h1>
+        <p>{{ _p('hulahoot_swess_not_authorized_body') }}</p>
+        <a href="{{ url('/find-your-industry') }}" class="btn btn-default">{{ _p('hulahoot_back_to_industries') }}</a>
+    </div>
+{% else %}
+    <div class="hulahoot-swess-app">
+        <div class="hulahoot-swess-header">
+            <div>
+                <h1>{{ _p('hulahoot_swess_dashboard') }}</h1>
+                <p>{{ _p('hulahoot_swess_dashboard_subtitle') }}</p>
+            </div>
+            <span class="hulahoot-swess-status-pill is-on"><span class="dot"></span>{{ _p('hulahoot_swess_status_active') }}</span>
+        </div>
+
+        <div class="hulahoot-swess-grid">
+
+            <div class="hulahoot-swess-card">
+                <div class="hulahoot-swess-card-head"><h2>{{ _p('hulahoot_swess_my_authorization') }}</h2></div>
+                <div class="hulahoot-swess-perm-row">
+                    <span>{{ _p('hulahoot_swess_field_enabled') }}</span>
+                    <span class="hulahoot-swess-flag {{ whitelist.is_enabled ? 'on' : 'off' }}">{{ whitelist.is_enabled ? _p('hulahoot_yes') : _p('hulahoot_no') }}</span>
+                </div>
+                <div class="hulahoot-swess-perm-row">
+                    <span>{{ _p('hulahoot_swess_field_post_as_self') }}</span>
+                    <span class="hulahoot-swess-flag {{ whitelist.post_as_self ? 'on' : 'off' }}">{{ whitelist.post_as_self ? _p('hulahoot_yes') : _p('hulahoot_no') }}</span>
+                </div>
+                <div class="hulahoot-swess-perm-row">
+                    <span>{{ _p('hulahoot_swess_field_post_as_business') }}</span>
+                    <span class="hulahoot-swess-flag {{ whitelist.post_as_business ? 'on' : 'off' }}">{{ whitelist.post_as_business ? _p('hulahoot_yes') : _p('hulahoot_no') }}</span>
+                </div>
+            </div>
+
+            <div class="hulahoot-swess-card">
+                <div class="hulahoot-swess-card-head"><h2>{{ _p('hulahoot_swess_entitlement') }}</h2></div>
+                {% if entitlement is null %}
+                    <div class="hulahoot-swess-empty">{{ _p('hulahoot_no_entitlement') }}</div>
+                    <a href="{{ url('/find-your-industry') }}" class="btn btn-primary btn-sm hulahoot-swess-cta">{{ _p('hulahoot_choose_plan') }}</a>
+                {% else %}
+                    <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_native_package') }}</span><span class="v">{{ _p(entitlement.package_title) }}</span></div>
+                    <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_credits') }}</span><span class="v">{{ entitlement.monthly_credits }}</span></div>
+                    <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_purchase_limit') }}</span><span class="v">{{ entitlement.purchase_limit|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>
+                    <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_campaign_limit') }}</span><span class="v">{{ entitlement.campaign_limit|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>
+                {% endif %}
+            </div>
+
+            <div class="hulahoot-swess-card span-2">
+                <div class="hulahoot-swess-card-head"><h2>{{ _p('hulahoot_swess_publishing_identity') }}</h2></div>
+                {% if identities is empty %}
+                    <div class="hulahoot-swess-empty">{{ _p('hulahoot_swess_no_identities_yet') }}</div>
+                {% else %}
+                    {% for identity in identities %}
+                        <div class="hulahoot-swess-identity">
+                            <div>
+                                <div class="hulahoot-swess-identity-name">
+                                    {% if identity.identity_type == 'self' %}
+                                        {{ self_profile.profile_name|default(_p('hulahoot_swess_identity_self')) }}
+                                    {% else %}
+                                        {{ _p('hulahoot_swess_identity_page') }} #{{ identity.identity_id }}
+                                    {% endif %}
+                                </div>
+                                <div class="hulahoot-swess-identity-type">{{ identity.identity_type == 'self' ? _p('hulahoot_swess_identity_self') : _p('hulahoot_swess_identity_page') }}</div>
+                                <div class="hulahoot-swess-identity-tags">
+                                    {% for tag in identity.tags %}
+                                        <span class="hulahoot-swess-tag-chip{{ tag.is_default ? ' is-default' : '' }}">{{ tag.name }}</span>
+                                    {% else %}
+                                        <span class="hulahoot-swess-identity-type">{{ _p('hulahoot_swess_no_tag_assigned') }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="hulahoot-swess-card">
+                <div class="hulahoot-swess-card-head"><h2>{{ _p('hulahoot_swess_available_tags') }}</h2></div>
+                {% if tags is empty %}
+                    <div class="hulahoot-swess-empty">{{ _p('hulahoot_swess_no_tags_configured') }}</div>
+                {% else %}
+                    {% for tag in tags %}
+                        <span class="hulahoot-swess-tag-chip">{{ tag.name }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="hulahoot-swess-card">
+                <div class="hulahoot-swess-card-head"><h2>{{ _p('hulahoot_swess_posts') }}</h2></div>
+                <div class="hulahoot-swess-empty">{{ _p('hulahoot_swess_no_posts_yet') }}</div>
+            </div>
+
+            <div class="hulahoot-swess-card">
+                <div class="hulahoot-swess-card-head">
+                    <h2>{{ _p('hulahoot_swess_targeting') }}</h2>
+                    <span class="hulahoot-swess-badge is-soon">{{ _p('hulahoot_swess_coming_soon') }}</span>
+                </div>
+                <div class="hulahoot-swess-soon">
+                    <strong>{{ _p('hulahoot_swess_targeting_soon_title') }}</strong>
+                    {{ _p('hulahoot_swess_targeting_soon_body') }}
+                </div>
+            </div>
+
+            <div class="hulahoot-swess-card">
+                <div class="hulahoot-swess-card-head">
+                    <h2>{{ _p('hulahoot_swess_scheduling') }}</h2>
+                    <span class="hulahoot-swess-badge is-soon">{{ _p('hulahoot_swess_coming_soon') }}</span>
+                </div>
+                <div class="hulahoot-swess-soon">
+                    <strong>{{ _p('hulahoot_swess_scheduling_soon_title') }}</strong>
+                    {{ _p('hulahoot_swess_scheduling_soon_body') }}
+                </div>
+            </div>
+
+        </div>
+    </div>
+{% endif %}

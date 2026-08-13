@@ -330,5 +330,26 @@
     "hulahoot_swess_field_identity": "Identity",
     "hulahoot_swess_field_action": "Action",
     "hulahoot_swess_field_context": "Context",
-    "hulahoot_swess_no_audit_entries": "No SWESS activity has been recorded yet."
+    "hulahoot_swess_no_audit_entries": "No SWESS activity has been recorded yet.",
+
+    "hulahoot_swess_dashboard": "SWESS Dashboard",
+    "hulahoot_swess_dashboard_subtitle": "Your authorization, publishing identities, and plan - all in one place.",
+    "hulahoot_swess_status_active": "SWESS Active",
+    "hulahoot_swess_my_authorization": "My Authorization",
+    "hulahoot_swess_entitlement": "Entitlement",
+    "hulahoot_swess_publishing_identity": "Publishing Identity",
+    "hulahoot_swess_no_tag_assigned": "No tag assigned",
+    "hulahoot_swess_available_tags": "Available Disclosure Tags",
+    "hulahoot_swess_no_tags_configured": "No disclosure tags have been configured yet.",
+    "hulahoot_swess_posts": "Posts",
+    "hulahoot_swess_no_posts_yet": "No SWESS posts yet.",
+    "hulahoot_swess_targeting": "Targeting",
+    "hulahoot_swess_coming_soon": "Coming Soon",
+    "hulahoot_swess_targeting_soon_title": "Location targeting",
+    "hulahoot_swess_targeting_soon_body": "Choosing a city, state, country, continent, or site-wide audience for a post will live here once the Hulahoot composer is built.",
+    "hulahoot_swess_scheduling": "Scheduling",
+    "hulahoot_swess_scheduling_soon_title": "Post scheduling",
+    "hulahoot_swess_scheduling_soon_body": "Scheduling a SWESS post for a future date/time will live here once the composer is built.",
+    "hulahoot_swess_not_authorized_title": "SWESS isn't enabled for your account yet",
+    "hulahoot_swess_not_authorized_body": "An administrator needs to add your profile to the SWESS whitelist before this dashboard is available to you."
 }

@@ -587,28 +587,70 @@ group('/admincp/hulahoot', function () {
 });
 
 // Placeholder-only route for the "Create Promotion" button on the profile
-// page (see hooks/profile.template_block_pic_info.php). Renders a stub
-// "coming soon" page - no promotion logic lives here. Swap the view for
-// the real Partnership Composer later; the URL and button that link to
-// it don't need to change when that happens.
+// page (see hooks/profile.template_block_pic_info.php). Kept as a
+// redirect to /hulahoot/swess (below) rather than deleted, so any
+// existing link/bookmark to the old placeholder URL still lands
+// somewhere real instead of 404ing.
 group('/hulahoot/promotions', function () {
 
-    // Phase 2 adds the entitlement gate ahead of the still-placeholder
-    // composer: a promotion can only be started with an active,
-    // completed subscription purchase. See Service/Entitlement.php and
-    // docs/HULAHOOT_INTEGRATION.md - this is the seam the main Hulahoot
-    // application's publishing integration will eventually sit behind
-    // (Service/HulahootPublisher.php, not implemented yet on purpose).
     route('/create', function () {
         auth()->membersOnly();
 
+        return url()->send('/hulahoot/swess');
+    });
+
+});
+
+// The SWESS dashboard - the real entry point the "Create Promotion"
+// profile-header button (hooks/profile.template_block_pic_info.php) now
+// points at. Gated on Service\Swess, not Service\Entitlement: whether
+// SWESS is available to this account at all is an admin-whitelist
+// decision (see Service/Swess.php's own docblock), independent of
+// whether they also hold an active subscription - the entitlement panel
+// inside the dashboard is informational, not the gate itself.
+//
+// This is the architecture/foundation dashboard only, per current scope
+// (see docs/HULAHOOT_INTEGRATION.md): it surfaces every piece of the
+// SWESS foundation already built (whitelist status, permissions,
+// approved identities, disclosure tags, entitlement) plus clearly-
+// labeled placeholder sections for what's explicitly later-phase
+// (targeting, scheduling, the actual composer/publishing). Nothing here
+// creates a post, calls HulahootPublisher, or talks to hulahoot.com.
+group('/hulahoot/swess', function () {
+
+    route('/', function () {
+        auth()->membersOnly();
+
+        $iUserId = \Phpfox::getUserId();
+        $swessService = new \Apps\Hulahoot\Service\Swess();
+        $profileService = new \Apps\Hulahoot\Service\Profile();
         $entitlementService = new \Apps\Hulahoot\Service\Entitlement();
-        $aEntitlement = $entitlementService->getActiveEntitlement(\Phpfox::getUserId());
 
-        title(_p('hulahoot_create_promotion'));
+        title(_p('hulahoot_swess_dashboard'));
 
-        return view('promotions/create.html', [
-            'entitlement' => $aEntitlement,
+        $aWhitelist = $swessService->getWhitelistForUser($iUserId);
+
+        if (!$aWhitelist || !(int)$aWhitelist['is_enabled']) {
+            // Not authorized - a distinct, honest state, not the
+            // dashboard with empty sections. See Service/Swess.php's
+            // canPostAs() docblock for why this check (whitelist +
+            // is_enabled) is the same one every other SWESS access
+            // decision goes through.
+            return view('swess-dashboard.html', [
+                'is_authorized' => false,
+            ]);
+        }
+
+        $aIdentities = $swessService->getApprovedIdentities((int)$aWhitelist['whitelist_id']);
+        $aSelfProfile = $profileService->getPrimaryByUserId($iUserId);
+
+        return view('swess-dashboard.html', [
+            'is_authorized' => true,
+            'whitelist' => $aWhitelist,
+            'identities' => $aIdentities,
+            'self_profile' => $aSelfProfile,
+            'tags' => $swessService->listActiveTags(),
+            'entitlement' => $entitlementService->getActiveEntitlement($iUserId),
         ]);
     });
 
