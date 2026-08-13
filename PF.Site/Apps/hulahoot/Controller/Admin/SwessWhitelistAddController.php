@@ -39,7 +39,16 @@ class SwessWhitelistAddController extends Phpfox_Component
         // post_as_business keys to exist for the template's {if
         // $whitelist.X} checks - same "form ?: [defaults]" shape every
         // other add/edit controller in this app already uses.
-        $aWhitelistForTemplate = $aWhitelist ?: ['is_enabled' => 0, 'post_as_self' => 0, 'post_as_business' => 0];
+        $aWhitelistForTemplate = $aWhitelist ?: [
+            'is_enabled' => 0,
+            'post_as_self' => 0,
+            'post_as_business' => 0,
+            'requires_review' => 0,
+            'allowed_target_levels' => null,
+        ];
+        $aAllowedLevels = $aWhitelistForTemplate['allowed_target_levels']
+            ? explode(',', $aWhitelistForTemplate['allowed_target_levels'])
+            : [];
 
         $aOwner = $aWhitelist
             ? db()->select('user_id, user_name, full_name')->from(':user')->where(['user_id' => (int)$aWhitelist['user_id']])->execute('getSlaveRow')
@@ -68,6 +77,8 @@ class SwessWhitelistAddController extends Phpfox_Component
                                 'is_enabled' => $req->get('is_enabled') ? 1 : 0,
                                 'post_as_self' => $req->get('post_as_self') ? 1 : 0,
                                 'post_as_business' => $req->get('post_as_business') ? 1 : 0,
+                                'requires_review' => $req->get('requires_review') ? 1 : 0,
+                                'allowed_target_levels' => (array)$req->get('allowed_target_levels', []),
                             ], $iActorUserId);
 
                             $this->url()->send('/admincp/hulahoot/swess/whitelist/add', ['id' => $iSavedId], _p('hulahoot_swess_whitelist_saved'));
@@ -120,6 +131,10 @@ class SwessWhitelistAddController extends Phpfox_Component
             ->assign([
                 'whitelist_id' => $iWhitelistId,
                 'whitelist' => $aWhitelistForTemplate,
+                'allowed_levels' => $aAllowedLevels,
+                'target_levels' => array_map(function ($sLevel) {
+                    return ['value' => $sLevel, 'label' => ucwords(str_replace('_', ' ', $sLevel))];
+                }, \Apps\Hulahoot\Service\Swess::TARGET_LEVELS),
                 'owner' => $aOwner,
                 'identities' => $aIdentities,
                 'tags' => (new \Apps\Hulahoot\Service\Swess())->listActiveTags(),

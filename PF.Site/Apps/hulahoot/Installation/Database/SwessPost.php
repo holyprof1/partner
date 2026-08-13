@@ -8,12 +8,17 @@ use Core\App\Install\Database\Table;
 /**
  * hulahoot_swess_post
  *
- * Structural shell only - deliberately not written to by anything yet.
- * No composer, no feed hook, and no publishing engine exist in this
- * phase (all explicitly deferred to the future Hulahoot.com build); this
- * table exists so that foundation has a place to land without a later
- * schema redesign. feed_id is nullable and unused today - the eventual
- * link to a real phpfox_feed row once posting is actually built.
+ * A real SWESS post record, per the SWESS UI/UX spec's composer
+ * workflow (Identity -> Content -> Tag -> Target -> Schedule -> Review
+ * -> Submit) - Service\Swess owns the full Draft/Pending/Approved/
+ * Scheduled/Published/Failed/Rejected/Archived lifecycle over this
+ * table. Still deliberately self-contained: nothing here creates a real
+ * phpfox_feed row or touches the native Feed. "Published" means SWESS
+ * itself considers the post live, tracked entirely in this table -
+ * actually distributing it onto hulahoot.com (a real feed_id, a real
+ * publish call) is still the explicitly-deferred next phase, per
+ * docs/HULAHOOT_INTEGRATION.md. feed_id stays nullable and unused until
+ * that phase links a real phpfox_feed row here.
  *
  * distribution_target_type / _value / _label: the flat, provider-neutral
  * shape agreed for future location targeting. type is one of
@@ -78,6 +83,16 @@ class SwessPost extends Table
                 Field::FIELD_PARAM_TYPE_VALUE => 10,
                 Field::FIELD_PARAM_OTHER => 'UNSIGNED NOT NULL',
             ],
+            // Plain text only in this phase - the spec's "normal post
+            // composer (text, media, links) exactly as it exists
+            // elsewhere" is native Feed authoring, which this phase does
+            // not integrate with (see class docblock). A future phase
+            // that wires this to a real phpfox_feed row inherits media/
+            // links from that native flow rather than duplicating it here.
+            'content' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_TEXT,
+                Field::FIELD_PARAM_OTHER => 'NULL',
+            ],
             'tag_id' => [
                 Field::FIELD_PARAM_TYPE => Field::TYPE_INT,
                 Field::FIELD_PARAM_TYPE_VALUE => 10,
@@ -98,12 +113,29 @@ class SwessPost extends Table
                 Field::FIELD_PARAM_TYPE_VALUE => 255,
                 Field::FIELD_PARAM_OTHER => 'NULL',
             ],
-            // Full lifecycle - see class docblock. Plain string, nothing
-            // transitions this yet.
+            // 'draft' | 'pending' | 'approved' | 'scheduled' | 'published'
+            // | 'failed' | 'rejected' | 'archived' - see class docblock
+            // and Service\Swess's status-transition methods.
             'status' => [
                 Field::FIELD_PARAM_TYPE => Field::TYPE_VARCHAR,
                 Field::FIELD_PARAM_TYPE_VALUE => 20,
                 Field::FIELD_PARAM_OTHER => 'NOT NULL DEFAULT \'draft\'',
+            ],
+            // Set only when "Schedule for Later" is chosen; null for
+            // Publish Now. A unix timestamp, not a date+timezone pair -
+            // the spec's timezone display is sourced from the publisher's
+            // existing account timezone at render time, not stored here.
+            'scheduled_at' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_INT,
+                Field::FIELD_PARAM_TYPE_VALUE => 10,
+                Field::FIELD_PARAM_OTHER => 'UNSIGNED DEFAULT NULL',
+            ],
+            // Admin's stated reason when status = 'rejected' - shown back
+            // to the publisher on the post detail view, per spec.
+            'rejection_reason' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_VARCHAR,
+                Field::FIELD_PARAM_TYPE_VALUE => 255,
+                Field::FIELD_PARAM_OTHER => 'NULL',
             ],
             'created' => [
                 Field::FIELD_PARAM_TYPE => Field::TYPE_INT,
@@ -123,6 +155,10 @@ class SwessPost extends Table
         $this->_key = [
             'user_id' => ['user_id'],
             'status' => ['status'],
+            // Not consumed by anything yet (no scheduler exists), but a
+            // future one would filter exactly this way - cheap to index
+            // now rather than as a later migration.
+            'scheduled_at' => ['scheduled_at'],
         ];
     }
 }

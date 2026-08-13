@@ -94,6 +94,27 @@ defined('PHPFOX') or exit('NO DICE!');
         </div>
 
         <div class="form-group">
+            <label class="col-sm-3 control-label">{_p var='hulahoot_swess_field_requires_review'}</label>
+            <div class="col-sm-9">
+                <label class="checkbox-inline">
+                    <input type="checkbox" name="requires_review" value="1" {if $whitelist.requires_review}checked{/if}> {_p var='hulahoot_swess_requires_review_help'}
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-sm-3 control-label">{_p var='hulahoot_swess_field_allowed_target_levels'}</label>
+            <div class="col-sm-9">
+                {foreach from=$target_levels item=aLevel}
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="allowed_target_levels[]" value="{$aLevel.value}" {if in_array($aLevel.value, $allowed_levels)}checked{/if}> {$aLevel.label}
+                    </label>
+                {/foreach}
+                <span class="help-block">{_p var='hulahoot_swess_allowed_target_levels_help'}</span>
+            </div>
+        </div>
+
+        <div class="form-group">
             <div class="col-sm-offset-3 col-sm-9">
                 <button type="submit" class="btn btn-primary">{_p var='hulahoot_save_changes'}</button>
             </div>

@@ -1,0 +1,23 @@
+{% include '_swess-nav.html' %}
+<style>
+.hulahoot-swess-entitlement-card { max-width: 480px; border: 1px solid #e2e2e2; border-radius: 10px; padding: 22px 24px; background: #fff; }
+.hulahoot-swess-entitlement-card h1 { font-size: 22px; font-weight: 800; margin: 0 0 18px; }
+.hulahoot-swess-ent-row { display: flex; justify-content: space-between; padding: 9px 0; font-size: 14px; border-bottom: 1px solid #f0f0f0; }
+.hulahoot-swess-ent-row:last-child { border-bottom: none; }
+.hulahoot-swess-ent-row .k { color: #797979; }
+.hulahoot-swess-ent-row .v { font-weight: 600; color: #000; }
+.hulahoot-swess-empty { text-align: center; color: #9a9a9a; padding: 26px 10px; font-size: 13.5px; }
+.hulahoot-swess-cta { margin-top: 14px; }
+</style>
+<div class="hulahoot-swess-entitlement-card">
+    <h1>{{ _p('hulahoot_swess_entitlement') }}</h1>
+    {% if entitlement is null %}
+        <div class="hulahoot-swess-empty">{{ _p('hulahoot_no_entitlement') }}</div>
+        <a href="{{ url('/find-your-industry') }}" class="btn btn-primary btn-sm hulahoot-swess-cta">{{ _p('hulahoot_choose_plan') }}</a>
+    {% else %}
+        <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_native_package') }}</span><span class="v">{{ _p(entitlement.package_title) }}</span></div>
+        <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_credits') }}</span><span class="v">{{ entitlement.monthly_credits }}</span></div>
+        <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_purchase_limit') }}</span><span class="v">{{ entitlement.purchase_limit|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>
+        <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_campaign_limit') }}</span><span class="v">{{ entitlement.campaign_limit|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>
+    {% endif %}
+</div>

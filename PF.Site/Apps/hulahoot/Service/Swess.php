@@ -34,6 +34,24 @@ namespace Apps\Hulahoot\Service;
  */
 class Swess
 {
+    /**
+     * Every distribution_target_type this architecture defines, per the
+     * SWESS UI/UX spec §8 - the full set a post (and a whitelist row's
+     * allowed_target_levels) may reference. Order matches the spec's own
+     * level selector (City, State, Country, Continent, Site-wide).
+     */
+    const TARGET_LEVELS = ['city', 'state', 'country', 'continent', 'site_wide'];
+
+    /**
+     * The full SWESS post lifecycle, per the spec's status table (§10).
+     * 'failed' is defined but nothing transitions a post into it yet -
+     * there is no real external publish call in this phase that could
+     * fail (see Service\Swess::submitPost()'s own docblock) - it exists
+     * so the column and every status-aware view already handle it
+     * correctly once real publishing is built.
+     */
+    const POST_STATUSES = ['draft', 'pending', 'approved', 'scheduled', 'published', 'failed', 'rejected', 'archived'];
+
     // ---- Whitelist -----------------------------------------------------
 
     /**
@@ -85,7 +103,10 @@ class Swess
      * other single-row-per-user invariant in this app).
      *
      * @param int $iUserId
-     * @param array $aData is_enabled, post_as_self, post_as_business
+     * @param array $aData is_enabled, post_as_self, post_as_business,
+     *        requires_review, allowed_target_levels (array of
+     *        'city'|'state'|'country'|'continent'|'site_wide', or empty/
+     *        omitted for "every level allowed")
      * @param int|null $iActorUserId the admin making this change, for the
      *        audit log and enabled_by
      *
@@ -102,10 +123,20 @@ class Swess
             throw new \InvalidArgumentException('User ' . $iUserId . ' does not exist.');
         }
 
+        $aLevels = array_values(array_intersect(
+            (array)($aData['allowed_target_levels'] ?? []),
+            self::TARGET_LEVELS
+        ));
+
         $aClean = [
             'is_enabled' => !empty($aData['is_enabled']) ? 1 : 0,
             'post_as_self' => !empty($aData['post_as_self']) ? 1 : 0,
             'post_as_business' => !empty($aData['post_as_business']) ? 1 : 0,
+            'requires_review' => !empty($aData['requires_review']) ? 1 : 0,
+            // Empty selection = no restriction (every level allowed) -
+            // matches this table's "NULL = unrestricted" convention, not
+            // "nothing allowed".
+            'allowed_target_levels' => $aLevels ? implode(',', $aLevels) : null,
         ];
 
         $aExisting = $this->getWhitelistForUser($iUserId);
@@ -557,6 +588,363 @@ class Swess
             ->join(':user', 'u', 'u.user_id = a.user_id')
             ->order('a.id DESC')
             ->limit(0, (int)$iLimit)
+            ->execute('getSlaveRows');
+    }
+
+    // ---- Posts (composer lifecycle) -------------------------------------
+
+    /**
+     * Which distribution target levels $aWhitelist allows, per its
+     * allowed_target_levels column - every level when unset (that
+     * column's own "NULL = unrestricted" convention).
+     *
+     * @param array $aWhitelist a hulahoot_swess_whitelist row
+     *
+     * @return array
+     */
+    public function getAllowedTargetLevels(array $aWhitelist)
+    {
+        if (empty($aWhitelist['allowed_target_levels'])) {
+            return self::TARGET_LEVELS;
+        }
+
+        return array_values(array_intersect(
+            explode(',', $aWhitelist['allowed_target_levels']),
+            self::TARGET_LEVELS
+        ));
+    }
+
+    /**
+     * Create a new draft. Deliberately no validation beyond basic type-
+     * cleaning - "no validation enforced" for Save as Draft, per spec.
+     * The real checks (identity approved, tag assigned, target level
+     * allowed, content present) happen in submitPost().
+     *
+     * @param int $iUserId
+     * @param array $aData identity_type, identity_id, content, tag_id,
+     *        distribution_target_type, distribution_target_value,
+     *        distribution_target_label, scheduled_at
+     *
+     * @return int the new swess_post_id
+     */
+    public function createDraftPost($iUserId, array $aData)
+    {
+        $iNow = time();
+
+        return (int)db()->insert(':hulahoot_swess_post', [
+            'user_id' => (int)$iUserId,
+            'identity_type' => (string)($aData['identity_type'] ?? ''),
+            'identity_id' => (int)($aData['identity_id'] ?? 0),
+            'content' => isset($aData['content']) ? (string)$aData['content'] : null,
+            'tag_id' => !empty($aData['tag_id']) ? (int)$aData['tag_id'] : null,
+            'distribution_target_type' => (string)($aData['distribution_target_type'] ?? 'site_wide'),
+            'distribution_target_value' => $aData['distribution_target_value'] ?? null,
+            'distribution_target_label' => $aData['distribution_target_label'] ?? null,
+            'scheduled_at' => !empty($aData['scheduled_at']) ? (int)$aData['scheduled_at'] : null,
+            'status' => 'draft',
+            'created' => $iNow,
+            'updated' => $iNow,
+        ]);
+    }
+
+    /**
+     * @param int $iPostId
+     *
+     * @return array|false
+     */
+    public function getPostById($iPostId)
+    {
+        return db()->select('*')->from(':hulahoot_swess_post')->where(['swess_post_id' => (int)$iPostId])->execute('getSlaveRow');
+    }
+
+    /**
+     * Update a post - only while it's still editable per the spec's
+     * "who can act" table: draft (freely), or rejected/failed (edit &
+     * resubmit). Editing always resets status back to 'draft' - an
+     * edited post is not automatically resubmitted, matching "Edit"
+     * and "Submit" being two distinct actions everywhere else in the
+     * composer.
+     *
+     * @param int $iPostId
+     * @param int $iUserId must own the post
+     * @param array $aData same shape as createDraftPost()
+     *
+     * @return bool
+     *
+     * @throws \InvalidArgumentException if the post doesn't belong to $iUserId or
+     *         isn't currently editable
+     */
+    public function updatePost($iPostId, $iUserId, array $aData)
+    {
+        $aPost = $this->getPostById($iPostId);
+
+        if (!$aPost || (int)$aPost['user_id'] !== (int)$iUserId) {
+            throw new \InvalidArgumentException('Post ' . $iPostId . ' does not belong to user ' . $iUserId . '.');
+        }
+
+        if (!in_array($aPost['status'], ['draft', 'rejected', 'failed'], true)) {
+            throw new \InvalidArgumentException('This post can no longer be edited (status: ' . $aPost['status'] . ').');
+        }
+
+        db()->update(':hulahoot_swess_post', [
+            'identity_type' => (string)($aData['identity_type'] ?? $aPost['identity_type']),
+            'identity_id' => (int)($aData['identity_id'] ?? $aPost['identity_id']),
+            'content' => isset($aData['content']) ? (string)$aData['content'] : $aPost['content'],
+            'tag_id' => !empty($aData['tag_id']) ? (int)$aData['tag_id'] : $aPost['tag_id'],
+            'distribution_target_type' => (string)($aData['distribution_target_type'] ?? $aPost['distribution_target_type']),
+            'distribution_target_value' => array_key_exists('distribution_target_value', $aData) ? $aData['distribution_target_value'] : $aPost['distribution_target_value'],
+            'distribution_target_label' => array_key_exists('distribution_target_label', $aData) ? $aData['distribution_target_label'] : $aPost['distribution_target_label'],
+            'scheduled_at' => !empty($aData['scheduled_at']) ? (int)$aData['scheduled_at'] : $aPost['scheduled_at'],
+            'status' => 'draft',
+            'rejection_reason' => null,
+            'updated' => time(),
+        ], ['swess_post_id' => (int)$iPostId]);
+
+        return true;
+    }
+
+    /**
+     * Submit a draft (or resubmit a rejected/failed one) - validates
+     * everything the composer's Review step promises has already been
+     * checked, then transitions to whichever status is actually correct
+     * for this combination of admin-configured rules:
+     *
+     * requires_review?  scheduled?   -> status
+     * yes                either      -> pending (approve/reject decides the rest)
+     * no                 yes         -> scheduled
+     * no                 no          -> published
+     *
+     * "published" here means SWESS's own bookkeeping considers the post
+     * live - it does not create a phpfox_feed row or touch the native
+     * Feed. Actually distributing a published SWESS post onto
+     * hulahoot.com is the explicitly-deferred next phase (see the
+     * hulahoot_swess_post table's own docblock) - nothing about that
+     * boundary changes here.
+     *
+     * @param int $iPostId
+     * @param int $iUserId must own the post
+     *
+     * @return array the updated post row
+     *
+     * @throws \InvalidArgumentException on any validation failure - identity no
+     *         longer approved/enabled, tag not assigned to that identity, target
+     *         level not allowed for this user, or content missing
+     */
+    public function submitPost($iPostId, $iUserId)
+    {
+        $iUserId = (int)$iUserId;
+        $aPost = $this->getPostById($iPostId);
+
+        if (!$aPost || (int)$aPost['user_id'] !== $iUserId) {
+            throw new \InvalidArgumentException('Post ' . $iPostId . ' does not belong to user ' . $iUserId . '.');
+        }
+
+        if (!in_array($aPost['status'], ['draft', 'rejected', 'failed'], true)) {
+            throw new \InvalidArgumentException('This post has already been submitted.');
+        }
+
+        if (trim((string)$aPost['content']) === '') {
+            throw new \InvalidArgumentException('This post has no content.');
+        }
+
+        $aCheck = $this->canPostAs($iUserId, $aPost['identity_type'], (int)$aPost['identity_id']);
+        if (!$aCheck['allowed']) {
+            throw new \InvalidArgumentException('This identity is no longer approved to post (' . $aCheck['reason'] . ').');
+        }
+
+        $aAssignedTagIds = array_map('intval', array_column($aCheck['tags'], 'tag_id'));
+        if (empty($aPost['tag_id']) || !in_array((int)$aPost['tag_id'], $aAssignedTagIds, true)) {
+            throw new \InvalidArgumentException('This identity has no matching disclosure tag assigned. Contact an Administrator.');
+        }
+
+        $aWhitelist = $this->getWhitelistForUser($iUserId);
+        $aAllowedLevels = $this->getAllowedTargetLevels($aWhitelist);
+        if (!in_array($aPost['distribution_target_type'], $aAllowedLevels, true)) {
+            throw new \InvalidArgumentException('This target level is not allowed for your account.');
+        }
+
+        if ((bool)$aWhitelist['requires_review']) {
+            $sNewStatus = 'pending';
+        } elseif (!empty($aPost['scheduled_at'])) {
+            $sNewStatus = 'scheduled';
+        } else {
+            $sNewStatus = 'published';
+        }
+
+        db()->update(':hulahoot_swess_post', [
+            'status' => $sNewStatus,
+            'rejection_reason' => null,
+            'updated' => time(),
+        ], ['swess_post_id' => (int)$iPostId]);
+
+        $this->logAudit($iUserId, $aPost['identity_type'], (int)$aPost['identity_id'], 'post_submitted', [
+            'swess_post_id' => (int)$iPostId,
+            'new_status' => $sNewStatus,
+        ]);
+
+        return $this->getPostById($iPostId);
+    }
+
+    /**
+     * @param int $iPostId
+     * @param int $iActorUserId the approving admin
+     *
+     * @return void
+     *
+     * @throws \InvalidArgumentException if the post isn't pending
+     */
+    public function approvePost($iPostId, $iActorUserId)
+    {
+        $aPost = $this->getPostById($iPostId);
+
+        if (!$aPost || $aPost['status'] !== 'pending') {
+            throw new \InvalidArgumentException('Only a pending post can be approved.');
+        }
+
+        $sNewStatus = !empty($aPost['scheduled_at']) ? 'scheduled' : 'published';
+
+        db()->update(':hulahoot_swess_post', [
+            'status' => $sNewStatus,
+            'updated' => time(),
+        ], ['swess_post_id' => (int)$iPostId]);
+
+        $this->logAudit((int)$aPost['user_id'], $aPost['identity_type'], (int)$aPost['identity_id'], 'post_approved', [
+            'swess_post_id' => (int)$iPostId,
+            'new_status' => $sNewStatus,
+        ], $iActorUserId);
+    }
+
+    /**
+     * @param int $iPostId
+     * @param string $sReason shown back to the publisher on their post detail view
+     * @param int $iActorUserId the rejecting admin
+     *
+     * @return void
+     *
+     * @throws \InvalidArgumentException if the post isn't pending
+     */
+    public function rejectPost($iPostId, $sReason, $iActorUserId)
+    {
+        $aPost = $this->getPostById($iPostId);
+
+        if (!$aPost || $aPost['status'] !== 'pending') {
+            throw new \InvalidArgumentException('Only a pending post can be rejected.');
+        }
+
+        db()->update(':hulahoot_swess_post', [
+            'status' => 'rejected',
+            'rejection_reason' => trim((string)$sReason) ?: null,
+            'updated' => time(),
+        ], ['swess_post_id' => (int)$iPostId]);
+
+        $this->logAudit((int)$aPost['user_id'], $aPost['identity_type'], (int)$aPost['identity_id'], 'post_rejected', [
+            'swess_post_id' => (int)$iPostId,
+            'reason' => $sReason,
+        ], $iActorUserId);
+    }
+
+    /**
+     * Cancel a still-pending/scheduled post - moves it to 'archived',
+     * never deletes it, per spec ("preserving the audit trail").
+     *
+     * @param int $iPostId
+     * @param int $iUserId must own the post
+     *
+     * @return void
+     *
+     * @throws \InvalidArgumentException if the post doesn't belong to $iUserId or
+     *         isn't in a cancellable status
+     */
+    public function cancelPost($iPostId, $iUserId)
+    {
+        $aPost = $this->getPostById($iPostId);
+
+        if (!$aPost || (int)$aPost['user_id'] !== (int)$iUserId) {
+            throw new \InvalidArgumentException('Post ' . $iPostId . ' does not belong to user ' . $iUserId . '.');
+        }
+
+        if (!in_array($aPost['status'], ['pending', 'approved', 'scheduled'], true)) {
+            throw new \InvalidArgumentException('This post can no longer be cancelled.');
+        }
+
+        db()->update(':hulahoot_swess_post', [
+            'status' => 'archived',
+            'updated' => time(),
+        ], ['swess_post_id' => (int)$iPostId]);
+
+        $this->logAudit((int)$iUserId, $aPost['identity_type'], (int)$aPost['identity_id'], 'post_cancelled', [
+            'swess_post_id' => (int)$iPostId,
+        ]);
+    }
+
+    /**
+     * Delete a draft outright - the one status the spec allows a hard
+     * delete for rather than archiving.
+     *
+     * @param int $iPostId
+     * @param int $iUserId must own the post
+     *
+     * @return void
+     *
+     * @throws \InvalidArgumentException if the post doesn't belong to $iUserId or
+     *         isn't a draft
+     */
+    public function deleteDraftPost($iPostId, $iUserId)
+    {
+        $aPost = $this->getPostById($iPostId);
+
+        if (!$aPost || (int)$aPost['user_id'] !== (int)$iUserId) {
+            throw new \InvalidArgumentException('Post ' . $iPostId . ' does not belong to user ' . $iUserId . '.');
+        }
+
+        if ($aPost['status'] !== 'draft') {
+            throw new \InvalidArgumentException('Only a draft can be deleted directly - use Cancel instead.');
+        }
+
+        db()->delete(':hulahoot_swess_post', ['swess_post_id' => (int)$iPostId]);
+    }
+
+    /**
+     * @param int $iUserId
+     * @param array $aFilters optional: status, identity_type, tag_id
+     *
+     * @return array newest-updated first
+     */
+    public function getPostsForUser($iUserId, array $aFilters = [])
+    {
+        $aWhere = ['user_id' => (int)$iUserId];
+
+        if (!empty($aFilters['status'])) {
+            $aWhere['status'] = (string)$aFilters['status'];
+        }
+        if (!empty($aFilters['identity_type'])) {
+            $aWhere['identity_type'] = (string)$aFilters['identity_type'];
+        }
+        if (!empty($aFilters['tag_id'])) {
+            $aWhere['tag_id'] = (int)$aFilters['tag_id'];
+        }
+
+        return (array)db()->select('*')
+            ->from(':hulahoot_swess_post')
+            ->where($aWhere)
+            ->order('updated DESC')
+            ->execute('getSlaveRows');
+    }
+
+    /**
+     * The AdminCP Approval Queue - every post currently 'pending',
+     * across every publisher, oldest first (first submitted, first
+     * reviewed).
+     *
+     * @return array
+     */
+    public function getPendingPosts()
+    {
+        return (array)db()->select('p.*, u.user_name')
+            ->from(':hulahoot_swess_post', 'p')
+            ->join(':user', 'u', 'u.user_id = p.user_id')
+            ->where(['p.status' => 'pending'])
+            ->order('p.created ASC')
             ->execute('getSlaveRows');
     }
 

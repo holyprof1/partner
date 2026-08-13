@@ -1,0 +1,84 @@
+{% include '_swess-nav.html' %}
+<style>
+.hulahoot-swess-detail { max-width: 640px; }
+.hulahoot-swess-detail-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+.hulahoot-swess-detail-header h1 { font-size: 22px; font-weight: 800; margin: 0; }
+.hulahoot-swess-status-badge {
+    font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 999px; text-transform: uppercase;
+    letter-spacing: .02em; white-space: nowrap; background: #f2f2f2; color: #676767;
+}
+.hulahoot-swess-status-badge.st-published, .hulahoot-swess-status-badge.st-approved { background: #000; color: #fff; }
+.hulahoot-swess-status-badge.st-pending, .hulahoot-swess-status-badge.st-scheduled { background: #fff3cd; color: #8a6d00; }
+.hulahoot-swess-status-badge.st-rejected, .hulahoot-swess-status-badge.st-failed { background: #f8d7da; color: #842029; }
+.hulahoot-swess-status-badge.st-draft, .hulahoot-swess-status-badge.st-archived { background: #f2f2f2; color: #9a9a9a; }
+.hulahoot-swess-detail-content {
+    border: 1px solid #e2e2e2; border-radius: 8px; padding: 18px 20px; font-size: 14.5px; white-space: pre-wrap; margin-bottom: 16px;
+}
+.hulahoot-swess-detail-facts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.hulahoot-swess-detail-facts span { font-size: 12px; background: #f2f2f2; border-radius: 999px; padding: 3px 12px; }
+.hulahoot-swess-rejection { background: #f8d7da; color: #842029; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; font-size: 13.5px; }
+.hulahoot-swess-detail-actions { display: flex; gap: 8px; margin-bottom: 26px; flex-wrap: wrap; }
+.hulahoot-swess-history { border-top: 1px solid #e5e5e5; padding-top: 18px; }
+.hulahoot-swess-history h2 { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; margin: 0 0 12px; }
+.hulahoot-swess-history-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+.hulahoot-swess-history-row:last-child { border-bottom: none; }
+.hulahoot-swess-history-row .action { font-weight: 600; }
+.hulahoot-swess-history-row .when { color: #9a9a9a; }
+</style>
+<div class="hulahoot-swess-detail">
+    <a href="{{ url('/hulahoot/swess/posts') }}" style="font-size:13px;display:inline-block;margin-bottom:14px;">&larr; {{ _p('hulahoot_swess_back_to_posts') }}</a>
+
+    <div class="hulahoot-swess-detail-header">
+        <h1>{{ _p('hulahoot_swess_post_detail') }}</h1>
+        <span class="hulahoot-swess-status-badge st-{{ post.status }}">{{ _p('hulahoot_swess_status_' ~ post.status) }}</span>
+    </div>
+
+    {% if post.status == 'rejected' and post.rejection_reason %}
+        <div class="hulahoot-swess-rejection">
+            <strong>{{ _p('hulahoot_swess_field_rejection_reason') }}:</strong> {{ post.rejection_reason }}
+        </div>
+    {% endif %}
+
+    <div class="hulahoot-swess-detail-content">{{ post.content|default('—') }}</div>
+
+    <div class="hulahoot-swess-detail-facts">
+        <span>{% if post.identity_type == 'self' %}{{ _p('hulahoot_swess_identity_self') }}{% else %}{{ _p('hulahoot_swess_identity_page') }} #{{ post.identity_id }}{% endif %}</span>
+        {% if tag %}<span>{{ tag.name }}</span>{% endif %}
+        <span>{{ post.distribution_target_type }}{% if post.distribution_target_label %}: {{ post.distribution_target_label }}{% endif %}</span>
+        {% if post.scheduled_at %}<span>{{ _p('hulahoot_swess_field_scheduled_for') }}: {{ post.scheduled_at|date('M j, Y g:i A') }}</span>{% endif %}
+    </div>
+
+    <div class="hulahoot-swess-detail-actions">
+        {% if post.status in ['draft', 'rejected', 'failed'] %}
+            <a href="{{ url('/hulahoot/swess/create', {'id': post.swess_post_id}) }}" class="btn btn-primary btn-sm">{{ _p('hulahoot_swess_edit') }}</a>
+        {% endif %}
+        {% if post.status in ['pending', 'approved', 'scheduled'] %}
+            <form method="post" action="{{ url('/hulahoot/swess/posts/view', {'id': post.swess_post_id}) }}" onsubmit="return confirm('{{ _p('hulahoot_swess_confirm_cancel')|e('js') }}');">
+                <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
+                <input type="hidden" name="do" value="cancel">
+                <button type="submit" class="btn btn-default btn-sm">{{ _p('hulahoot_swess_cancel_post') }}</button>
+            </form>
+        {% endif %}
+        {% if post.status == 'draft' %}
+            <form method="post" action="{{ url('/hulahoot/swess/posts/view', {'id': post.swess_post_id}) }}" onsubmit="return confirm('{{ _p('hulahoot_swess_confirm_delete')|e('js') }}');">
+                <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
+                <input type="hidden" name="do" value="delete">
+                <button type="submit" class="btn btn-link btn-sm text-danger">{{ _p('hulahoot_swess_delete_post') }}</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <div class="hulahoot-swess-history">
+        <h2>{{ _p('hulahoot_swess_history') }}</h2>
+        {% if history is empty %}
+            <p class="text-muted">{{ _p('hulahoot_swess_no_history') }}</p>
+        {% else %}
+            {% for row in history %}
+                <div class="hulahoot-swess-history-row">
+                    <span class="action">{{ row.action }}</span>
+                    <span class="when">{{ row.created_display }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>

@@ -351,6 +351,7 @@ group('/my-profiles', function () {
         'hulahoot.admincp.swess-whitelist-add' => \Apps\Hulahoot\Controller\Admin\SwessWhitelistAddController::class,
         'hulahoot.admincp.swess-tag' => \Apps\Hulahoot\Controller\Admin\SwessTagController::class,
         'hulahoot.admincp.swess-tag-add' => \Apps\Hulahoot\Controller\Admin\SwessTagAddController::class,
+        'hulahoot.admincp.swess-approval' => \Apps\Hulahoot\Controller\Admin\SwessApprovalController::class,
         'hulahoot.admincp.swess-audit' => \Apps\Hulahoot\Controller\Admin\SwessAuditController::class,
 
         // Backs the "SWESS Wallet" profile tab (/username/hulahoot),
@@ -576,6 +577,15 @@ group('/admincp/hulahoot', function () {
         return 'controller';
     });
 
+    // GET (list) / POST (approve or reject one pending post)
+    // /admincp/hulahoot/swess/approval.
+    route('/swess/approval', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.swess-approval');
+
+        return 'controller';
+    });
+
     // Read-only.
     route('/swess/audit', function () {
         auth()->isAdmin(true);
@@ -609,13 +619,13 @@ group('/hulahoot/promotions', function () {
 // whether they also hold an active subscription - the entitlement panel
 // inside the dashboard is informational, not the gate itself.
 //
-// This is the architecture/foundation dashboard only, per current scope
-// (see docs/HULAHOOT_INTEGRATION.md): it surfaces every piece of the
-// SWESS foundation already built (whitelist status, permissions,
-// approved identities, disclosure tags, entitlement) plus clearly-
-// labeled placeholder sections for what's explicitly later-phase
-// (targeting, scheduling, the actual composer/publishing). Nothing here
-// creates a post, calls HulahootPublisher, or talks to hulahoot.com.
+// Alongside the dashboard, this group also carries the member-facing
+// Composer (create/edit a post), My Posts (list + detail), and a
+// dedicated Entitlement tab - the UI/UX spec's four-item secondary nav
+// (see views/_swess-nav.html). All four share the same authorization
+// gate below (whitelist row exists and is_enabled) via
+// _swessRequireAuthorized(), since none of this is reachable at all
+// without it.
 group('/hulahoot/swess', function () {
 
     route('/', function () {
@@ -643,13 +653,240 @@ group('/hulahoot/swess', function () {
 
         $aIdentities = $swessService->getApprovedIdentities((int)$aWhitelist['whitelist_id']);
         $aSelfProfile = $profileService->getPrimaryByUserId($iUserId);
+        $aRecentPosts = $swessService->getPostsForUser($iUserId);
 
         return view('swess-dashboard.html', [
+            'swess_active' => 'dashboard',
             'is_authorized' => true,
             'whitelist' => $aWhitelist,
             'identities' => $aIdentities,
             'self_profile' => $aSelfProfile,
             'tags' => $swessService->listActiveTags(),
+            'entitlement' => $entitlementService->getActiveEntitlement($iUserId),
+            'recent_posts' => array_slice($aRecentPosts, 0, 5),
+            'post_counts' => [
+                'total' => count($aRecentPosts),
+                'published' => count(array_filter($aRecentPosts, function ($p) { return $p['status'] === 'published'; })),
+                'pending' => count(array_filter($aRecentPosts, function ($p) { return in_array($p['status'], ['pending', 'scheduled'], true); })),
+                'drafts' => count(array_filter($aRecentPosts, function ($p) { return $p['status'] === 'draft'; })),
+            ],
+        ]);
+    });
+
+    // GET/POST /hulahoot/swess/create - the composer. ?id=X edits an
+    // existing draft/rejected/failed post (see Service\Swess::updatePost()
+    // for exactly which statuses that's allowed on); no id creates a new
+    // one. One form, two submit buttons (Save Draft / Submit) - see
+    // Service\Swess::createDraftPost()/updatePost()/submitPost().
+    route('/create', function () {
+        auth()->membersOnly();
+
+        $iUserId = \Phpfox::getUserId();
+        $swessService = new \Apps\Hulahoot\Service\Swess();
+
+        $aWhitelist = $swessService->getWhitelistForUser($iUserId);
+        if (!$aWhitelist || !(int)$aWhitelist['is_enabled']) {
+            return url()->send('/hulahoot/swess');
+        }
+
+        title(_p('hulahoot_swess_nav_create'));
+
+        $iPostId = (int)request()->get('id');
+        $aPost = $iPostId ? $swessService->getPostById($iPostId) : null;
+
+        if ($iPostId && (!$aPost || (int)$aPost['user_id'] !== $iUserId)) {
+            return url()->send('/hulahoot/swess/posts', [], _p('hulahoot_swess_post_not_found'));
+        }
+
+        if ($aPost && !in_array($aPost['status'], ['draft', 'rejected', 'failed'], true)) {
+            return url()->send('/hulahoot/swess/posts/view', ['id' => $iPostId], _p('hulahoot_swess_post_not_editable'));
+        }
+
+        $aIdentities = $swessService->getApprovedIdentities((int)$aWhitelist['whitelist_id']);
+        $aAllowedLevels = $swessService->getAllowedTargetLevels($aWhitelist);
+        $error = null;
+
+        if (request()->method() === 'POST') {
+            if (request()->get('hulahoot_token') !== \Phpfox::getService('log.session')->getToken()) {
+                $error = _p('hulahoot_invalid_token');
+            } else {
+                $sAction = (string)request()->get('swess_action');
+                $aData = [
+                    'identity_type' => (string)request()->get('identity_type'),
+                    'identity_id' => (int)request()->get('identity_id'),
+                    'content' => (string)request()->get('content'),
+                    'tag_id' => (int)request()->get('tag_id'),
+                    'distribution_target_type' => (string)request()->get('distribution_target_type', 'site_wide'),
+                    'distribution_target_label' => trim((string)request()->get('distribution_target_label')) ?: null,
+                ];
+
+                $sScheduledLocal = trim((string)request()->get('scheduled_at'));
+                if ($sScheduledLocal !== '') {
+                    $iTs = strtotime($sScheduledLocal);
+                    $aData['scheduled_at'] = $iTs ?: null;
+                }
+
+                try {
+                    if ($aPost) {
+                        $swessService->updatePost($iPostId, $iUserId, $aData);
+                    } else {
+                        $iPostId = $swessService->createDraftPost($iUserId, $aData);
+                    }
+
+                    if ($sAction === 'submit') {
+                        $swessService->submitPost($iPostId, $iUserId);
+                        return url()->send('/hulahoot/swess/posts/view', ['id' => $iPostId], _p('hulahoot_swess_post_submitted'));
+                    }
+
+                    return url()->send('/hulahoot/swess/posts/view', ['id' => $iPostId], _p('hulahoot_swess_post_saved_draft'));
+                } catch (\InvalidArgumentException $e) {
+                    $error = $e->getMessage();
+                    $aPost = $swessService->getPostById($iPostId) ?: array_merge(['swess_post_id' => null], $aData);
+                }
+            }
+        }
+
+        $aIdentityTags = [];
+        foreach ($aIdentities as $aIdentity) {
+            $aIdentityTags[(int)$aIdentity['approved_identity_id']] = array_map(function ($aTag) {
+                return ['tag_id' => (int)$aTag['tag_id'], 'name' => $aTag['name']];
+            }, $aIdentity['tags']);
+        }
+
+        // <input type="datetime-local"> needs "YYYY-MM-DDTHH:MM" in the
+        // browser's local time - $aPost['scheduled_at'] is a plain unix
+        // timestamp (see Installation/Database/SwessPost.php), so this is
+        // display-only prefill, not a timezone-aware round trip; the
+        // value submitted back is re-parsed with strtotime() above exactly
+        // like a fresh entry.
+        if ($aPost && !empty($aPost['scheduled_at'])) {
+            $aPost['scheduled_at_local'] = date('Y-m-d\TH:i', (int)$aPost['scheduled_at']);
+        }
+
+        return view('swess-composer.html', [
+            'swess_active' => 'create',
+            'post' => $aPost,
+            'post_id' => $iPostId ?: null,
+            'identities' => $aIdentities,
+            'identity_tags_json' => json_encode($aIdentityTags),
+            'allowed_levels' => $aAllowedLevels,
+            'error' => $error,
+            'csrf_token' => \Phpfox::getService('log.session')->getToken(),
+        ]);
+    });
+
+    // GET /hulahoot/swess/posts - every post this user has ever created,
+    // newest-updated first, with an optional ?status= filter.
+    route('/posts', function () {
+        auth()->membersOnly();
+
+        $iUserId = \Phpfox::getUserId();
+        $swessService = new \Apps\Hulahoot\Service\Swess();
+
+        $aWhitelist = $swessService->getWhitelistForUser($iUserId);
+        if (!$aWhitelist || !(int)$aWhitelist['is_enabled']) {
+            return url()->send('/hulahoot/swess');
+        }
+
+        title(_p('hulahoot_swess_nav_posts'));
+
+        $sStatus = (string)request()->get('status');
+        $aFilters = in_array($sStatus, \Apps\Hulahoot\Service\Swess::POST_STATUSES, true) ? ['status' => $sStatus] : [];
+
+        return view('swess-posts.html', [
+            'swess_active' => 'posts',
+            'posts' => $swessService->getPostsForUser($iUserId, $aFilters),
+            'statuses' => \Apps\Hulahoot\Service\Swess::POST_STATUSES,
+            'active_status' => $sStatus,
+        ]);
+    });
+
+    // GET (view) / POST (cancel or delete) /hulahoot/swess/posts/view?id=X
+    route('/posts/view', function () {
+        auth()->membersOnly();
+
+        $iUserId = \Phpfox::getUserId();
+        $swessService = new \Apps\Hulahoot\Service\Swess();
+
+        $aWhitelist = $swessService->getWhitelistForUser($iUserId);
+        if (!$aWhitelist || !(int)$aWhitelist['is_enabled']) {
+            return url()->send('/hulahoot/swess');
+        }
+
+        $iPostId = (int)request()->get('id');
+        $aPost = $swessService->getPostById($iPostId);
+
+        if (!$aPost || (int)$aPost['user_id'] !== $iUserId) {
+            return url()->send('/hulahoot/swess/posts', [], _p('hulahoot_swess_post_not_found'));
+        }
+
+        if (request()->method() === 'POST') {
+            if (request()->get('hulahoot_token') !== \Phpfox::getService('log.session')->getToken()) {
+                return url()->send('/hulahoot/swess/posts/view', ['id' => $iPostId], _p('hulahoot_invalid_token'));
+            }
+
+            $sDo = (string)request()->get('do');
+
+            try {
+                if ($sDo === 'cancel') {
+                    $swessService->cancelPost($iPostId, $iUserId);
+                    return url()->send('/hulahoot/swess/posts/view', ['id' => $iPostId], _p('hulahoot_swess_post_cancelled'));
+                } elseif ($sDo === 'delete') {
+                    $swessService->deleteDraftPost($iPostId, $iUserId);
+                    return url()->send('/hulahoot/swess/posts', [], _p('hulahoot_swess_post_deleted'));
+                }
+            } catch (\InvalidArgumentException $e) {
+                return url()->send('/hulahoot/swess/posts/view', ['id' => $iPostId], $e->getMessage());
+            }
+        }
+
+        title(_p('hulahoot_swess_post_detail'));
+
+        // Best-effort timeline: this post's own entries out of the shared
+        // audit log (reused rather than adding a second status-history
+        // table - see Service/Swess.php's Posts section docblock).
+        // Matched by a literal JSON substring on context.swess_post_id
+        // since :hulahoot_swess_audit_log stores context as an opaque
+        // JSON blob with no queryable post_id column of its own.
+        $aLog = $swessService->listAuditLog(500);
+        $aHistory = array_values(array_filter($aLog, function ($aRow) use ($iPostId) {
+            return isset($aRow['context']) && strpos((string)$aRow['context'], '"swess_post_id":' . $iPostId) !== false;
+        }));
+        foreach ($aHistory as &$aRow) {
+            $aRow['created_display'] = \Phpfox::getLib('date')->convertTime((int)$aRow['created'], 'core.global_update_time');
+        }
+        unset($aRow);
+
+        return view('swess-post-detail.html', [
+            'swess_active' => 'posts',
+            'post' => $aPost,
+            'tag' => $aPost['tag_id'] ? $swessService->getTagById((int)$aPost['tag_id']) : null,
+            'history' => $aHistory,
+            'csrf_token' => \Phpfox::getService('log.session')->getToken(),
+        ]);
+    });
+
+    // GET /hulahoot/swess/entitlement - the dedicated plan/credits tab.
+    // Reads the exact same read-only view Service\Entitlement already
+    // provides for the dashboard's Entitlement card - see that class's
+    // own docblock for why this deliberately never becomes a second
+    // wallet/credit system.
+    route('/entitlement', function () {
+        auth()->membersOnly();
+
+        $iUserId = \Phpfox::getUserId();
+        $swessService = new \Apps\Hulahoot\Service\Swess();
+        $entitlementService = new \Apps\Hulahoot\Service\Entitlement();
+
+        $aWhitelist = $swessService->getWhitelistForUser($iUserId);
+        if (!$aWhitelist || !(int)$aWhitelist['is_enabled']) {
+            return url()->send('/hulahoot/swess');
+        }
+
+        title(_p('hulahoot_swess_nav_entitlement'));
+
+        return view('swess-entitlement.html', [
+            'swess_active' => 'entitlement',
             'entitlement' => $entitlementService->getActiveEntitlement($iUserId),
         ]);
     });

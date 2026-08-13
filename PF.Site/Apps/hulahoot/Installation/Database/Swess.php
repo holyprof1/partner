@@ -77,6 +77,30 @@ class Swess extends Table
                 Field::FIELD_PARAM_TYPE_VALUE => 1,
                 Field::FIELD_PARAM_OTHER => 'UNSIGNED NOT NULL DEFAULT \'0\'',
             ],
+            // Per the SWESS UI/UX spec (SWESS - Site-Wide Echo Spreading
+            // System, "resolved assumptions"): whitelisting does not by
+            // itself mean every post skips review. When 1, this user's
+            // submitted posts land in 'pending' and need an admin
+            // approve/reject (see Service\Swess::submitPost()) instead of
+            // publishing/scheduling immediately. Default 0 (immediate).
+            'requires_review' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_TINYINT,
+                Field::FIELD_PARAM_TYPE_VALUE => 1,
+                Field::FIELD_PARAM_OTHER => 'UNSIGNED NOT NULL DEFAULT \'0\'',
+            ],
+            // Comma-separated subset of 'city,state,country,continent,
+            // site_wide' - which distribution_target_type values this
+            // user's posts may use (spec: "subject only to whatever
+            // target levels Admin has authorized for that publisher").
+            // NULL = every level allowed, the default for a newly
+            // whitelisted user - matches this table's existing "NULL/0 =
+            // no extra restriction" convention rather than requiring
+            // admin to explicitly re-grant every level.
+            'allowed_target_levels' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_VARCHAR,
+                Field::FIELD_PARAM_TYPE_VALUE => 100,
+                Field::FIELD_PARAM_OTHER => 'NULL',
+            ],
             // phpfox_user.user_id of the admin who enabled this - display
             // only, never used in any permission check.
             'enabled_by' => [
