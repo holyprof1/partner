@@ -1,7 +1,10 @@
 {% include '_swess-nav.html' %}
+{% include '_swess-styles.html' %}
 <style>
 .hulahoot-swess-posts-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
 .hulahoot-swess-posts-header h1 { font-size: 22px; font-weight: 800; margin: 0; }
+.hulahoot-swess-posts-header .btn-primary { background: #000; border-color: #000; font-weight: 700; transition: transform .1s ease, box-shadow .15s ease; }
+.hulahoot-swess-posts-header .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.15); }
 .hulahoot-swess-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
 .hulahoot-swess-filters a {
     font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px;
@@ -14,15 +17,12 @@
 }
 .hulahoot-swess-post-row .content { font-size: 13.5px; color: #333; max-width: 480px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hulahoot-swess-post-row .meta { font-size: 11.5px; color: #9a9a9a; margin-top: 6px; }
-.hulahoot-swess-status-badge {
-    font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; text-transform: uppercase;
-    letter-spacing: .02em; white-space: nowrap; background: #f2f2f2; color: #676767;
+.hulahoot-swess-post-row .view-link { font-size: 12.5px; font-weight: 600; }
+@media (max-width: 560px) {
+    .hulahoot-swess-post-row { flex-direction: column; }
+    .hulahoot-swess-post-row .content { max-width: 100%; white-space: normal; }
+    .hulahoot-swess-post-row > div:last-child { text-align: left !important; display: flex; align-items: center; gap: 10px; }
 }
-.hulahoot-swess-status-badge.st-published, .hulahoot-swess-status-badge.st-approved { background: #000; color: #fff; }
-.hulahoot-swess-status-badge.st-pending, .hulahoot-swess-status-badge.st-scheduled { background: #fff3cd; color: #8a6d00; }
-.hulahoot-swess-status-badge.st-rejected, .hulahoot-swess-status-badge.st-failed { background: #f8d7da; color: #842029; }
-.hulahoot-swess-status-badge.st-draft, .hulahoot-swess-status-badge.st-archived { background: #f2f2f2; color: #9a9a9a; }
-.hulahoot-swess-empty { text-align: center; color: #9a9a9a; padding: 40px 10px; border: 1px dashed #d8d8d8; border-radius: 8px; }
 </style>
 <div class="hulahoot-swess-posts-header">
     <h1>{{ _p('hulahoot_swess_nav_posts') }}</h1>
@@ -50,7 +50,7 @@
             </div>
             <div style="text-align:right;">
                 <div class="hulahoot-swess-status-badge st-{{ post.status }}">{{ _p('hulahoot_swess_status_' ~ post.status) }}</div>
-                <div style="margin-top:8px;"><a href="{{ url('/hulahoot/swess/posts/view', {'id': post.swess_post_id}) }}">{{ _p('hulahoot_swess_view') }}</a></div>
+                <div style="margin-top:8px;"><a href="{{ url('/hulahoot/swess/posts/view', {'id': post.swess_post_id}) }}" class="view-link">{{ _p('hulahoot_swess_view') }} &rarr;</a></div>
             </div>
         </div>
     {% endfor %}

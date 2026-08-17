@@ -1,3 +1,4 @@
+{% if is_authorized %}{% include '_swess-styles.html' %}{% endif %}
 <style>
 .hulahoot-swess-app {
     max-width: 1080px;
@@ -71,7 +72,9 @@
     background: #fff;
     padding: 20px 22px;
     margin-bottom: 18px;
+    transition: box-shadow .15s ease, border-color .15s ease;
 }
+.hulahoot-swess-card:hover { border-color: #d5d5d5; box-shadow: 0 3px 12px rgba(0,0,0,.05); }
 .hulahoot-swess-card-head {
     display: flex;
     align-items: center;
@@ -116,14 +119,23 @@
 }
 .hulahoot-swess-primary-cta h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
 .hulahoot-swess-primary-cta p { margin: 0; font-size: 13px; color: #c9c9c9; }
-.hulahoot-swess-primary-cta .btn { background: #fff; color: #000; border: none; font-weight: 700; }
+.hulahoot-swess-primary-cta .btn {
+    background: #fff; color: #000; border: none; font-weight: 700;
+    transition: transform .1s ease, box-shadow .15s ease;
+}
+.hulahoot-swess-primary-cta .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.35); }
 
 /* ---- Quick stats ---- */
 .hulahoot-swess-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
-.hulahoot-swess-stat { border: 1px solid #e2e2e2; border-radius: 10px; padding: 16px 18px; background: #fff; }
-.hulahoot-swess-stat .num { font-size: 24px; font-weight: 800; color: #000; }
+.hulahoot-swess-stat {
+    border: 1px solid #e2e2e2; border-radius: 10px; padding: 16px 18px; background: #fff;
+    transition: box-shadow .15s ease, border-color .15s ease;
+}
+.hulahoot-swess-stat:hover { border-color: #d5d5d5; box-shadow: 0 3px 12px rgba(0,0,0,.05); }
+.hulahoot-swess-stat .num { font-size: 24px; font-weight: 800; color: #000; font-variant-numeric: tabular-nums; }
 .hulahoot-swess-stat .label { font-size: 11.5px; color: #9a9a9a; text-transform: uppercase; letter-spacing: .03em; margin-top: 2px; }
 @media (max-width: 720px) { .hulahoot-swess-stats-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .hulahoot-swess-stats-row { grid-template-columns: 1fr 1fr; gap: 10px; } .hulahoot-swess-stat { padding: 12px 14px; } .hulahoot-swess-stat .num { font-size: 20px; } }
 
 /* ---- Posts preview ---- */
 .hulahoot-swess-post-preview-row {
@@ -132,14 +144,8 @@
 }
 .hulahoot-swess-post-preview-row:last-child { border-bottom: none; }
 .hulahoot-swess-post-preview-row .content { max-width: 480px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hulahoot-swess-status-badge {
-    font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; text-transform: uppercase;
-    letter-spacing: .02em; white-space: nowrap; background: #f2f2f2; color: #676767;
-}
-.hulahoot-swess-status-badge.st-published, .hulahoot-swess-status-badge.st-approved { background: #000; color: #fff; }
-.hulahoot-swess-status-badge.st-pending, .hulahoot-swess-status-badge.st-scheduled { background: #fff3cd; color: #8a6d00; }
-.hulahoot-swess-status-badge.st-rejected, .hulahoot-swess-status-badge.st-failed { background: #f8d7da; color: #842029; }
-.hulahoot-swess-status-badge.st-draft, .hulahoot-swess-status-badge.st-archived { background: #f2f2f2; color: #9a9a9a; }
+.hulahoot-swess-post-preview-row .hulahoot-swess-status-badge { font-size: 10.5px; padding: 2px 9px; }
+.hulahoot-swess-post-preview-row a.content:hover { text-decoration: underline; }
 
 /* ---- Tag strip ---- */
 .hulahoot-swess-tag-chip {
@@ -163,8 +169,10 @@
 .hulahoot-swess-ent-row .k { color: #797979; }
 .hulahoot-swess-ent-row .v { font-weight: 600; color: #000; }
 
-/* ---- Empty states ---- */
-.hulahoot-swess-empty { text-align: center; color: #9a9a9a; padding: 26px 10px; font-size: 13.5px; }
+/* Empty states nested inside a card already have their own border - the
+   shared dashed-box treatment would be redundant, so this trims it back to
+   a plain centered note here specifically. */
+.hulahoot-swess-card .hulahoot-swess-empty { border: none; padding: 22px 10px; }
 
 /* ---- Unauthorized state ---- */
 .hulahoot-swess-locked {
@@ -300,6 +308,8 @@
                 {% else %}
                     <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_native_package') }}</span><span class="v">{{ _p(entitlement.package_title) }}</span></div>
                     <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_credits') }}</span><span class="v">{{ entitlement.monthly_credits }}</span></div>
+                    <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_purchase_limit') }}</span><span class="v">{{ entitlement.purchase_limit|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>
+                    <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_campaign_limit') }}</span><span class="v">{{ entitlement.campaign_limit|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>
                 {% endif %}
             </div>
         </div>

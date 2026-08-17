@@ -15,7 +15,11 @@ defined('PHPFOX') or exit('NO DICE!');
         font-size: 11px; font-weight: 800; letter-spacing: -.02em; margin-right: 8px;
         vertical-align: middle;
     }
-    .hulahoot-swess-queue-card { border: 1px solid #e2e2e2; border-radius: 4px; padding: 16px 18px; margin-bottom: 14px; background: #fff; }
+    .hulahoot-swess-queue-card {
+        border: 1px solid #e2e2e2; border-radius: 4px; padding: 16px 18px; margin-bottom: 14px; background: #fff;
+        transition: box-shadow .15s ease, border-color .15s ease;
+    }
+    .hulahoot-swess-queue-card:hover { border-color: #d5d5d5; box-shadow: 0 3px 12px rgba(0,0,0,.05); }
     .hulahoot-swess-queue-meta { font-size: 12px; color: #888; margin-bottom: 8px; }
     .hulahoot-swess-queue-content { font-size: 14px; margin-bottom: 10px; white-space: pre-wrap; }
     .hulahoot-swess-queue-facts { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
@@ -23,6 +27,7 @@ defined('PHPFOX') or exit('NO DICE!');
     .hulahoot-swess-queue-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
     .hulahoot-swess-queue-actions form { display: flex; gap: 6px; align-items: center; }
     .hulahoot-swess-queue-actions input[type=text] { padding: 4px 8px; width: 260px; }
+    .hulahoot-swess-queue-actions button:disabled { opacity: .6; cursor: default; }
 {/literal}
 </style>
 <div class="hulahoot-admin">
@@ -63,3 +68,27 @@ defined('PHPFOX') or exit('NO DICE!');
         <div class="hulahoot-admin-empty">{_p var='hulahoot_swess_no_pending_posts'}</div>
     {/foreach}
 </div>
+<script>
+(function () {
+    // Disable BOTH forms in a queue card the instant either one is
+    // submitted - the server's per-post GET_LOCK already prevents a
+    // double-approve/reject from actually corrupting anything, this just
+    // keeps the UI from looking clickable while that request is in flight.
+    var cards = document.querySelectorAll('.hulahoot-swess-queue-card');
+    for (var i = 0; i < cards.length; i++) {
+        (function (card) {
+            var forms = card.querySelectorAll('form');
+            for (var j = 0; j < forms.length; j++) {
+                forms[j].addEventListener('submit', function () {
+                    for (var k = 0; k < forms.length; k++) {
+                        var btn = forms[k].querySelector('button[type="submit"]');
+                        if (btn) {
+                            btn.disabled = true;
+                        }
+                    }
+                });
+            }
+        })(cards[i]);
+    }
+})();
+</script>

@@ -15,9 +15,14 @@
     color: #797979;
     text-decoration: none;
     border-bottom: 2px solid transparent;
+    transition: color .15s ease, border-color .15s ease;
 }
 .hulahoot-swess-nav a:hover { color: #000; text-decoration: none; }
 .hulahoot-swess-nav a.is-active { color: #000; border-bottom-color: #000; }
+@media (max-width: 480px) {
+    .hulahoot-swess-nav { gap: 0; }
+    .hulahoot-swess-nav a { padding: 9px 10px; font-size: 12.5px; }
+}
 </style>
 <div class="hulahoot-swess-nav">
     <a href="{{ url('/hulahoot/swess') }}" class="{{ swess_active == 'dashboard' ? 'is-active' : '' }}">{{ _p('hulahoot_swess_nav_dashboard') }}</a>

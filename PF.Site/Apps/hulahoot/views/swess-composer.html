@@ -1,17 +1,53 @@
 {% include '_swess-nav.html' %}
+{% include '_swess-styles.html' %}
 <style>
-.hulahoot-swess-composer { max-width: 640px; }
-.hulahoot-swess-composer .form-group { margin-bottom: 18px; }
-.hulahoot-swess-composer label.control-label { font-weight: 600; display: block; margin-bottom: 6px; }
-.hulahoot-swess-composer .help-block { margin-top: 4px; font-size: 12.5px; color: #888; }
+.hulahoot-swess-composer { max-width: 660px; }
+.hulahoot-swess-composer-title { font-size: 22px; font-weight: 800; margin: 0 0 20px; }
+
+.hulahoot-swess-step {
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+    background: #fff;
+    padding: 20px 22px;
+    margin-bottom: 14px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.hulahoot-swess-step:hover { border-color: #d5d5d5; box-shadow: 0 3px 12px rgba(0,0,0,.04); }
+.hulahoot-swess-step-head {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.hulahoot-swess-step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%; background: #000; color: #fff;
+    font-size: 11.5px; font-weight: 800; flex-shrink: 0;
+}
+.hulahoot-swess-step-head label.control-label { font-weight: 700; margin: 0; font-size: 13.5px; text-transform: uppercase; letter-spacing: .02em; }
+.hulahoot-swess-composer .help-block { margin-top: 6px; font-size: 12.5px; color: #888; }
 .hulahoot-swess-composer textarea { min-height: 140px; resize: vertical; }
-.hulahoot-swess-composer-actions { display: flex; gap: 10px; margin-top: 24px; }
+.hulahoot-swess-composer .form-control:focus {
+    border-color: #000; box-shadow: 0 0 0 3px rgba(0,0,0,.06); outline: none;
+}
+.hulahoot-swess-char-count { font-size: 11.5px; color: #aaa; text-align: right; margin-top: 6px; }
+.hulahoot-swess-char-count.is-empty { color: #c0392b; }
+
+.hulahoot-swess-composer-actions { display: flex; align-items: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+.hulahoot-swess-composer-actions .btn-primary { background: #000; border-color: #000; font-weight: 700; }
+.hulahoot-swess-composer-actions .btn-primary:hover:not(:disabled) { background: #1a1a1a; }
+.hulahoot-swess-composer-actions .btn-default { font-weight: 600; }
+
 .hulahoot-swess-no-identity {
-    border: 1px dashed #d8d8d8; border-radius: 8px; padding: 28px; text-align: center; color: #797979;
+    border: 1px dashed #d8d8d8; border-radius: 10px; padding: 32px 24px; text-align: center; color: #797979;
+}
+.hulahoot-swess-no-identity p { margin: 0 0 16px; font-size: 14px; }
+
+@media (max-width: 560px) {
+    .hulahoot-swess-step { padding: 16px 16px; }
+    .hulahoot-swess-composer-actions { flex-direction: column; align-items: stretch; }
+    .hulahoot-swess-composer-actions .btn { width: 100%; }
 }
 </style>
 <div class="hulahoot-swess-composer">
-    <h1 style="font-size:22px;font-weight:800;margin:0 0 18px;">{{ post_id ? _p('hulahoot_swess_edit_post') : _p('hulahoot_swess_create_post') }}</h1>
+    <h1 class="hulahoot-swess-composer-title">{{ post_id ? _p('hulahoot_swess_edit_post') : _p('hulahoot_swess_create_post') }}</h1>
 
     {% if error %}
         <div class="alert alert-danger">{{ error|e }}</div>
@@ -28,8 +64,11 @@
             <input type="hidden" name="identity_type" id="hulahoot_swess_identity_type" value="{{ post.identity_type }}">
             <input type="hidden" name="identity_id" id="hulahoot_swess_identity_id" value="{{ post.identity_id }}">
 
-            <div class="form-group">
-                <label class="control-label">{{ _p('hulahoot_swess_field_identity') }}</label>
+            <div class="hulahoot-swess-step">
+                <div class="hulahoot-swess-step-head">
+                    <span class="hulahoot-swess-step-num">1</span>
+                    <label class="control-label">{{ _p('hulahoot_swess_field_identity') }}</label>
+                </div>
                 <select class="form-control" id="hulahoot_swess_identity_select">
                     {% for identity in identities %}
                         <option value="{{ identity.approved_identity_id }}" data-type="{{ identity.identity_type }}" data-identity-id="{{ identity.identity_id }}">
@@ -39,45 +78,56 @@
                 </select>
             </div>
 
-            <div class="form-group">
-                <label class="control-label" for="hulahoot_swess_content">{{ _p('hulahoot_swess_field_content') }}</label>
-                <textarea class="form-control" name="content" id="hulahoot_swess_content" required>{{ post.content }}</textarea>
+            <div class="hulahoot-swess-step">
+                <div class="hulahoot-swess-step-head">
+                    <span class="hulahoot-swess-step-num">2</span>
+                    <label class="control-label" for="hulahoot_swess_content">{{ _p('hulahoot_swess_field_content') }}</label>
+                </div>
+                <textarea class="form-control" name="content" id="hulahoot_swess_content" maxlength="5000" required>{{ post.content }}</textarea>
+                <div class="hulahoot-swess-char-count" id="hulahoot_swess_char_count"></div>
             </div>
 
-            <div class="form-group">
-                <label class="control-label">{{ _p('hulahoot_swess_field_tag') }}</label>
+            <div class="hulahoot-swess-step">
+                <div class="hulahoot-swess-step-head">
+                    <span class="hulahoot-swess-step-num">3</span>
+                    <label class="control-label">{{ _p('hulahoot_swess_field_tag') }}</label>
+                </div>
                 <select class="form-control" name="tag_id" id="hulahoot_swess_tag_select" required>
                     <option value="">{{ _p('hulahoot_swess_choose_tag') }}</option>
                 </select>
                 <span class="help-block">{{ _p('hulahoot_swess_composer_tag_help') }}</span>
             </div>
 
-            <div class="form-group">
-                <label class="control-label" for="hulahoot_swess_target_type">{{ _p('hulahoot_swess_field_target_level') }}</label>
+            <div class="hulahoot-swess-step">
+                <div class="hulahoot-swess-step-head">
+                    <span class="hulahoot-swess-step-num">4</span>
+                    <label class="control-label" for="hulahoot_swess_target_type">{{ _p('hulahoot_swess_field_target_level') }}</label>
+                </div>
                 <select class="form-control" name="distribution_target_type" id="hulahoot_swess_target_type">
                     {% for level in allowed_levels %}
                         <option value="{{ level }}"{% if post.distribution_target_type == level %} selected="selected"{% endif %}>{{ _p('hulahoot_swess_target_level_' ~ level) }}</option>
                     {% endfor %}
                 </select>
+                <div id="hulahoot_swess_target_label_group" style="margin-top:12px;">
+                    <input type="text" class="form-control" name="distribution_target_label" id="hulahoot_swess_target_label"
+                           value="{{ post.distribution_target_label }}" placeholder="{{ _p('hulahoot_swess_target_label_placeholder') }}">
+                    <span class="help-block">{{ _p('hulahoot_swess_target_label_help') }}</span>
+                </div>
             </div>
 
-            <div class="form-group" id="hulahoot_swess_target_label_group">
-                <label class="control-label" for="hulahoot_swess_target_label">{{ _p('hulahoot_swess_field_target_label') }}</label>
-                <input type="text" class="form-control" name="distribution_target_label" id="hulahoot_swess_target_label"
-                       value="{{ post.distribution_target_label }}" placeholder="{{ _p('hulahoot_swess_target_label_placeholder') }}">
-                <span class="help-block">{{ _p('hulahoot_swess_target_label_help') }}</span>
-            </div>
-
-            <div class="form-group">
-                <label class="control-label" for="hulahoot_swess_scheduled_at">{{ _p('hulahoot_swess_field_schedule') }}</label>
+            <div class="hulahoot-swess-step">
+                <div class="hulahoot-swess-step-head">
+                    <span class="hulahoot-swess-step-num">5</span>
+                    <label class="control-label" for="hulahoot_swess_scheduled_at">{{ _p('hulahoot_swess_field_schedule') }}</label>
+                </div>
                 <input type="datetime-local" class="form-control" name="scheduled_at" id="hulahoot_swess_scheduled_at"
                        value="{{ post.scheduled_at_local }}">
                 <span class="help-block">{{ _p('hulahoot_swess_schedule_help') }}</span>
             </div>
 
             <div class="hulahoot-swess-composer-actions">
-                <button type="submit" name="swess_action" value="save_draft" class="btn btn-default">{{ _p('hulahoot_swess_save_draft') }}</button>
                 <button type="submit" name="swess_action" value="submit" class="btn btn-primary">{{ _p('hulahoot_swess_submit_post') }}</button>
+                <button type="submit" name="swess_action" value="save_draft" class="btn btn-default">{{ _p('hulahoot_swess_save_draft') }}</button>
                 <a href="{{ url('/hulahoot/swess/posts') }}" class="btn btn-link">{{ _p('hulahoot_cancel') }}</a>
             </div>
         </form>
@@ -98,6 +148,9 @@
     var idField = document.getElementById('hulahoot_swess_identity_id');
     var targetTypeSelect = document.getElementById('hulahoot_swess_target_type');
     var targetLabelGroup = document.getElementById('hulahoot_swess_target_label_group');
+    var contentField = document.getElementById('hulahoot_swess_content');
+    var charCount = document.getElementById('hulahoot_swess_char_count');
+    var form = document.getElementById('hulahoot_swess_composer_form');
 
     if (!identitySelect) {
         return;
@@ -128,6 +181,12 @@
         targetLabelGroup.style.display = (targetTypeSelect.value === 'site_wide') ? 'none' : '';
     }
 
+    function updateCharCount() {
+        var len = contentField.value.length;
+        charCount.textContent = len + ' / 5000';
+        charCount.classList.toggle('is-empty', len === 0);
+    }
+
     // Pre-select the identity that matches the post being edited, if any.
     if (currentIdentityType && currentIdentityId) {
         for (var i = 0; i < identitySelect.options.length; i++) {
@@ -141,8 +200,15 @@
 
     identitySelect.addEventListener('change', function () { onIdentityChange(null); });
     targetTypeSelect.addEventListener('change', toggleTargetLabel);
+    contentField.addEventListener('input', updateCharCount);
 
     onIdentityChange(currentTagId);
     toggleTargetLabel();
+    updateCharCount();
+
+    hulahootSwessLockForm(form, {
+        submit: '{{ _p('hulahoot_swess_submit_post')|e('js') }}…',
+        save_draft: '{{ _p('hulahoot_swess_save_draft')|e('js') }}…'
+    });
 })();
 </script>

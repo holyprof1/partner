@@ -16,14 +16,20 @@ defined('PHPFOX') or exit('NO DICE!');
     .hulahoot-admin-form .help-block { margin-top: 4px; font-size: 12.5px; }
     .hulahoot-swess-section { margin: 30px 0 0; padding-top: 22px; border-top: 1px solid #e5e5e5; }
     .hulahoot-swess-section h2 { font-size: 16px; font-weight: 600; margin: 0 0 14px; }
-    .hulahoot-swess-identity-card { border: 1px solid #e2e2e2; border-radius: 4px; padding: 12px 14px; margin-bottom: 10px; background: #fff; }
+    .hulahoot-swess-identity-card {
+        border: 1px solid #e2e2e2; border-radius: 4px; padding: 12px 14px; margin-bottom: 10px; background: #fff;
+        transition: box-shadow .15s ease, border-color .15s ease;
+    }
+    .hulahoot-swess-identity-card:hover { border-color: #d5d5d5; box-shadow: 0 3px 12px rgba(0,0,0,.05); }
     .hulahoot-swess-identity-card .hulahoot-swess-identity-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .hulahoot-swess-tag-chip { display: inline-block; background: #f0f0f0; border-radius: 999px; padding: 2px 10px; font-size: 12px; margin: 6px 6px 0 0; }
+    .hulahoot-swess-tag-chip { display: inline-block; background: #f0f0f0; border-radius: 999px; padding: 2px 10px; font-size: 12px; margin: 6px 6px 0 0; transition: background-color .15s ease; }
     .hulahoot-swess-tag-chip.is-default { background: #000; color: #fff; }
     .hulahoot-swess-tag-chip form { display: inline; margin-left: 6px; }
-    .hulahoot-swess-tag-chip button { border: none; background: none; color: inherit; cursor: pointer; padding: 0; font-size: 11px; }
+    .hulahoot-swess-tag-chip button { border: none; background: none; color: inherit; cursor: pointer; padding: 0; font-size: 11px; opacity: .6; transition: opacity .15s ease; }
+    .hulahoot-swess-tag-chip button:hover { opacity: 1; }
     .hulahoot-swess-inline-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
     .hulahoot-swess-inline-form select, .hulahoot-swess-inline-form input[type=text] { padding: 4px 8px; }
+    .hulahoot-admin-form button[type=submit]:disabled { opacity: .6; cursor: default; }
     .hulahoot-swess-mark {
         display: inline-flex; align-items: center; justify-content: center;
         width: 26px; height: 26px; border-radius: 7px; background: #000; color: #fff;
