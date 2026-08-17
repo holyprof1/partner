@@ -319,6 +319,17 @@ class PurchaseFlow
 
         db()->updateCount('subscribe_purchase', 'package_id = ' . $iPackageId . ' AND status = "completed"', 'total_active', 'subscribe_package', 'package_id = ' . $iPackageId);
 
+        // If this package includes SWESS (hulahoot_subscription_package.
+        // swess_enabled), reconcile the buyer's whitelist now rather than
+        // waiting for their next SWESS page load - see
+        // Swess::syncPackageEntitlement()'s own docblock for the full
+        // auto-grant rule (never touches an admin-managed row) and why
+        // this same call also happens lazily on every /hulahoot/swess/*
+        // route (this completion path is the only one Hulahoot code
+        // controls end to end; a real paid-gateway purchase completes
+        // entirely inside native Core_Subscriptions with no hook here).
+        (new Swess())->syncPackageEntitlement($iUserId);
+
         // The purchase is already fully committed above (status, expiry,
         // history, counter) by this point - a transient failure sending
         // the confirmation email must never turn into an apparent

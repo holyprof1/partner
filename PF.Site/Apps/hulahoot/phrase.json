@@ -209,6 +209,8 @@
     "hulahoot_field_posting_limit_per_month": "Posting Limit (Per Month)",
     "hulahoot_unlimited_placeholder": "Unlimited",
     "hulahoot_field_monthly_credits": "Monthly Credits",
+    "hulahoot_field_swess_enabled": "Include SWESS",
+    "hulahoot_swess_enabled_package_help": "Purchasing this package automatically grants the buyer SWESS access (subject to Admin's usual SWESS configuration for that user).",
     "hulahoot_monthly_credits_help": "Configured amount only - display purposes for now. Credits are not yet earned, spent, or enforced.",
     "hulahoot_industries_help": "Which Hulahoot industries this package is intended for. Leave all unchecked to make it available to every industry.",
     "hulahoot_no_industries_found": "No industries have been added yet. Add one on the Industries page first.",

@@ -124,6 +124,7 @@ class SubscriptionPackageAdmin
             'posting_limit_per_day' => null,
             'posting_limit_per_month' => null,
             'monthly_credits' => 0,
+            'swess_enabled' => 0,
             'is_active' => 0,
         ];
     }
@@ -317,7 +318,7 @@ class SubscriptionPackageAdmin
      * @param array $aData subtitle, description, badge_text, accent_color,
      *        button_text, ordering, purchase_limit, campaign_limit,
      *        posting_limit_per_day, posting_limit_per_month,
-     *        monthly_credits, is_active
+     *        monthly_credits, swess_enabled, is_active
      * @param int[] $aIndustryIds
      * @param string[] $aFeatureTexts in display order - blank entries are
      *        dropped, order in the array becomes the stored ordering
@@ -439,6 +440,7 @@ class SubscriptionPackageAdmin
             'posting_limit_per_day' => $fParseLimit($aData['posting_limit_per_day'] ?? null),
             'posting_limit_per_month' => $fParseLimit($aData['posting_limit_per_month'] ?? null),
             'monthly_credits' => max(0, (int)($aData['monthly_credits'] ?? 0)),
+            'swess_enabled' => !empty($aData['swess_enabled']) ? 1 : 0,
             'is_active' => !empty($aData['is_active']) ? 1 : 0,
         ];
     }

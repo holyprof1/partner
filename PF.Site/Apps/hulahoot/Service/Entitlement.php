@@ -41,9 +41,9 @@ class Entitlement
      *     purchase_id, package_id, package_title (phrase var_name - wrap
      *     in _p()), status, expiry_date,
      *     purchase_limit, campaign_limit, posting_limit_per_day,
-     *     posting_limit_per_month, monthly_credits (all from the
-     *     Hulahoot companion row - null limit = unlimited, matching that
-     *     table's own convention),
+     *     posting_limit_per_month, monthly_credits, swess_enabled (all
+     *     from the Hulahoot companion row - null limit = unlimited,
+     *     matching that table's own convention),
      *     promotions_used, campaigns_used (COUNT()s against whatever
      *     promotion/campaign table Hulahoot eventually creates - both
      *     hardcoded to 0 for now: Phase 2 builds no promotion table yet,
@@ -71,7 +71,7 @@ class Entitlement
             return null;
         }
 
-        $aRules = db()->select('purchase_limit, campaign_limit, posting_limit_per_day, posting_limit_per_month, monthly_credits')
+        $aRules = db()->select('purchase_limit, campaign_limit, posting_limit_per_day, posting_limit_per_month, monthly_credits, swess_enabled')
             ->from(':hulahoot_subscription_package')
             ->where(['package_id' => (int)$aPurchase['package_id'], 'is_active' => 1])
             ->execute('getSlaveRow');

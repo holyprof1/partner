@@ -101,6 +101,24 @@ class Swess extends Table
                 Field::FIELD_PARAM_TYPE_VALUE => 100,
                 Field::FIELD_PARAM_OTHER => 'NULL',
             ],
+            // Soft reference to hulahoot_subscription_package.package_id -
+            // set only when this row exists because Service\Swess::
+            // syncPackageEntitlement() auto-granted it from a qualifying
+            // package purchase (subscribe_package.swess_enabled = 1).
+            // NULL means this row is admin-managed: either an admin
+            // created/edited it directly via AdminCP (Controller\Admin\
+            // SwessWhitelistAddController always clears this back to NULL
+            // on save - see setWhitelist()'s own docblock), or it predates
+            // this column. syncPackageEntitlement() only ever creates a
+            // new row or touches an existing row that already has this set
+            // - an admin-managed row (NULL) is never auto-modified,
+            // regardless of the user's purchase history, so an admin's own
+            // configuration always wins.
+            'granted_by_package_id' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_INT,
+                Field::FIELD_PARAM_TYPE_VALUE => 10,
+                Field::FIELD_PARAM_OTHER => 'UNSIGNED DEFAULT NULL',
+            ],
             // phpfox_user.user_id of the admin who enabled this - display
             // only, never used in any permission check.
             'enabled_by' => [

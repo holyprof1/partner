@@ -63,6 +63,7 @@ class SubscriptionPackageAddController extends Phpfox_Component
                     'posting_limit_per_day' => $req->get('posting_limit_per_day'),
                     'posting_limit_per_month' => $req->get('posting_limit_per_month'),
                     'monthly_credits' => (int)$req->get('monthly_credits'),
+                    'swess_enabled' => $req->get('swess_enabled') ? 1 : 0,
                     'is_active' => $req->get('is_active') ? 1 : 0,
                 ];
                 $selectedIndustryIds = array_map('intval', (array)$req->get('industry_ids', []));

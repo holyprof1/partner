@@ -636,6 +636,14 @@ group('/hulahoot/swess', function () {
         $profileService = new \Apps\Hulahoot\Service\Profile();
         $entitlementService = new \Apps\Hulahoot\Service\Entitlement();
 
+        // Safety net for the native paid-gateway completion path, which
+        // has no Hulahoot hook point - see syncPackageEntitlement()'s own
+        // docblock. The free/admin-preview path already gets this call
+        // immediately at purchase time (PurchaseFlow::completeAsHulahoot()),
+        // so this is a no-op reconciliation on every other page load, not
+        // the only place it happens.
+        $swessService->syncPackageEntitlement($iUserId);
+
         title(_p('hulahoot_swess_dashboard'));
 
         $aWhitelist = $swessService->getWhitelistForUser($iUserId);
@@ -683,6 +691,7 @@ group('/hulahoot/swess', function () {
 
         $iUserId = \Phpfox::getUserId();
         $swessService = new \Apps\Hulahoot\Service\Swess();
+        $swessService->syncPackageEntitlement($iUserId);
 
         $aWhitelist = $swessService->getWhitelistForUser($iUserId);
         if (!$aWhitelist || !(int)$aWhitelist['is_enabled']) {
@@ -782,6 +791,7 @@ group('/hulahoot/swess', function () {
 
         $iUserId = \Phpfox::getUserId();
         $swessService = new \Apps\Hulahoot\Service\Swess();
+        $swessService->syncPackageEntitlement($iUserId);
 
         $aWhitelist = $swessService->getWhitelistForUser($iUserId);
         if (!$aWhitelist || !(int)$aWhitelist['is_enabled']) {
@@ -807,6 +817,7 @@ group('/hulahoot/swess', function () {
 
         $iUserId = \Phpfox::getUserId();
         $swessService = new \Apps\Hulahoot\Service\Swess();
+        $swessService->syncPackageEntitlement($iUserId);
 
         $aWhitelist = $swessService->getWhitelistForUser($iUserId);
         if (!$aWhitelist || !(int)$aWhitelist['is_enabled']) {
@@ -877,6 +888,7 @@ group('/hulahoot/swess', function () {
         $iUserId = \Phpfox::getUserId();
         $swessService = new \Apps\Hulahoot\Service\Swess();
         $entitlementService = new \Apps\Hulahoot\Service\Entitlement();
+        $swessService->syncPackageEntitlement($iUserId);
 
         $aWhitelist = $swessService->getWhitelistForUser($iUserId);
         if (!$aWhitelist || !(int)$aWhitelist['is_enabled']) {

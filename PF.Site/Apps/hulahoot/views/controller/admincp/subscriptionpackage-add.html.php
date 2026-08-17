@@ -187,6 +187,15 @@ defined('PHPFOX') or exit('NO DICE!');
                     <span class="help-block">{_p var='hulahoot_monthly_credits_help'}</span>
                 </div>
             </div>
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label">{_p var='hulahoot_field_swess_enabled'}</label>
+                <div class="col-sm-9">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="swess_enabled" value="1" {if $rules.swess_enabled}checked{/if}> {_p var='hulahoot_swess_enabled_package_help'}
+                    </label>
+                </div>
+            </div>
         </div>
 
         <div class="hulahoot-form-section">

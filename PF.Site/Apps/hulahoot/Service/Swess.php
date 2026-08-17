@@ -109,12 +109,21 @@ class Swess
      *        omitted for "every level allowed")
      * @param int|null $iActorUserId the admin making this change, for the
      *        audit log and enabled_by
+     * @param int|null $iGrantedByPackageId internal use only - never passed
+     *        by an AdminCP caller. Every AdminCP save goes through this
+     *        method with this left at its default (null), which is exactly
+     *        what makes an AdminCP save always win over - and permanently
+     *        clear - any prior auto-grant: the moment an admin explicitly
+     *        saves this screen for a user, granted_by_package_id resets to
+     *        NULL and syncPackageEntitlement() will never touch that row
+     *        again, regardless of what the user goes on to purchase. Only
+     *        syncPackageEntitlement() itself passes a non-null value here.
      *
      * @return int the whitelist_id
      *
      * @throws \InvalidArgumentException if $iUserId doesn't resolve to a real account
      */
-    public function setWhitelist($iUserId, array $aData, $iActorUserId = null)
+    public function setWhitelist($iUserId, array $aData, $iActorUserId = null, $iGrantedByPackageId = null)
     {
         $iUserId = (int)$iUserId;
 
@@ -137,10 +146,12 @@ class Swess
             // matches this table's "NULL = unrestricted" convention, not
             // "nothing allowed".
             'allowed_target_levels' => $aLevels ? implode(',', $aLevels) : null,
+            'granted_by_package_id' => $iGrantedByPackageId ? (int)$iGrantedByPackageId : null,
         ];
 
         $aExisting = $this->getWhitelistForUser($iUserId);
         $iNow = time();
+        $bWasEnabled = $aExisting ? (bool)$aExisting['is_enabled'] : false;
 
         if ($aExisting) {
             db()->update(':hulahoot_swess_whitelist', array_merge($aClean, [
@@ -160,9 +171,94 @@ class Swess
         $this->logAudit($iUserId, null, null, $aClean['is_enabled'] ? 'whitelist_enabled' : 'whitelist_disabled', [
             'post_as_self' => $aClean['post_as_self'],
             'post_as_business' => $aClean['post_as_business'],
+            'granted_by_package_id' => $aClean['granted_by_package_id'],
         ], $iActorUserId);
 
+        // Only notify on an actual enabled/disabled transition, not on
+        // every unrelated field edit (e.g. an admin tweaking Require
+        // Review shouldn't re-notify "SWESS enabled" every time).
+        if ($bWasEnabled !== (bool)$aClean['is_enabled']) {
+            notify('Hulahoot', $aClean['is_enabled'] ? 'whitelist_enabled' : 'whitelist_disabled', $iWhitelistId, $iUserId);
+        }
+
         return $iWhitelistId;
+    }
+
+    /**
+     * Auto-grant/reconcile SWESS access from the user's current active
+     * subscription entitlement, per the SWESS spec's "qualifying package
+     * purchase automatically grants SWESS entitlement" requirement.
+     * Deliberately a lazy, idempotent "pull" (call this and it reconciles
+     * to whatever's currently true) rather than a one-shot "push" fired
+     * only at the instant a purchase completes - see this method's own
+     * call sites for why: Service\PurchaseFlow::completeAsHulahoot() calls
+     * it immediately after a free/admin-preview purchase completes (the
+     * only completion path Hulahoot's own code controls end to end), and
+     * every /hulahoot/swess/* route also calls it on every page load as a
+     * safety net - because a real paid purchase completes entirely inside
+     * native Core_Subscriptions code (RegisterController -> gateway driver
+     * -> Callback::paymentApiCallback() -> Purchase\Process::update()),
+     * which this app deliberately never hooks into or modifies (no safe
+     * plugin hook exists before its side effects run - see
+     * docs/PHASE_3_PAYMENT_GATEWAY.md). Calling this here instead means a
+     * real gateway purchase still ends up with correct SWESS access the
+     * next time the buyer loads any SWESS page, with zero native-app
+     * changes.
+     *
+     * Never touches an admin-managed row (granted_by_package_id IS NULL) -
+     * an admin's own configuration always wins, per the spec's explicit
+     * "Admin must still retain control" requirement. Only ever:
+     * - creates a new auto-granted row when the user has none yet, or
+     * - re-enables/updates a row this method itself created earlier
+     *   (granted_by_package_id IS NOT NULL).
+     *
+     * Grants but deliberately never auto-revokes: if the qualifying
+     * entitlement later expires or the user's active package no longer has
+     * swess_enabled, this method intentionally leaves a previously
+     * auto-granted row exactly as it is rather than disabling it - see
+     * docs/PHASE_3_PAYMENT_GATEWAY.md "Known limitations" for why
+     * (auto-revoke-on-expiry was judged too easy to get wrong silently
+     * pulling access out from under someone mid-use, versus admin-driven
+     * revocation, which remains fully available via Controller\Admin\
+     * SwessWhitelistAddController regardless of how the row was created).
+     *
+     * @param int $iUserId
+     *
+     * @return void
+     */
+    public function syncPackageEntitlement($iUserId)
+    {
+        $iUserId = (int)$iUserId;
+
+        $aEntitlement = (new Entitlement())->getActiveEntitlement($iUserId);
+
+        if (!$aEntitlement || empty($aEntitlement['swess_enabled'])) {
+            return;
+        }
+
+        $aExisting = $this->getWhitelistForUser($iUserId);
+
+        if ($aExisting && $aExisting['granted_by_package_id'] === null) {
+            // Admin-managed row - never touched by auto-grant, even if
+            // it's currently disabled. See method docblock.
+            return;
+        }
+
+        if ($aExisting && (int)$aExisting['is_enabled'] === 1) {
+            // Already enabled by a prior auto-grant (possibly from a
+            // different qualifying package) - nothing to do.
+            return;
+        }
+
+        $this->setWhitelist($iUserId, [
+            'is_enabled' => 1,
+            'post_as_self' => 1,
+            'post_as_business' => $aExisting['post_as_business'] ?? 0,
+            'requires_review' => $aExisting['requires_review'] ?? 0,
+            'allowed_target_levels' => $aExisting && $aExisting['allowed_target_levels']
+                ? explode(',', $aExisting['allowed_target_levels'])
+                : [],
+        ], null, (int)$aEntitlement['package_id']);
     }
 
     /**
@@ -236,8 +332,9 @@ class Swess
      *
      * @return int the approved_identity_id
      *
-     * @throws \InvalidArgumentException if identity_type is invalid, or a 'self'
-     *         identity is given that doesn't belong to $iUserId
+     * @throws \InvalidArgumentException if identity_type is invalid, a 'self'
+     *         identity is given that doesn't belong to $iUserId, or a 'page'
+     *         identity is given that doesn't exist or isn't managed by $iUserId
      */
     public function approveIdentity($iWhitelistId, $iUserId, $sIdentityType, $iIdentityId, $iActorUserId = null)
     {
@@ -263,6 +360,19 @@ class Swess
             }
 
             $iIdentityId = (int)$aProfile['profile_id'];
+        } else {
+            // 'page' - reuses native Pages exactly as documented at the
+            // top of this file: never verify against phpfox_pages/
+            // phpfox_pages_admin directly, always go through the same
+            // isAdmin() check the Pages app itself uses to decide who may
+            // manage a Page. Without this, any integer was silently
+            // accepted as a Page id regardless of who actually owns/
+            // administers it - closes that gap.
+            $aPage = \Phpfox::getService('pages')->getPage($iIdentityId);
+
+            if (!$aPage || !\Phpfox::getService('pages')->isAdmin($aPage, $iUserId)) {
+                throw new \InvalidArgumentException('Page ' . $iIdentityId . ' does not exist or is not managed by user ' . $iUserId . '.');
+            }
         }
 
         $aExisting = db()->select('approved_identity_id')
@@ -292,6 +402,7 @@ class Swess
         }
 
         $this->logAudit($iUserId, $sIdentityType, $iIdentityId, 'identity_approved', [], $iActorUserId);
+        notify('Hulahoot', 'identity_approved', $iApprovedId, $iUserId);
 
         return $iApprovedId;
     }
@@ -318,6 +429,7 @@ class Swess
         ]);
 
         $this->logAudit((int)$aIdentity['user_id'], $aIdentity['identity_type'], (int)$aIdentity['identity_id'], 'identity_revoked', [], $iActorUserId);
+        notify('Hulahoot', 'identity_revoked', (int)$iApprovedIdentityId, (int)$aIdentity['user_id']);
     }
 
     // ---- Tags ------------------------------------------------------------
@@ -728,61 +840,82 @@ class Swess
      *
      * @throws \InvalidArgumentException on any validation failure - identity no
      *         longer approved/enabled, tag not assigned to that identity, target
-     *         level not allowed for this user, or content missing
+     *         level not allowed for this user, or content missing, or the post
+     *         was already submitted by a concurrent request
      */
     public function submitPost($iPostId, $iUserId)
     {
         $iUserId = (int)$iUserId;
-        $aPost = $this->getPostById($iPostId);
 
-        if (!$aPost || (int)$aPost['user_id'] !== $iUserId) {
-            throw new \InvalidArgumentException('Post ' . $iPostId . ' does not belong to user ' . $iUserId . '.');
+        // Named lock scoped to this one post - closes the double-click/
+        // double-submit race: two near-simultaneous requests could both
+        // read status='draft' before either write commits and both
+        // proceed, publishing the same post twice over (and, worse, both
+        // consuming a review slot). Same GET_LOCK/RELEASE_LOCK pattern
+        // Service\PurchaseFlow::initiate() already uses per-package - see
+        // that method's own docblock for why a short wait here is fine.
+        $sLockName = 'hulahoot_swess_post_' . (int)$iPostId;
+        $aLockResult = db()->select("GET_LOCK('" . $sLockName . "', 5) AS locked")->from('DUAL')->execute('getSlaveRow');
+
+        if (empty($aLockResult['locked'])) {
+            throw new \InvalidArgumentException('This post is being submitted already. Please try again.');
         }
 
-        if (!in_array($aPost['status'], ['draft', 'rejected', 'failed'], true)) {
-            throw new \InvalidArgumentException('This post has already been submitted.');
+        try {
+            $aPost = $this->getPostById($iPostId);
+
+            if (!$aPost || (int)$aPost['user_id'] !== $iUserId) {
+                throw new \InvalidArgumentException('Post ' . $iPostId . ' does not belong to user ' . $iUserId . '.');
+            }
+
+            if (!in_array($aPost['status'], ['draft', 'rejected', 'failed'], true)) {
+                throw new \InvalidArgumentException('This post has already been submitted.');
+            }
+
+            if (trim((string)$aPost['content']) === '') {
+                throw new \InvalidArgumentException('This post has no content.');
+            }
+
+            $aCheck = $this->canPostAs($iUserId, $aPost['identity_type'], (int)$aPost['identity_id']);
+            if (!$aCheck['allowed']) {
+                throw new \InvalidArgumentException('This identity is no longer approved to post (' . $aCheck['reason'] . ').');
+            }
+
+            $aAssignedTagIds = array_map('intval', array_column($aCheck['tags'], 'tag_id'));
+            if (empty($aPost['tag_id']) || !in_array((int)$aPost['tag_id'], $aAssignedTagIds, true)) {
+                throw new \InvalidArgumentException('This identity has no matching disclosure tag assigned. Contact an Administrator.');
+            }
+
+            $aWhitelist = $this->getWhitelistForUser($iUserId);
+            $aAllowedLevels = $this->getAllowedTargetLevels($aWhitelist);
+            if (!in_array($aPost['distribution_target_type'], $aAllowedLevels, true)) {
+                throw new \InvalidArgumentException('This target level is not allowed for your account.');
+            }
+
+            if ((bool)$aWhitelist['requires_review']) {
+                $sNewStatus = 'pending';
+            } elseif (!empty($aPost['scheduled_at'])) {
+                $sNewStatus = 'scheduled';
+            } else {
+                $sNewStatus = 'published';
+            }
+
+            db()->update(':hulahoot_swess_post', [
+                'status' => $sNewStatus,
+                'rejection_reason' => null,
+                'updated' => time(),
+            ], ['swess_post_id' => (int)$iPostId]);
+
+            $this->logAudit($iUserId, $aPost['identity_type'], (int)$aPost['identity_id'], 'post_submitted', [
+                'swess_post_id' => (int)$iPostId,
+                'new_status' => $sNewStatus,
+            ]);
+            notify('Hulahoot', 'post_submitted', (int)$iPostId, $iUserId);
+
+            return $this->getPostById($iPostId);
+        } finally {
+            db()->select("RELEASE_LOCK('" . $sLockName . "') AS released")->from('DUAL')->execute('getSlaveRow');
         }
-
-        if (trim((string)$aPost['content']) === '') {
-            throw new \InvalidArgumentException('This post has no content.');
-        }
-
-        $aCheck = $this->canPostAs($iUserId, $aPost['identity_type'], (int)$aPost['identity_id']);
-        if (!$aCheck['allowed']) {
-            throw new \InvalidArgumentException('This identity is no longer approved to post (' . $aCheck['reason'] . ').');
-        }
-
-        $aAssignedTagIds = array_map('intval', array_column($aCheck['tags'], 'tag_id'));
-        if (empty($aPost['tag_id']) || !in_array((int)$aPost['tag_id'], $aAssignedTagIds, true)) {
-            throw new \InvalidArgumentException('This identity has no matching disclosure tag assigned. Contact an Administrator.');
-        }
-
-        $aWhitelist = $this->getWhitelistForUser($iUserId);
-        $aAllowedLevels = $this->getAllowedTargetLevels($aWhitelist);
-        if (!in_array($aPost['distribution_target_type'], $aAllowedLevels, true)) {
-            throw new \InvalidArgumentException('This target level is not allowed for your account.');
-        }
-
-        if ((bool)$aWhitelist['requires_review']) {
-            $sNewStatus = 'pending';
-        } elseif (!empty($aPost['scheduled_at'])) {
-            $sNewStatus = 'scheduled';
-        } else {
-            $sNewStatus = 'published';
-        }
-
-        db()->update(':hulahoot_swess_post', [
-            'status' => $sNewStatus,
-            'rejection_reason' => null,
-            'updated' => time(),
-        ], ['swess_post_id' => (int)$iPostId]);
-
-        $this->logAudit($iUserId, $aPost['identity_type'], (int)$aPost['identity_id'], 'post_submitted', [
-            'swess_post_id' => (int)$iPostId,
-            'new_status' => $sNewStatus,
-        ]);
-
-        return $this->getPostById($iPostId);
     }
 
     /**
@@ -791,27 +924,47 @@ class Swess
      *
      * @return void
      *
-     * @throws \InvalidArgumentException if the post isn't pending
+     * @throws \InvalidArgumentException if the post isn't pending, the actor is
+     *         the post's own author, or a concurrent request already acted on it
      */
     public function approvePost($iPostId, $iActorUserId)
     {
-        $aPost = $this->getPostById($iPostId);
+        $sLockName = 'hulahoot_swess_post_' . (int)$iPostId;
+        $aLockResult = db()->select("GET_LOCK('" . $sLockName . "', 5) AS locked")->from('DUAL')->execute('getSlaveRow');
 
-        if (!$aPost || $aPost['status'] !== 'pending') {
-            throw new \InvalidArgumentException('Only a pending post can be approved.');
+        if (empty($aLockResult['locked'])) {
+            throw new \InvalidArgumentException('This post is being reviewed already. Please try again.');
         }
 
-        $sNewStatus = !empty($aPost['scheduled_at']) ? 'scheduled' : 'published';
+        try {
+            $aPost = $this->getPostById($iPostId);
 
-        db()->update(':hulahoot_swess_post', [
-            'status' => $sNewStatus,
-            'updated' => time(),
-        ], ['swess_post_id' => (int)$iPostId]);
+            if (!$aPost || $aPost['status'] !== 'pending') {
+                throw new \InvalidArgumentException('Only a pending post can be approved.');
+            }
 
-        $this->logAudit((int)$aPost['user_id'], $aPost['identity_type'], (int)$aPost['identity_id'], 'post_approved', [
-            'swess_post_id' => (int)$iPostId,
-            'new_status' => $sNewStatus,
-        ], $iActorUserId);
+            // No existing business rule permits self-approval - an admin
+            // who happens to also be a SWESS publisher must have someone
+            // else review their own submissions.
+            if ((int)$aPost['user_id'] === (int)$iActorUserId) {
+                throw new \InvalidArgumentException('You cannot approve your own post.');
+            }
+
+            $sNewStatus = !empty($aPost['scheduled_at']) ? 'scheduled' : 'published';
+
+            db()->update(':hulahoot_swess_post', [
+                'status' => $sNewStatus,
+                'updated' => time(),
+            ], ['swess_post_id' => (int)$iPostId]);
+
+            $this->logAudit((int)$aPost['user_id'], $aPost['identity_type'], (int)$aPost['identity_id'], 'post_approved', [
+                'swess_post_id' => (int)$iPostId,
+                'new_status' => $sNewStatus,
+            ], $iActorUserId);
+            notify('Hulahoot', 'post_approved', (int)$iPostId, (int)$aPost['user_id']);
+        } finally {
+            db()->select("RELEASE_LOCK('" . $sLockName . "') AS released")->from('DUAL')->execute('getSlaveRow');
+        }
     }
 
     /**
@@ -821,26 +974,48 @@ class Swess
      *
      * @return void
      *
-     * @throws \InvalidArgumentException if the post isn't pending
+     * @throws \InvalidArgumentException if the post isn't pending, no reason was
+     *         given, the actor is the post's own author, or a concurrent request
+     *         already acted on it
      */
     public function rejectPost($iPostId, $sReason, $iActorUserId)
     {
-        $aPost = $this->getPostById($iPostId);
-
-        if (!$aPost || $aPost['status'] !== 'pending') {
-            throw new \InvalidArgumentException('Only a pending post can be rejected.');
+        if (trim((string)$sReason) === '') {
+            throw new \InvalidArgumentException('A rejection reason is required.');
         }
 
-        db()->update(':hulahoot_swess_post', [
-            'status' => 'rejected',
-            'rejection_reason' => trim((string)$sReason) ?: null,
-            'updated' => time(),
-        ], ['swess_post_id' => (int)$iPostId]);
+        $sLockName = 'hulahoot_swess_post_' . (int)$iPostId;
+        $aLockResult = db()->select("GET_LOCK('" . $sLockName . "', 5) AS locked")->from('DUAL')->execute('getSlaveRow');
 
-        $this->logAudit((int)$aPost['user_id'], $aPost['identity_type'], (int)$aPost['identity_id'], 'post_rejected', [
-            'swess_post_id' => (int)$iPostId,
-            'reason' => $sReason,
-        ], $iActorUserId);
+        if (empty($aLockResult['locked'])) {
+            throw new \InvalidArgumentException('This post is being reviewed already. Please try again.');
+        }
+
+        try {
+            $aPost = $this->getPostById($iPostId);
+
+            if (!$aPost || $aPost['status'] !== 'pending') {
+                throw new \InvalidArgumentException('Only a pending post can be rejected.');
+            }
+
+            if ((int)$aPost['user_id'] === (int)$iActorUserId) {
+                throw new \InvalidArgumentException('You cannot reject your own post.');
+            }
+
+            db()->update(':hulahoot_swess_post', [
+                'status' => 'rejected',
+                'rejection_reason' => trim((string)$sReason),
+                'updated' => time(),
+            ], ['swess_post_id' => (int)$iPostId]);
+
+            $this->logAudit((int)$aPost['user_id'], $aPost['identity_type'], (int)$aPost['identity_id'], 'post_rejected', [
+                'swess_post_id' => (int)$iPostId,
+                'reason' => $sReason,
+            ], $iActorUserId);
+            notify('Hulahoot', 'post_rejected', (int)$iPostId, (int)$aPost['user_id']);
+        } finally {
+            db()->select("RELEASE_LOCK('" . $sLockName . "') AS released")->from('DUAL')->execute('getSlaveRow');
+        }
     }
 
     /**
@@ -852,29 +1027,41 @@ class Swess
      *
      * @return void
      *
-     * @throws \InvalidArgumentException if the post doesn't belong to $iUserId or
-     *         isn't in a cancellable status
+     * @throws \InvalidArgumentException if the post doesn't belong to $iUserId,
+     *         isn't in a cancellable status, or a concurrent request already
+     *         acted on it (e.g. an admin approving/rejecting at the same instant)
      */
     public function cancelPost($iPostId, $iUserId)
     {
-        $aPost = $this->getPostById($iPostId);
+        $sLockName = 'hulahoot_swess_post_' . (int)$iPostId;
+        $aLockResult = db()->select("GET_LOCK('" . $sLockName . "', 5) AS locked")->from('DUAL')->execute('getSlaveRow');
 
-        if (!$aPost || (int)$aPost['user_id'] !== (int)$iUserId) {
-            throw new \InvalidArgumentException('Post ' . $iPostId . ' does not belong to user ' . $iUserId . '.');
+        if (empty($aLockResult['locked'])) {
+            throw new \InvalidArgumentException('This post is being updated already. Please try again.');
         }
 
-        if (!in_array($aPost['status'], ['pending', 'approved', 'scheduled'], true)) {
-            throw new \InvalidArgumentException('This post can no longer be cancelled.');
+        try {
+            $aPost = $this->getPostById($iPostId);
+
+            if (!$aPost || (int)$aPost['user_id'] !== (int)$iUserId) {
+                throw new \InvalidArgumentException('Post ' . $iPostId . ' does not belong to user ' . $iUserId . '.');
+            }
+
+            if (!in_array($aPost['status'], ['pending', 'approved', 'scheduled'], true)) {
+                throw new \InvalidArgumentException('This post can no longer be cancelled.');
+            }
+
+            db()->update(':hulahoot_swess_post', [
+                'status' => 'archived',
+                'updated' => time(),
+            ], ['swess_post_id' => (int)$iPostId]);
+
+            $this->logAudit((int)$iUserId, $aPost['identity_type'], (int)$aPost['identity_id'], 'post_cancelled', [
+                'swess_post_id' => (int)$iPostId,
+            ]);
+        } finally {
+            db()->select("RELEASE_LOCK('" . $sLockName . "') AS released")->from('DUAL')->execute('getSlaveRow');
         }
-
-        db()->update(':hulahoot_swess_post', [
-            'status' => 'archived',
-            'updated' => time(),
-        ], ['swess_post_id' => (int)$iPostId]);
-
-        $this->logAudit((int)$iUserId, $aPost['identity_type'], (int)$aPost['identity_id'], 'post_cancelled', [
-            'swess_post_id' => (int)$iPostId,
-        ]);
     }
 
     /**
@@ -946,6 +1133,97 @@ class Swess
             ->where(['p.status' => 'pending'])
             ->order('p.created ASC')
             ->execute('getSlaveRows');
+    }
+
+    /**
+     * Publish every 'scheduled' post whose scheduled_at has arrived -
+     * called from publish-scheduled-swess-posts.php, a standalone CLI
+     * script (its own crontab entry, not phpFox's native phpfox_cron
+     * table) since nothing on this domain currently triggers native cron
+     * at all - see docs/PHASE_3_PAYMENT_GATEWAY.md and that script's own
+     * docblock for why, matching the exact precedent already established
+     * by send-expiry-reminders.php.
+     *
+     * "Publish" here means the same thing it means everywhere else in
+     * this phase (see submitPost()'s docblock): SWESS's own bookkeeping
+     * only, no phpfox_feed row, no call to hulahoot.com. A post that fails
+     * this transition (should never happen today - the transition itself
+     * is just a status flip - but the branch exists so a real future
+     * failure has somewhere correct to go) is marked 'failed' with a
+     * rejection_reason explaining why, rather than left silently stuck as
+     * 'scheduled' forever.
+     *
+     * @return array{published: int[], failed: int[]} the post ids actually
+     *         transitioned, for the cron script's own log line
+     */
+    public function publishDuePosts()
+    {
+        // A single raw WHERE string, not two chained ->where() calls -
+        // this query builder's where() replaces its clause on every call
+        // rather than ANDing them together (confirmed by reading
+        // Phpfox_Database_Driver_Mysql::where() directly), so a second
+        // ->where() call would silently drop the status filter entirely.
+        $aDue = (array)db()->select('*')
+            ->from(':hulahoot_swess_post')
+            ->where("status = 'scheduled' AND scheduled_at <= " . time())
+            ->execute('getSlaveRows');
+
+        $aPublished = [];
+        $aFailed = [];
+
+        foreach ($aDue as $aPost) {
+            $iPostId = (int)$aPost['swess_post_id'];
+
+            // Same per-post lock every other lifecycle transition uses -
+            // a post being cancelled by its owner at the exact instant
+            // this cron runs must not also get published.
+            $sLockName = 'hulahoot_swess_post_' . $iPostId;
+            $aLockResult = db()->select("GET_LOCK('" . $sLockName . "', 5) AS locked")->from('DUAL')->execute('getSlaveRow');
+
+            if (empty($aLockResult['locked'])) {
+                continue;
+            }
+
+            try {
+                // Re-check status under the lock - the row could have
+                // been cancelled between the SELECT above and acquiring
+                // the lock.
+                $aFresh = $this->getPostById($iPostId);
+                if (!$aFresh || $aFresh['status'] !== 'scheduled') {
+                    continue;
+                }
+
+                try {
+                    db()->update(':hulahoot_swess_post', [
+                        'status' => 'published',
+                        'updated' => time(),
+                    ], ['swess_post_id' => $iPostId]);
+
+                    $this->logAudit((int)$aFresh['user_id'], $aFresh['identity_type'], (int)$aFresh['identity_id'], 'post_published', [
+                        'swess_post_id' => $iPostId,
+                    ]);
+                    notify('Hulahoot', 'post_published', $iPostId, (int)$aFresh['user_id']);
+                    $aPublished[] = $iPostId;
+                } catch (\Throwable $e) {
+                    db()->update(':hulahoot_swess_post', [
+                        'status' => 'failed',
+                        'rejection_reason' => substr($e->getMessage(), 0, 255),
+                        'updated' => time(),
+                    ], ['swess_post_id' => $iPostId]);
+
+                    $this->logAudit((int)$aFresh['user_id'], $aFresh['identity_type'], (int)$aFresh['identity_id'], 'post_failed', [
+                        'swess_post_id' => $iPostId,
+                        'reason' => $e->getMessage(),
+                    ]);
+                    notify('Hulahoot', 'post_failed', $iPostId, (int)$aFresh['user_id']);
+                    $aFailed[] = $iPostId;
+                }
+            } finally {
+                db()->select("RELEASE_LOCK('" . $sLockName . "') AS released")->from('DUAL')->execute('getSlaveRow');
+            }
+        }
+
+        return ['published' => $aPublished, 'failed' => $aFailed];
     }
 
     // ---- Internal ------------------------------------------------------

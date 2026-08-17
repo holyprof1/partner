@@ -182,5 +182,62 @@ class Install extends App\App
             'phrase_var_name' => 'hulahoot_my_profiles',
             'ordering' => 5,
         ];
+
+        // SWESS lifecycle notifications, via Core\App\App's declarative
+        // $notifications property - the same extension point Ync_Blogs
+        // uses for its own comment notification ("__comment"), reached at
+        // send time through the global notify($app_id, $key_name, ...)
+        // helper (PF.Base/start.php) rather than a direct call to
+        // Notification_Service_Process, so every SWESS notification
+        // resolves its display copy from here in one place. See
+        // Service/Swess.php's notify() call sites for exactly when each
+        // of these fires.
+        $this->notifications = [
+            'whitelist_enabled' => [
+                'message' => 'Your SWESS access has been enabled',
+                'url' => '/hulahoot/swess',
+                'icon' => 'check-circle',
+            ],
+            'whitelist_disabled' => [
+                'message' => 'Your SWESS access has been disabled',
+                'url' => '/hulahoot/swess',
+                'icon' => 'ban',
+            ],
+            'identity_approved' => [
+                'message' => 'A publishing identity was approved for your SWESS account',
+                'url' => '/hulahoot/swess',
+                'icon' => 'id-badge',
+            ],
+            'identity_revoked' => [
+                'message' => 'A publishing identity was revoked from your SWESS account',
+                'url' => '/hulahoot/swess',
+                'icon' => 'id-badge',
+            ],
+            'post_submitted' => [
+                'message' => 'Your SWESS post was submitted for review',
+                'url' => '/hulahoot/swess/posts',
+                'icon' => 'paper-plane',
+            ],
+            'post_approved' => [
+                'message' => 'Your SWESS post was approved',
+                'url' => '/hulahoot/swess/posts',
+                'icon' => 'check',
+            ],
+            'post_rejected' => [
+                'message' => 'Your SWESS post was rejected',
+                'url' => '/hulahoot/swess/posts',
+                'icon' => 'times',
+            ],
+            'post_published' => [
+                'message' => 'Your scheduled SWESS post was published',
+                'url' => '/hulahoot/swess/posts',
+                'icon' => 'bullhorn',
+            ],
+            'post_failed' => [
+                'message' => 'Your scheduled SWESS post failed to publish',
+                'url' => '/hulahoot/swess/posts',
+                'icon' => 'exclamation-triangle',
+            ],
+        ];
     }
 }

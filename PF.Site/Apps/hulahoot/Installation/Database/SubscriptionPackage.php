@@ -145,6 +145,18 @@ class SubscriptionPackage extends Table
                 Field::FIELD_PARAM_TYPE_VALUE => 10,
                 Field::FIELD_PARAM_OTHER => 'UNSIGNED NOT NULL DEFAULT \'0\'',
             ],
+            // Does purchasing this package grant SWESS access? Read by
+            // Service\Swess::syncPackageEntitlement(), which auto-creates/
+            // enables a SWESS whitelist row for a buyer once their
+            // purchase completes - see that method's own docblock for the
+            // full auto-grant/never-touch-an-admin-owned-row rule. Default
+            // 0: SWESS access is opt-in per package, never implied by
+            // purchasing any package at all.
+            'swess_enabled' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_TINYINT,
+                Field::FIELD_PARAM_TYPE_VALUE => 1,
+                Field::FIELD_PARAM_OTHER => 'UNSIGNED NOT NULL DEFAULT \'0\'',
+            ],
             // A kill switch for Hulahoot's rules specifically, independent
             // of the native package's own is_active - lets an admin
             // disable Hulahoot-side enforcement without touching the
