@@ -368,6 +368,25 @@ class Swess
             // manage a Page. Without this, any integer was silently
             // accepted as a Page id regardless of who actually owns/
             // administers it - closes that gap.
+            //
+            // Core_Pages is CURRENTLY INACTIVE on this install (confirmed
+            // live: Phpfox::isAppActive('Core_Pages') === false) - calling
+            // Phpfox::getService('pages') against an inactive app doesn't
+            // return null/false, it hard-errors ("Calling a Service from
+            // an invalid Module"), which without this guard surfaced as an
+            // uncaught 500 the moment anyone tried to approve a 'page'
+            // identity - discovered by testing this exact path through a
+            // real AdminCP request. This checks first and fails the same
+            // clean, catchable way every other validation failure in this
+            // method already does, with a message that says WHY rather
+            // than a blank server error. Business/Page-identity SWESS
+            // publishing is not usable at all until Core_Pages is
+            // reactivated - that's an existing, pre-SWESS platform state,
+            // not something this fix changes.
+            if (!\Phpfox::isAppActive('Core_Pages')) {
+                throw new \InvalidArgumentException('Business Page identities are unavailable: the native Pages app is not active on this install.');
+            }
+
             $aPage = \Phpfox::getService('pages')->getPage($iIdentityId);
 
             if (!$aPage || !\Phpfox::getService('pages')->isAdmin($aPage, $iUserId)) {
