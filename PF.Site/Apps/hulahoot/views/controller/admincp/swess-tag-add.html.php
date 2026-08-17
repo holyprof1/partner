@@ -14,6 +14,11 @@ defined('PHPFOX') or exit('NO DICE!');
     .hulahoot-admin-form .form-group { margin-bottom: 16px; }
     .hulahoot-admin-form label.control-label { font-weight: 600; }
     .hulahoot-admin-form .help-block { margin-top: 4px; font-size: 12.5px; }
+    .hulahoot-admin-form .form-control:focus { border-color: #000; box-shadow: 0 0 0 3px rgba(0,0,0,.06); }
+    .hulahoot-admin-form button[type=submit] { transition: transform .1s ease, box-shadow .15s ease; }
+    .hulahoot-admin-form button[type=submit]:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,.15); }
+    .hulahoot-header-actions .btn { transition: transform .1s ease, box-shadow .15s ease; }
+    .hulahoot-header-actions .btn:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,.12); }
     .hulahoot-swess-mark {
         display: inline-flex; align-items: center; justify-content: center;
         width: 26px; height: 26px; border-radius: 7px; background: #000; color: #fff;

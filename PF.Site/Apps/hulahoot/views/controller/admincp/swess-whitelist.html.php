@@ -17,9 +17,14 @@ defined('PHPFOX') or exit('NO DICE!');
         color: #767676; font-weight: 600; border-bottom-width: 1px !important;
     }
     .hulahoot-admin-table td { vertical-align: middle !important; }
+    .hulahoot-admin-table tbody tr { transition: background-color .1s ease; }
+    .hulahoot-admin-table.table-striped tbody tr:hover > td { background-color: #f3f3f3 !important; }
     .hulahoot-admin-actions { white-space: nowrap; text-align: right; }
-    .hulahoot-admin-actions .btn { margin-left: 4px; }
+    .hulahoot-admin-actions .btn { margin-left: 4px; transition: transform .1s ease; }
+    .hulahoot-admin-actions .btn:hover { transform: translateY(-1px); }
     .hulahoot-admin-empty { text-align: center; color: #888; padding: 28px 10px !important; }
+    .hulahoot-header-actions .btn { transition: transform .1s ease, box-shadow .15s ease; }
+    .hulahoot-header-actions .btn:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,.12); }
     .hulahoot-swess-mark {
         display: inline-flex; align-items: center; justify-content: center;
         width: 26px; height: 26px; border-radius: 7px; background: #000; color: #fff;
