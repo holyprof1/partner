@@ -81,7 +81,7 @@
                         </button>
                     </form>
 
-                    {% if package.slots_remaining is not null and package.slots_remaining > 1 %}
+                    {% if package.slots_remaining is not null and package.slots_remaining > 1 and not package.default_cost %}
                         <form method="post" action="{{ url('/industry/buy-out') }}" class="hulahoot-package-buyout-form" onsubmit="return confirm('{{ _p('hulahoot_buy_out_confirm_body', {'remaining': package.slots_remaining})|e('js') }}');">
                             <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
                             <input type="hidden" name="package_id" value="{{ package.package_id }}">

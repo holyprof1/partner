@@ -31,6 +31,15 @@ defined('PHPFOX') or exit('NO DICE!');
         display: inline-block; width: 20px; height: 20px; border-radius: 4px;
         vertical-align: middle; margin-left: 8px; border: 1px solid #ccc;
     }
+    .hulahoot-price-tag {
+        display: inline-block; font-size: 18px; font-weight: 700; color: #1a1a1a;
+    }
+    .hulahoot-price-tag.hulahoot-price-free { color: #1e824c; }
+    .hulahoot-billing-cycle {
+        display: inline-block; margin-left: 10px; font-size: 12px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: .03em; color: #767676;
+        background: #f2f2f2; border-radius: 999px; padding: 3px 10px;
+    }
 {/literal}
 </style>
 <div class="hulahoot-admin">
@@ -45,30 +54,61 @@ defined('PHPFOX') or exit('NO DICE!');
         <div class="alert alert-danger">{$error|clean}</div>
     {/if}
 
-    <div class="form-horizontal hulahoot-admin-form">
-        <div class="form-group">
-            <label class="col-sm-3 control-label">{_p var='hulahoot_field_native_package'}</label>
-            <div class="col-sm-9">
-                <p class="form-control-static">
-                    {_p var=$package.title}
-                    {if $package.default_cost}
-                        &mdash; {$package.default_cost} {$package.default_currency_id|clean}
-                    {else}
-                        &mdash; {_p var='hulahoot_free'}
-                    {/if}
-                    {if $package.is_active}
-                        <span class="label label-success">{_p var='hulahoot_active'}</span>
-                    {else}
-                        <span class="label label-default">{_p var='hulahoot_inactive'}</span>
-                    {/if}
-                </p>
-                <span class="help-block">{_p var='hulahoot_native_package_help'}</span>
-            </div>
-        </div>
-    </div>
-
     <form method="post" action="/admincp/hulahoot/subscriptionpackage/edit?id={$package_id}" enctype="multipart/form-data" class="form-horizontal hulahoot-admin-form">
         <input type="hidden" name="hulahoot_token" value="{$csrf_token}">
+
+        <div class="hulahoot-form-section">
+            <p class="hulahoot-form-section-title">{_p var='hulahoot_section_payment'}</p>
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label">{_p var='hulahoot_field_native_package'}</label>
+                <div class="col-sm-9">
+                    <p class="form-control-static">
+                        {_p var=$package.title}
+                        {if $package.is_active}
+                            <span class="label label-success">{_p var='hulahoot_active'}</span>
+                        {else}
+                            <span class="label label-default">{_p var='hulahoot_inactive'}</span>
+                        {/if}
+                    </p>
+                    <span class="help-block">{_p var='hulahoot_native_package_help'}</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label">{_p var='hulahoot_field_price'}</label>
+                <div class="col-sm-9">
+                    <p class="form-control-static">
+                        {if $package.default_cost}
+                            <span class="hulahoot-price-tag">{$package.default_cost} {$package.default_currency_id|clean}</span>
+                            {if $package.recurring_period == 1}
+                                <span class="hulahoot-billing-cycle">{_p var='hulahoot_billing_monthly'}</span>
+                            {elseif $package.recurring_period == 2}
+                                <span class="hulahoot-billing-cycle">{_p var='hulahoot_billing_quarterly'}</span>
+                            {elseif $package.recurring_period == 3}
+                                <span class="hulahoot-billing-cycle">{_p var='hulahoot_billing_biannual'}</span>
+                            {elseif $package.recurring_period == 4}
+                                <span class="hulahoot-billing-cycle">{_p var='hulahoot_billing_yearly'}</span>
+                            {else}
+                                <span class="hulahoot-billing-cycle">{_p var='hulahoot_billing_one_time'}</span>
+                            {/if}
+                        {else}
+                            <span class="hulahoot-price-tag hulahoot-price-free">{_p var='hulahoot_free'}</span>
+                        {/if}
+                    </p>
+                    <span class="help-block">{_p var='hulahoot_price_help'}</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label">{_p var='hulahoot_field_swess_enabled'}</label>
+                <div class="col-sm-9">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="swess_enabled" value="1" {if $rules.swess_enabled}checked{/if}> {_p var='hulahoot_swess_enabled_package_help'}
+                    </label>
+                </div>
+            </div>
+        </div>
 
         <div class="form-group">
             <label class="col-sm-3 control-label">{_p var='hulahoot_field_hulahoot_rules'}</label>
@@ -188,14 +228,6 @@ defined('PHPFOX') or exit('NO DICE!');
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="col-sm-3 control-label">{_p var='hulahoot_field_swess_enabled'}</label>
-                <div class="col-sm-9">
-                    <label class="checkbox-inline">
-                        <input type="checkbox" name="swess_enabled" value="1" {if $rules.swess_enabled}checked{/if}> {_p var='hulahoot_swess_enabled_package_help'}
-                    </label>
-                </div>
-            </div>
         </div>
 
         <div class="hulahoot-form-section">

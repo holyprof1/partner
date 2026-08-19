@@ -181,11 +181,12 @@ class PurchaseFlow
      * meaningful for a package with a real purchase_limit; refuses an
      * unlimited package (nothing to "buy out") or one already at zero.
      *
-     * Only usable today for the same completion path initiate() itself
-     * supports without a real gateway (free, or admin preview) - buying
-     * out several PAID slots through a real payment gateway in one
-     * checkout is a separate, larger feature for whenever a gateway
-     * actually goes live.
+     * Only usable for a free package - buying out several PAID slots
+     * through a real payment gateway in one checkout would need a
+     * per-item checkout step this bulk loop doesn't have, and is a
+     * separate, larger feature. Enforced explicitly below (not just
+     * documented) since Stripe going active made this a real path a
+     * customer could hit, not just a theoretical one.
      *
      * @param int $iUserId
      * @param int $iPackageId
@@ -217,6 +218,22 @@ class PurchaseFlow
 
         if ($aRules['purchase_limit'] === null) {
             throw new \InvalidArgumentException(_p('hulahoot_package_not_limited'));
+        }
+
+        // Buy Out only ever completes a purchase immediately - free, or an
+        // admin preview with no gateway active (see initiate()). Now that a
+        // real gateway (Stripe) is active, a paid package no longer takes
+        // that immediate-complete branch for ANYONE, admin included -
+        // initiate() instead leaves the purchase pending and expects a
+        // single interactive gateway checkout to finish it. This loop has
+        // no such per-item checkout step, so left unguarded it would
+        // silently create N pending, unpaid purchase rows and still report
+        // "success" with a count - a false positive with real money never
+        // collected. Block it here with a clear reason instead, matching
+        // this method's original documented scope (see class docblock).
+        $bFree = ((float)$aPackage['default_cost'] === 0.0);
+        if (!$bFree) {
+            throw new \InvalidArgumentException(_p('hulahoot_buy_out_paid_not_supported'));
         }
 
         $iRemaining = max(0, (int)$aRules['purchase_limit'] - (new Marketplace())->getOccupiedSlotCount($iPackageId));
