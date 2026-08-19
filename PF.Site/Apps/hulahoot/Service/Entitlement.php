@@ -103,4 +103,72 @@ class Entitlement
     {
         return $this->getActiveEntitlement($iUserId) !== null;
     }
+
+    /**
+     * The specific completed, unexpired, swess_enabled purchase that
+     * currently justifies this user's automatic SWESS access - used by
+     * Service\Swess::syncPackageEntitlement() for both granting (which
+     * package_id to record as the auto-grant's source) and revoking
+     * (whether ANY such purchase still exists at all).
+     *
+     * Deliberately not the same query as getActiveEntitlement(): that
+     * method looks only at the user's single MOST RECENT completed
+     * purchase (correct for its own purpose - promotion/campaign limits
+     * come from exactly one active package at a time) and returns null
+     * the moment that one purchase isn't swess_enabled or has expired,
+     * even if an OLDER purchase the user still holds is swess_enabled
+     * and still perfectly valid. Since Hulahoot purchases now routinely
+     * coexist across industries/tiers (see PurchaseFlow.php's own
+     * docblock on native auto-cancel), SWESS access must be decided by
+     * "does ANY currently-active held purchase qualify," not "does the
+     * latest one." Scans every completed purchase, newest first, and
+     * returns the first that hasn't expired - same expiry idiom
+     * getActiveEntitlement() already uses (empty() on expiry_date, so a
+     * still-unreconciled 0 - see Marketplace::reconcilePurchaseTermsForUser() -
+     * is correctly treated as not-yet-expired either way).
+     *
+     * @param int $iUserId
+     *
+     * @return array|null {purchase_id, package_id, expiry_date}
+     */
+    public function getActiveSwessEntitlement($iUserId)
+    {
+        if (!Phpfox::isAppActive('Core_Subscriptions')) {
+            return null;
+        }
+
+        $aPurchases = db()->select('sp.purchase_id, sp.package_id, sp.expiry_date')
+            ->from(':subscribe_purchase', 'sp')
+            ->join(':hulahoot_subscription_package', 'hsp', 'hsp.package_id = sp.package_id')
+            ->where([
+                'sp.user_id' => (int)$iUserId,
+                'sp.status' => 'completed',
+                'hsp.swess_enabled' => 1,
+                'hsp.is_active' => 1,
+            ])
+            ->order('sp.time_stamp DESC')
+            ->execute('getSlaveRows');
+
+        $iNow = time();
+
+        foreach ($aPurchases as $aPurchase) {
+            if (!empty($aPurchase['expiry_date']) && (int)$aPurchase['expiry_date'] < $iNow) {
+                continue;
+            }
+
+            return $aPurchase;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param int $iUserId
+     *
+     * @return bool
+     */
+    public function hasAnyActiveSwessEntitlement($iUserId)
+    {
+        return $this->getActiveSwessEntitlement($iUserId) !== null;
+    }
 }

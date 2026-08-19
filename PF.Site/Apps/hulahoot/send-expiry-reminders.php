@@ -1,9 +1,9 @@
 <?php
 /**
  * Sends renewal reminder emails for every completed purchase currently
- * inside its post-expiry grace window - see Service/ExpiryReminders.php
- * for the full cadence/cap logic (up to 5 reminders, spread across the
- * 30-day grace window).
+ * inside its pre-expiry reminder window OR its post-expiry grace window -
+ * see Service/ExpiryReminders.php for the full cadence/cap logic, all of
+ * it admin-configurable from AdminCP -> Settings -> Hulahoot Profiles.
  *
  * Intended to run once a day via cron - this app has no cron entry point
  * of its own yet (the main hulahoot.com site's crontab points at its own,

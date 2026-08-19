@@ -68,9 +68,67 @@ class Install extends App\App
         $this->version = '1.0.0';
     }
 
+    /**
+     * Subscription term/grace/reminder settings - the confirmed
+     * requirement that "Admin must be able to control the relevant
+     * subscription renewal/expiry/reminder settings from AdminCP" rather
+     * than these staying hardcoded PHP constants. Native App settings
+     * framework (the same one every core app, e.g. Core_Subscriptions,
+     * already uses for its own AdminCP settings) - phpFox auto-builds the
+     * AdminCP edit form from this array on install, no custom controller/
+     * template needed. Read at runtime via Phpfox::getParam('hulahoot.
+     * <var_name>') - see Service\Marketplace::getSubscriptionTermDays()/
+     * getGracePeriodDays() and Service\ExpiryReminders' own settings
+     * getters, all of which fall back to a sane documented default if a
+     * setting is ever somehow unset (e.g. before this app's first
+     * install/upgrade run writes the 'value' below as the actual stored
+     * default).
+     */
     protected function setSettings()
     {
-        // No admin-facing settings in Sprint 2A (database foundation only).
+        $iIndex = 1;
+        $this->settings = [
+            'subscription_term_days' => [
+                'var_name' => 'subscription_term_days',
+                'info' => 'Subscription Term (Days)',
+                'description' => 'How many days a completed Hulahoot package purchase lasts before it expires. Currently 365 (one year) for every qualifying plan.',
+                'type' => '',
+                'value' => '365',
+                'ordering' => $iIndex++,
+            ],
+            'grace_period_days' => [
+                'var_name' => 'grace_period_days',
+                'info' => 'Renewal Grace Period (Days)',
+                'description' => 'After a purchase\'s term ends, how many extra days its slot stays reserved for the holder (with renewal reminders still going out) before it returns to the market for someone else to buy.',
+                'type' => '',
+                'value' => '30',
+                'ordering' => $iIndex++,
+            ],
+            'pre_expiry_reminder_start_days' => [
+                'var_name' => 'pre_expiry_reminder_start_days',
+                'info' => 'Pre-Expiry Reminders Start (Days Before Expiry)',
+                'description' => 'How many days before a subscription expires its first renewal reminder email goes out.',
+                'type' => '',
+                'value' => '30',
+                'ordering' => $iIndex++,
+            ],
+            'pre_expiry_reminder_count' => [
+                'var_name' => 'pre_expiry_reminder_count',
+                'info' => 'Pre-Expiry Reminder Count',
+                'description' => 'How many renewal reminder emails to send in total before a subscription expires, spread evenly across the pre-expiry window above.',
+                'type' => '',
+                'value' => '3',
+                'ordering' => $iIndex++,
+            ],
+            'post_expiry_reminder_count' => [
+                'var_name' => 'post_expiry_reminder_count',
+                'info' => 'Post-Expiry (Grace Period) Reminder Count',
+                'description' => 'How many renewal reminder emails to send in total during the post-expiry grace period above, spread evenly across it.',
+                'type' => '',
+                'value' => '5',
+                'ordering' => $iIndex++,
+            ],
+        ];
     }
 
     protected function setUserGroupSettings()

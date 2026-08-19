@@ -207,20 +207,23 @@ class Swess
      *
      * Never touches an admin-managed row (granted_by_package_id IS NULL) -
      * an admin's own configuration always wins, per the spec's explicit
-     * "Admin must still retain control" requirement. Only ever:
-     * - creates a new auto-granted row when the user has none yet, or
-     * - re-enables/updates a row this method itself created earlier
-     *   (granted_by_package_id IS NOT NULL).
-     *
-     * Grants but deliberately never auto-revokes: if the qualifying
-     * entitlement later expires or the user's active package no longer has
-     * swess_enabled, this method intentionally leaves a previously
-     * auto-granted row exactly as it is rather than disabling it - see
-     * docs/PHASE_3_PAYMENT_GATEWAY.md "Known limitations" for why
-     * (auto-revoke-on-expiry was judged too easy to get wrong silently
-     * pulling access out from under someone mid-use, versus admin-driven
-     * revocation, which remains fully available via Controller\Admin\
-     * SwessWhitelistAddController regardless of how the row was created).
+     * "Admin must still retain control" requirement, and per the current
+     * business rule confirmed directly: manually Admin-granted SWESS does
+     * NOT expire alongside any subscription. Only ever:
+     * - creates a new auto-granted row when the user has none yet,
+     * - re-enables a row this method itself created earlier
+     *   (granted_by_package_id IS NOT NULL) once a qualifying purchase
+     *   exists again, or
+     * - auto-revokes (disables, never deletes) a row it created earlier
+     *   once NO currently-active qualifying purchase remains - see
+     *   Service\Entitlement::getActiveSwessEntitlement()'s own docblock
+     *   for exactly what "currently-active" means (any held purchase,
+     *   not just the most recent), and Marketplace::
+     *   reconcilePurchaseTermsForUser() (called first, below) for why a
+     *   real gateway-paid purchase's expiry_date is trustworthy by the
+     *   time this check runs. This auto-revoke behavior is the
+     *   confirmed, current business rule - a package-granted entitlement
+     *   that genuinely expires must stop being considered active.
      *
      * @param int $iUserId
      *
@@ -230,35 +233,65 @@ class Swess
     {
         $iUserId = (int)$iUserId;
 
-        $aEntitlement = (new Entitlement())->getActiveEntitlement($iUserId);
-
-        if (!$aEntitlement || empty($aEntitlement['swess_enabled'])) {
-            return;
-        }
+        // Every entry point that calls this method already relies on it
+        // to reconcile SWESS state to current truth - folding the
+        // purchase-term fix in here too (rather than adding it
+        // separately at every one of this method's own call sites) means
+        // every existing caller gets a correctly-expired view of this
+        // user's purchases for free. See that method's own docblock for
+        // why this can only be a lazy correction, not a synchronous one.
+        (new Marketplace())->reconcilePurchaseTermsForUser($iUserId);
 
         $aExisting = $this->getWhitelistForUser($iUserId);
 
         if ($aExisting && $aExisting['granted_by_package_id'] === null) {
-            // Admin-managed row - never touched by auto-grant, even if
-            // it's currently disabled. See method docblock.
+            // Admin-managed row - never touched by auto-grant OR
+            // auto-revoke, even if it's currently disabled/enabled. See
+            // method docblock.
             return;
         }
 
+        $aSwessEntitlement = (new Entitlement())->getActiveSwessEntitlement($iUserId);
+
+        if ($aSwessEntitlement) {
+            if ($aExisting && (int)$aExisting['is_enabled'] === 1) {
+                // Already enabled by a prior auto-grant (possibly from a
+                // different qualifying package) - nothing to do.
+                return;
+            }
+
+            $this->setWhitelist($iUserId, [
+                'is_enabled' => 1,
+                'post_as_self' => 1,
+                'post_as_business' => $aExisting['post_as_business'] ?? 0,
+                'requires_review' => $aExisting['requires_review'] ?? 0,
+                'allowed_target_levels' => $aExisting && $aExisting['allowed_target_levels']
+                    ? explode(',', $aExisting['allowed_target_levels'])
+                    : [],
+            ], null, (int)$aSwessEntitlement['package_id']);
+
+            return;
+        }
+
+        // No currently-active qualifying purchase. Only something to do
+        // if a PRIOR auto-grant is still sitting enabled - a row that's
+        // already disabled, or that never existed, needs nothing.
         if ($aExisting && (int)$aExisting['is_enabled'] === 1) {
-            // Already enabled by a prior auto-grant (possibly from a
-            // different qualifying package) - nothing to do.
-            return;
+            $this->setWhitelist($iUserId, [
+                'is_enabled' => 0,
+                'post_as_self' => $aExisting['post_as_self'],
+                'post_as_business' => $aExisting['post_as_business'],
+                'requires_review' => $aExisting['requires_review'],
+                'allowed_target_levels' => $aExisting['allowed_target_levels']
+                    ? explode(',', $aExisting['allowed_target_levels'])
+                    : [],
+                // Preserves the existing granted_by_package_id (passed
+                // back in below, not left null) - keeps this row tagged
+                // as auto-managed, so a later renewal correctly
+                // re-enables it via the branch above instead of being
+                // silently ignored as "admin-managed".
+            ], null, (int)$aExisting['granted_by_package_id']);
         }
-
-        $this->setWhitelist($iUserId, [
-            'is_enabled' => 1,
-            'post_as_self' => 1,
-            'post_as_business' => $aExisting['post_as_business'] ?? 0,
-            'requires_review' => $aExisting['requires_review'] ?? 0,
-            'allowed_target_levels' => $aExisting && $aExisting['allowed_target_levels']
-                ? explode(',', $aExisting['allowed_target_levels'])
-                : [],
-        ], null, (int)$aEntitlement['package_id']);
     }
 
     /**

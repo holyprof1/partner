@@ -513,7 +513,10 @@ class PurchaseFlow
      * anchor's real expiry_date isn't reliably readable yet at that
      * point; hard-coding the value native code is guaranteed to compute
      * anyway sidesteps that ordering entirely rather than risking a
-     * stale read.
+     * stale read. Marketplace::reconcilePurchaseTermsForUser() later
+     * corrects this row's expiry_date=0 to its real term from time_stamp
+     * (set below), the exact same lazy fix it applies to the anchor
+     * itself - see that method's own docblock.
      *
      * @param int $iPackageId
      * @param int $iUserId
@@ -600,7 +603,7 @@ class PurchaseFlow
         db()->update(':user_field', ['subscribe_id' => '0'], 'user_id = ' . $iUserId);
 
         $sTransactionId = Phpfox::getService('subscribe.helper')->generateTransactionId();
-        $iExpiryDate = time() + (Marketplace::SUBSCRIPTION_TERM_DAYS * 86400);
+        $iExpiryDate = time() + (Marketplace::getSubscriptionTermDays() * 86400);
 
         Phpfox::getService('subscribe.purchase.process')->addRecentPurchase([
             'purchase_id' => $iPurchaseId,

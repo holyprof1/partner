@@ -927,6 +927,15 @@ group('/find-your-industry', function () {
         // sync). Cheap no-op for a buyer with nothing pending.
         (new \Apps\Hulahoot\Service\PurchaseFlow())->expandAllPendingBuyouts(\Phpfox::getUserId());
 
+        // Same lazy-pull correction as Service\Swess::syncPackageEntitlement()
+        // already runs internally - see Service\Marketplace::
+        // reconcilePurchaseTermsForUser()'s own docblock for why a real
+        // gateway-paid purchase needs this at all. Harmless to also run
+        // it here directly: keeps slot-count/entitlement reads on this
+        // browsing surface correct even for a user who never visits a
+        // SWESS page.
+        (new \Apps\Hulahoot\Service\Marketplace())->reconcilePurchaseTermsForUser(\Phpfox::getUserId());
+
         $service = new \Apps\Hulahoot\Service\Marketplace();
 
         title(_p('hulahoot_find_your_industry'));
@@ -943,8 +952,9 @@ group('/industry', function () {
     route('/', function () {
         auth()->membersOnly();
 
-        // See /find-your-industry's own copy of this call for why.
+        // See /find-your-industry's own copy of these calls for why.
         (new \Apps\Hulahoot\Service\PurchaseFlow())->expandAllPendingBuyouts(\Phpfox::getUserId());
+        (new \Apps\Hulahoot\Service\Marketplace())->reconcilePurchaseTermsForUser(\Phpfox::getUserId());
 
         $service = new \Apps\Hulahoot\Service\Marketplace();
         $sSlug = (string)request()->get('slug');
