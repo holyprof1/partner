@@ -149,6 +149,13 @@ class Install extends App\App
             'SubscriptionPackage',
             'SubscriptionPackageIndustry',
             'SubscriptionPackageFeature',
+            // Anchors a paid package's aggregated "Buy Out Remaining
+            // Slots" purchase (Buyout before Slot - Slot soft-references
+            // Buyout's own purchase_id) - see Installation/Database/
+            // PurchaseBuyout.php's own docblock for why native Core
+            // Subscriptions needs this help.
+            'PurchaseBuyout',
+            'PurchaseBuyoutSlot',
             'PackageTemplate',
             'ExpiryReminder',
             // SWESS foundation (Partner Portal architecture phase only -

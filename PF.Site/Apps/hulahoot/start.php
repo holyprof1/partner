@@ -920,6 +920,13 @@ group('/find-your-industry', function () {
     route('/', function () {
         auth()->membersOnly();
 
+        // Lazy safety-net for any Buy Out purchase that completed but
+        // hasn't finished expanding into its full slot_count yet (see
+        // Service\PurchaseFlow::expandAllPendingBuyouts()'s own docblock -
+        // same established pattern as Service\Swess's lazy entitlement
+        // sync). Cheap no-op for a buyer with nothing pending.
+        (new \Apps\Hulahoot\Service\PurchaseFlow())->expandAllPendingBuyouts(\Phpfox::getUserId());
+
         $service = new \Apps\Hulahoot\Service\Marketplace();
 
         title(_p('hulahoot_find_your_industry'));
@@ -935,6 +942,9 @@ group('/industry', function () {
 
     route('/', function () {
         auth()->membersOnly();
+
+        // See /find-your-industry's own copy of this call for why.
+        (new \Apps\Hulahoot\Service\PurchaseFlow())->expandAllPendingBuyouts(\Phpfox::getUserId());
 
         $service = new \Apps\Hulahoot\Service\Marketplace();
         $sSlug = (string)request()->get('slug');
@@ -992,9 +1002,13 @@ group('/industry', function () {
     });
 
     // POST /industry/buy-out - "Buy Out Remaining Slots" on a limited
-    // package's card. Only meaningful today for the same free/admin-
-    // preview completion path /subscribe itself supports without a real
-    // gateway - see PurchaseFlow::buyOutRemainingSlots()'s own docblock.
+    // package's card. Free package: completes immediately, same as
+    // before. Paid package: PurchaseFlow::buyOutRemainingSlots() creates
+    // ONE aggregated purchase (real total for every remaining slot) and
+    // leaves it pending - hand off to the native gateway-selection page
+    // exactly like a normal single purchase; hooks/subscribe.
+    // component_controller_register__1.php makes sure the buyer is
+    // actually charged the full aggregated amount there.
     route('/buy-out', function () {
         auth()->membersOnly();
 
@@ -1016,7 +1030,11 @@ group('/industry', function () {
             return url()->send('/industry', ['slug' => $sIndustrySlug], $e->getMessage());
         }
 
-        return url()->send('/industry', ['slug' => $sIndustrySlug], _p('hulahoot_buy_out_success', ['count' => $aResult['completed_count']]));
+        if ($aResult['completed']) {
+            return url()->send('/industry', ['slug' => $sIndustrySlug], _p('hulahoot_buy_out_success', ['count' => $aResult['completed_count']]));
+        }
+
+        return url()->send('subscribe.register', ['id' => $aResult['purchase_id']]);
     });
 
 });

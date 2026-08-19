@@ -142,3 +142,37 @@ if (!defined('PHPFOX_INSTALLER') && isset($sStatus) && $sStatus === 'completed' 
         );
     }
 }
+
+/**
+ * Buy Out expansion trigger (separate concern from the restore logic
+ * above - this runs regardless of whether $aCurrentActiveSubscriptions
+ * was empty, e.g. a buyer's very first purchase). If the purchase that
+ * JUST completed is a Hulahoot "Buy Out Remaining Slots" aggregated
+ * anchor (hulahoot_purchase_buyout - see Service\PurchaseFlow::
+ * buyOutRemainingSlots()'s own docblock), this is the earliest possible
+ * moment to expand it into its full slot_count of completed purchase
+ * rows - synchronously, inside the very same webhook request that
+ * confirmed payment, rather than waiting for the buyer's next page load.
+ *
+ * $bAssumeCompleted=true is passed deliberately: at this exact point,
+ * native update() hasn't yet written $iPurchaseId's own 'completed'
+ * status to the database (that write happens a few lines AFTER this
+ * hook point) - $sStatus is what's about to be written, so
+ * expandCompletedBuyout() is told to trust it rather than re-reading a
+ * still-stale row. See that method's own docblock for the full
+ * resumable/idempotent expansion design, and start.php's /industry and
+ * /find-your-industry routes for the lazy safety-net sweep that finishes
+ * the job later if this synchronous attempt never ran or was
+ * interrupted (a crash, a timeout, anything) - expandCompletedBuyout()
+ * itself guarantees neither path can ever create duplicate or excess
+ * rows, however many times or wherever it's invoked.
+ */
+if (!defined('PHPFOX_INSTALLER') && isset($sStatus) && $sStatus === 'completed' && isset($iPurchaseId)) {
+    try {
+        (new \Apps\Hulahoot\Service\PurchaseFlow())->expandCompletedBuyout((int)$iPurchaseId, true);
+    } catch (\Throwable $eExpand) {
+        Phpfox::getLog('hulahoot.log')->error(
+            'Hulahoot buy-out expansion trigger: failed for purchase ' . (int)$iPurchaseId . ': ' . $eExpand->getMessage()
+        );
+    }
+}
