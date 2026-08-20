@@ -330,6 +330,27 @@ class Swess
     // ---- Approved identities --------------------------------------------
 
     /**
+     * @param int $iApprovedIdentityId
+     *
+     * @return array|false the raw hulahoot_swess_approved_identity row
+     *         (no tags attached - see getApprovedIdentities() for that),
+     *         or false if it doesn't exist. Exists so callers - notably
+     *         Controller\Admin\SwessWhitelistAddController's revoke_identity/
+     *         assign_tag/unassign_tag actions - can confirm which
+     *         whitelist_id an approved_identity_id actually belongs to
+     *         before acting on it, rather than trusting a request param
+     *         that a tampered form could point at a different whitelist
+     *         entry entirely.
+     */
+    public function getApprovedIdentityById($iApprovedIdentityId)
+    {
+        return db()->select('*')
+            ->from(':hulahoot_swess_approved_identity')
+            ->where(['approved_identity_id' => (int)$iApprovedIdentityId])
+            ->execute('getSlaveRow');
+    }
+
+    /**
      * @param int $iWhitelistId
      *
      * @return array each row plus its assigned tags (see getTagsForIdentity())
@@ -1276,6 +1297,93 @@ class Swess
         }
 
         return ['published' => $aPublished, 'failed' => $aFailed];
+    }
+
+    // ---- Main Hulahoot hand-off ------------------------------------------
+
+    /**
+     * The clean internal read boundary for the eventual main-Hulahoot
+     * publishing pipeline: everything it will need to actually publish
+     * one SWESS post, assembled in a single call rather than requiring
+     * that future integration to know which several tables/services to
+     * query itself (post row, resolved identity, resolved tag, target,
+     * scheduling, and the entitlement snapshot that justified it).
+     *
+     * Deliberately read-only, side-effect-free, and internal-only - this
+     * is the SHAPE of the hand-off contract, not a real API and not the
+     * publishing pipeline itself, which belongs to main Hulahoot and is
+     * explicitly out of scope here (see docs on why this app never fakes
+     * a Hulahoot API or calls hulahoot.com directly).
+     *
+     * Only ever returns a payload for a post actually in a publish-
+     * eligible status ('published' or 'scheduled' - scheduled carries
+     * its own scheduled_at for the pipeline to respect) - every other
+     * status (draft/pending/rejected/failed/cancelled/archived) returns
+     * null, since none of those represent something ready to hand off.
+     *
+     * @param int $iPostId
+     *
+     * @return array|null null if the post doesn't exist or isn't
+     *         publish-eligible, else:
+     *         {
+     *             post_id, user_id, status, content, created, updated,
+     *             identity: {type: 'self'|'page', id, profile?: hulahoot_profile
+     *                 row (identity_type='self'), page?: native Page row or
+     *                 null (identity_type='page', only resolved while
+     *                 Core_Pages is active)},
+     *             tag: {tag_id, name, description}|null,
+     *             target: {type, value, label} (distribution_target_*,
+     *                 unchanged - value is null today, see
+     *                 distribution_target_value's own docblock on why:
+     *                 the composer doesn't populate it yet, pending the
+     *                 main Hulahoot Location & Context Service),
+     *             scheduled_at: int|null,
+     *             entitlement: Service\Entitlement::getActiveEntitlement()'s
+     *                 snapshot for this post's user at hand-off time
+     *         }
+     */
+    public function getPublishPayload($iPostId)
+    {
+        $aPost = $this->getPostById($iPostId);
+
+        if (!$aPost || !in_array($aPost['status'], ['published', 'scheduled'], true)) {
+            return null;
+        }
+
+        $aIdentity = [
+            'type' => $aPost['identity_type'],
+            'id' => (int)$aPost['identity_id'],
+        ];
+
+        if ($aPost['identity_type'] === 'self') {
+            $aIdentity['profile'] = (new Profile())->getById((int)$aPost['identity_id']) ?: null;
+        } elseif ($aPost['identity_type'] === 'page' && \Phpfox::isAppActive('Core_Pages')) {
+            $aIdentity['page'] = \Phpfox::getService('pages')->getPage((int)$aPost['identity_id']) ?: null;
+        }
+
+        $aTag = $aPost['tag_id'] ? $this->getTagById((int)$aPost['tag_id']) : null;
+
+        return [
+            'post_id' => (int)$aPost['swess_post_id'],
+            'user_id' => (int)$aPost['user_id'],
+            'status' => $aPost['status'],
+            'content' => $aPost['content'],
+            'identity' => $aIdentity,
+            'tag' => $aTag ? [
+                'tag_id' => (int)$aTag['tag_id'],
+                'name' => $aTag['name'],
+                'description' => $aTag['description'],
+            ] : null,
+            'target' => [
+                'type' => $aPost['distribution_target_type'],
+                'value' => $aPost['distribution_target_value'],
+                'label' => $aPost['distribution_target_label'],
+            ],
+            'scheduled_at' => $aPost['scheduled_at'] !== null ? (int)$aPost['scheduled_at'] : null,
+            'created' => (int)$aPost['created'],
+            'updated' => (int)$aPost['updated'],
+            'entitlement' => (new Entitlement())->getActiveEntitlement((int)$aPost['user_id']),
+        ];
     }
 
     // ---- Internal ------------------------------------------------------

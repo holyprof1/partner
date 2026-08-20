@@ -97,12 +97,14 @@ class SwessWhitelistAddController extends Phpfox_Component
                             break;
 
                         case 'revoke_identity':
+                            $this->assertIdentityBelongsToWhitelist((int)$req->get('approved_identity_id'), $iWhitelistId, $service);
                             $service->revokeIdentity((int)$req->get('approved_identity_id'), $iActorUserId);
 
                             $this->url()->send('/admincp/hulahoot/swess/whitelist/add', ['id' => $iWhitelistId], _p('hulahoot_swess_identity_revoked'));
                             break;
 
                         case 'assign_tag':
+                            $this->assertIdentityBelongsToWhitelist((int)$req->get('approved_identity_id'), $iWhitelistId, $service);
                             $service->assignTag(
                                 (int)$req->get('approved_identity_id'),
                                 (int)$req->get('tag_id'),
@@ -113,6 +115,7 @@ class SwessWhitelistAddController extends Phpfox_Component
                             break;
 
                         case 'unassign_tag':
+                            $this->assertIdentityBelongsToWhitelist((int)$req->get('approved_identity_id'), $iWhitelistId, $service);
                             $service->unassignTag((int)$req->get('approved_identity_id'), (int)$req->get('tag_id'));
 
                             $this->url()->send('/admincp/hulahoot/swess/whitelist/add', ['id' => $iWhitelistId], _p('hulahoot_swess_tag_removed'));
@@ -146,5 +149,34 @@ class SwessWhitelistAddController extends Phpfox_Component
     public function clean()
     {
         (($sPlugin = Phpfox_Plugin::get('hulahoot.component_controller_admincp_swess_whitelist_add_clean')) ? eval($sPlugin) : false);
+    }
+
+    /**
+     * revoke_identity/assign_tag/unassign_tag all take approved_identity_id
+     * straight from the POST body - without this check, a tampered form
+     * field lets whatever whitelist entry is currently on screen mutate
+     * a DIFFERENT user's approved identity/tags, since none of Service\
+     * Swess's own revokeIdentity()/assignTag()/unassignTag() validate
+     * ownership against a whitelist_id (they only confirm the identity
+     * row itself exists). Confirmed during a security audit - fixed
+     * here rather than in the service, since "does this identity belong
+     * to the whitelist entry I'm currently editing" is specifically this
+     * one-entry-per-screen controller's own concern, not a rule every
+     * caller of the service needs enforced on their behalf.
+     *
+     * @param int $iApprovedIdentityId
+     * @param int $iWhitelistId
+     * @param \Apps\Hulahoot\Service\Swess $service
+     *
+     * @throws \InvalidArgumentException if the identity doesn't exist or
+     *         belongs to a different whitelist entry
+     */
+    private function assertIdentityBelongsToWhitelist($iApprovedIdentityId, $iWhitelistId, \Apps\Hulahoot\Service\Swess $service)
+    {
+        $aIdentity = $service->getApprovedIdentityById($iApprovedIdentityId);
+
+        if (!$aIdentity || (int)$aIdentity['whitelist_id'] !== (int)$iWhitelistId) {
+            throw new \InvalidArgumentException(_p('hulahoot_swess_identity_not_found'));
+        }
     }
 }

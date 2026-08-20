@@ -731,8 +731,25 @@ group('/hulahoot/swess', function () {
 
                 $sScheduledLocal = trim((string)request()->get('scheduled_at'));
                 if ($sScheduledLocal !== '') {
-                    $iTs = strtotime($sScheduledLocal);
-                    $aData['scheduled_at'] = $iTs ?: null;
+                    // <input type="datetime-local"> submits a timezone-free
+                    // wall-clock string. Interpreting it with plain
+                    // strtotime() resolves against the SERVER's default
+                    // timezone, not the publisher's own phpFox account
+                    // timezone (Phpfox::getLib('date')->getTimeZone() - the
+                    // same native offset this app already uses elsewhere,
+                    // e.g. the audit-history display below) - wrong for
+                    // any publisher not in the server's own timezone.
+                    // Correction: treat the submitted string's clock digits
+                    // as UTC (strtotime(...' UTC') - immune to server tz),
+                    // then shift by the user's own offset to land on the
+                    // real UTC instant their wall-clock reading meant.
+                    $iAsIfUtc = strtotime($sScheduledLocal . ' UTC');
+                    if ($iAsIfUtc) {
+                        $fOffsetHours = (float)Phpfox::getLib('date')->getTimeZone(true);
+                        $aData['scheduled_at'] = $iAsIfUtc - (int)round($fOffsetHours * 3600);
+                    } else {
+                        $aData['scheduled_at'] = null;
+                    }
                 }
 
                 try {
@@ -763,13 +780,12 @@ group('/hulahoot/swess', function () {
         }
 
         // <input type="datetime-local"> needs "YYYY-MM-DDTHH:MM" in the
-        // browser's local time - $aPost['scheduled_at'] is a plain unix
-        // timestamp (see Installation/Database/SwessPost.php), so this is
-        // display-only prefill, not a timezone-aware round trip; the
-        // value submitted back is re-parsed with strtotime() above exactly
-        // like a fresh entry.
+        // publisher's own phpFox account timezone - the exact inverse of
+        // the parse above (gmdate(), not date(), so this is never
+        // affected by the server's own default timezone setting either).
         if ($aPost && !empty($aPost['scheduled_at'])) {
-            $aPost['scheduled_at_local'] = date('Y-m-d\TH:i', (int)$aPost['scheduled_at']);
+            $fOffsetHours = (float)Phpfox::getLib('date')->getTimeZone(true);
+            $aPost['scheduled_at_local'] = gmdate('Y-m-d\TH:i', (int)$aPost['scheduled_at'] + (int)round($fOffsetHours * 3600));
         }
 
         return view('swess-composer.html', [
