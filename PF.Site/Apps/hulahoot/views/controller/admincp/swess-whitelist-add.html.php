@@ -221,6 +221,7 @@ defined('PHPFOX') or exit('NO DICE!');
 </div>
 {if !$owner}
 <script>
+{literal}
 (function () {
     var input = document.getElementById('hulahoot_swess_user_lookup');
     var hiddenId = document.getElementById('hulahoot_swess_user_lookup_id');
@@ -243,7 +244,7 @@ defined('PHPFOX') or exit('NO DICE!');
         if (!users.length) {
             var empty = document.createElement('div');
             empty.className = 'hulahoot-swess-user-search-empty';
-            empty.textContent = '{_p var="hulahoot_swess_search_no_results" phpfox_squote=true}';
+            empty.textContent = '{/literal}{_p var="hulahoot_swess_search_no_results" phpfox_squote=true}{literal}';
             results.appendChild(empty);
             results.classList.add('is-open');
             return;
@@ -324,5 +325,6 @@ defined('PHPFOX') or exit('NO DICE!');
         }
     });
 })();
+{/literal}
 </script>
 {/if}

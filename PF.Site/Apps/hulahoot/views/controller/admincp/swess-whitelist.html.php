@@ -62,6 +62,11 @@ defined('PHPFOX') or exit('NO DICE!');
                     <td>{if $aEntry.post_as_business}{_p var='hulahoot_yes'}{else}{_p var='hulahoot_no'}{/if}</td>
                     <td class="hulahoot-admin-actions">
                         <a href="/admincp/hulahoot/swess/whitelist/add?id={$aEntry.whitelist_id}" class="btn btn-default btn-sm">{_p var='hulahoot_edit'}</a>
+                        <form method="post" action="/admincp/hulahoot/swess/whitelist/add?id={$aEntry.whitelist_id}" style="display:inline;" onsubmit="return confirm('{_p var='hulahoot_confirm_delete_swess_whitelist' phpfox_squote=true}');">
+                            <input type="hidden" name="hulahoot_token" value="{$csrf_token}">
+                            <input type="hidden" name="do" value="delete_whitelist">
+                            <button type="submit" class="btn btn-danger btn-sm">{_p var='hulahoot_delete'}</button>
+                        </form>
                     </td>
                 </tr>
             {foreachelse}

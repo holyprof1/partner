@@ -69,6 +69,7 @@ defined('PHPFOX') or exit('NO DICE!');
     {/foreach}
 </div>
 <script>
+{literal}
 (function () {
     // Disable BOTH forms in a queue card the instant either one is
     // submitted - the server's per-post GET_LOCK already prevents a
@@ -91,4 +92,5 @@ defined('PHPFOX') or exit('NO DICE!');
         })(cards[i]);
     }
 })();
+{/literal}
 </script>
