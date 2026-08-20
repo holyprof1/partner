@@ -66,11 +66,28 @@ class SwessWhitelistAddController extends Phpfox_Component
                             $iUserId = (int)($aOwner['user_id'] ?? 0);
 
                             if (!$iUserId) {
-                                $aFound = $service->findUserByUsernameOrEmail((string)$req->get('user_lookup'));
-                                if (!$aFound) {
-                                    throw new \InvalidArgumentException(_p('hulahoot_swess_user_not_found'));
+                                // Set by the type-ahead when an admin clicks a
+                                // suggestion (see swess-whitelist-add.html.php's
+                                // inline script) - takes priority since it
+                                // names an exact user_id, sidestepping the
+                                // exact-string-match requirement of
+                                // findUserByUsernameOrEmail() below that was
+                                // the actual cause of "user not found" reports
+                                // for anyone who typed a close-but-not-exact
+                                // username/email. Falls back to the text
+                                // lookup for anyone submitting without
+                                // JavaScript / without picking a suggestion.
+                                $iLookupId = (int)$req->get('user_lookup_id');
+
+                                if ($iLookupId) {
+                                    $iUserId = $iLookupId;
+                                } else {
+                                    $aFound = $service->findUserByUsernameOrEmail((string)$req->get('user_lookup'));
+                                    if (!$aFound) {
+                                        throw new \InvalidArgumentException(_p('hulahoot_swess_user_not_found'));
+                                    }
+                                    $iUserId = (int)$aFound['user_id'];
                                 }
-                                $iUserId = (int)$aFound['user_id'];
                             }
 
                             $iSavedId = $service->setWhitelist($iUserId, [
@@ -119,6 +136,12 @@ class SwessWhitelistAddController extends Phpfox_Component
                             $service->unassignTag((int)$req->get('approved_identity_id'), (int)$req->get('tag_id'));
 
                             $this->url()->send('/admincp/hulahoot/swess/whitelist/add', ['id' => $iWhitelistId], _p('hulahoot_swess_tag_removed'));
+                            break;
+
+                        case 'delete_whitelist':
+                            $service->deleteWhitelist($iWhitelistId, $iActorUserId);
+
+                            $this->url()->send('/admincp/hulahoot/swess/whitelist', [], _p('hulahoot_swess_whitelist_deleted'));
                             break;
                     }
                 } catch (\InvalidArgumentException $e) {

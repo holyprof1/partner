@@ -563,6 +563,30 @@ group('/admincp/hulahoot', function () {
         return 'controller';
     });
 
+    // GET /admincp/hulahoot/swess/whitelist/search-users?q=X - backs the
+    // "Add to Whitelist" type-ahead (swess-whitelist-add.html.php's inline
+    // script). Plain JSON, not a Phpfox_Ajax component - simplest fit for
+    // "return matching rows for a text box", and this route group already
+    // sits behind auth()->isAdmin(true) the same as every other AdminCP
+    // route here. Never touches CSRF/session state, so no token needed for
+    // this read-only lookup.
+    route('/swess/whitelist/search-users', function () {
+        auth()->isAdmin(true);
+
+        $aUsers = (new \Apps\Hulahoot\Service\Swess())->searchUsers((string)request()->get('q'));
+
+        header('Content-Type: application/json');
+        echo json_encode(array_map(function ($aUser) {
+            return [
+                'user_id' => (int)$aUser['user_id'],
+                'user_name' => $aUser['user_name'],
+                'full_name' => $aUser['full_name'],
+                'email' => $aUser['email'],
+            ];
+        }, $aUsers));
+        exit;
+    });
+
     route('/swess/tag', function () {
         auth()->isAdmin(true);
         \Phpfox::getLib('module')->dispatch('hulahoot.admincp.swess-tag');

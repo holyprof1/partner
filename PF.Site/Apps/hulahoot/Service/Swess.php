@@ -185,6 +185,45 @@ class Swess
     }
 
     /**
+     * Delete a whitelist entry outright, along with its approved
+     * identities and their tag assignments - nothing else in this schema
+     * references whitelist_id, so there's no orphaning risk the way
+     * Profile Type/Category deletes have to guard against (see
+     * DatabaseSchema.md's "no DB FK, guard in service layer" convention -
+     * this table just has nothing downstream to guard).
+     *
+     * @param int $iWhitelistId
+     * @param int|null $iActorUserId the admin doing this, for the audit log
+     *
+     * @return void
+     *
+     * @throws \InvalidArgumentException if the whitelist entry doesn't exist
+     */
+    public function deleteWhitelist($iWhitelistId, $iActorUserId = null)
+    {
+        $iWhitelistId = (int)$iWhitelistId;
+        $aWhitelist = $this->getWhitelistById($iWhitelistId);
+
+        if (!$aWhitelist) {
+            throw new \InvalidArgumentException('Whitelist entry ' . $iWhitelistId . ' does not exist.');
+        }
+
+        $aIdentities = (array)db()->select('approved_identity_id')
+            ->from(':hulahoot_swess_approved_identity')
+            ->where(['whitelist_id' => $iWhitelistId])
+            ->execute('getSlaveRows');
+
+        foreach ($aIdentities as $aIdentity) {
+            db()->delete(':hulahoot_swess_identity_tag', ['approved_identity_id' => (int)$aIdentity['approved_identity_id']]);
+        }
+
+        db()->delete(':hulahoot_swess_approved_identity', ['whitelist_id' => $iWhitelistId]);
+        db()->delete(':hulahoot_swess_whitelist', ['whitelist_id' => $iWhitelistId]);
+
+        $this->logAudit((int)$aWhitelist['user_id'], null, null, 'whitelist_deleted', [], $iActorUserId);
+    }
+
+    /**
      * Auto-grant/reconcile SWESS access from the user's current active
      * subscription entitlement, per the SWESS spec's "qualifying package
      * purchase automatically grants SWESS entitlement" requirement.
@@ -325,6 +364,37 @@ class Swess
             ->from(':user')
             ->where(['email' => $sValue])
             ->execute('getSlaveRow');
+    }
+
+    /**
+     * Partial-match user search for the AdminCP "add to whitelist"
+     * type-ahead - matches anywhere in username, email, or full name, so
+     * an admin doesn't need the exact string findUserByUsernameOrEmail()
+     * requires (that method stays exact-match, since it's still the
+     * server-side fallback save uses when no suggestion was clicked).
+     *
+     * @param string $sQuery
+     * @param int $iLimit
+     *
+     * @return array each row {user_id, user_name, full_name, email}, empty
+     *         for a blank query
+     */
+    public function searchUsers($sQuery, $iLimit = 10)
+    {
+        $sQuery = trim((string)$sQuery);
+
+        if ($sQuery === '') {
+            return [];
+        }
+
+        $sLike = "'%" . db()->escape(str_replace(['%', '_'], ['\\%', '\\_'], $sQuery)) . "%'";
+
+        return (array)db()->select('user_id, user_name, full_name, email')
+            ->from(':user')
+            ->where('user_name LIKE ' . $sLike . ' OR email LIKE ' . $sLike . ' OR full_name LIKE ' . $sLike)
+            ->order('user_name ASC')
+            ->limit(0, (int)$iLimit)
+            ->execute('getSlaveRows');
     }
 
     // ---- Approved identities --------------------------------------------

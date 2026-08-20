@@ -128,6 +128,53 @@ class Install extends App\App
                 'value' => '5',
                 'ordering' => $iIndex++,
             ],
+
+            // Email template settings - same native pattern Core_Subscriptions
+            // itself uses for its own emails (group_id 'email' + a value of
+            // {_p var="..."} + a "Click here to edit" link that opens the
+            // native phrase/meta editor). Service\ExpiryReminders::
+            // sendReminderEmail() already sends these exact phrase keys via
+            // Phpfox's mail lib - editing the phrase text here through
+            // AdminCP changes what actually gets sent, no code change or
+            // redeploy required. Previously these existed only as phrase.json
+            // entries with no AdminCP surface to edit them from - this is
+            // what "Admin must be able to edit the mail template" means.
+            'pre_expiry_reminder_email_subject' => [
+                'var_name' => 'pre_expiry_reminder_email_subject',
+                'info' => 'Pre-Expiry Reminder - Email Subject',
+                'description' => 'Subject line of the reminder email sent before a subscription expires. <a role="button" onclick="$Core.editMeta(\'hulahoot_pre_expiry_reminder_subject\', true)">Click here</a> to edit.<span style="float:right;">(Email) <input style="width:220px;" readonly value="hulahoot_pre_expiry_reminder_subject"></span>',
+                'type' => '',
+                'value' => '{_p var="hulahoot_pre_expiry_reminder_subject"}',
+                'ordering' => $iIndex++,
+                'group_id' => 'email',
+            ],
+            'pre_expiry_reminder_email_message' => [
+                'var_name' => 'pre_expiry_reminder_email_message',
+                'info' => 'Pre-Expiry Reminder - Email Content',
+                'description' => 'Body of the reminder email sent before a subscription expires. Available tokens: {site_title}, {link}, {days}. <a role="button" onclick="$Core.editMeta(\'hulahoot_pre_expiry_reminder_message\', true)">Click here</a> to edit.<span style="float:right;">(Email) <input style="width:220px;" readonly value="hulahoot_pre_expiry_reminder_message"></span>',
+                'type' => '',
+                'value' => '{_p var="hulahoot_pre_expiry_reminder_message"}',
+                'ordering' => $iIndex++,
+                'group_id' => 'email',
+            ],
+            'expiry_reminder_email_subject' => [
+                'var_name' => 'expiry_reminder_email_subject',
+                'info' => 'Post-Expiry (Grace Period) Reminder - Email Subject',
+                'description' => 'Subject line of the reminder email sent after a subscription has expired, during the grace period. <a role="button" onclick="$Core.editMeta(\'hulahoot_expiry_reminder_subject\', true)">Click here</a> to edit.<span style="float:right;">(Email) <input style="width:220px;" readonly value="hulahoot_expiry_reminder_subject"></span>',
+                'type' => '',
+                'value' => '{_p var="hulahoot_expiry_reminder_subject"}',
+                'ordering' => $iIndex++,
+                'group_id' => 'email',
+            ],
+            'expiry_reminder_email_message' => [
+                'var_name' => 'expiry_reminder_email_message',
+                'info' => 'Post-Expiry (Grace Period) Reminder - Email Content',
+                'description' => 'Body of the reminder email sent after a subscription has expired, during the grace period. Available tokens: {site_title}, {link}. <a role="button" onclick="$Core.editMeta(\'hulahoot_expiry_reminder_message\', true)">Click here</a> to edit.<span style="float:right;">(Email) <input style="width:220px;" readonly value="hulahoot_expiry_reminder_message"></span>',
+                'type' => '',
+                'value' => '{_p var="hulahoot_expiry_reminder_message"}',
+                'ordering' => $iIndex++,
+                'group_id' => 'email',
+            ],
         ];
     }
 
