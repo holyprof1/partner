@@ -147,6 +147,18 @@ class SwessPost extends Table
                 Field::FIELD_PARAM_TYPE_VALUE => 10,
                 Field::FIELD_PARAM_OTHER => 'UNSIGNED NOT NULL DEFAULT \'0\'',
             ],
+            // Set exactly once, the moment Service\Swess::submitPost()
+            // first moves a post out of 'draft' - unlike `updated` (which
+            // also moves every time an admin later approves/rejects an
+            // OLDER post), this is a stable "when did the user actually
+            // submit" timestamp submitPost() itself uses to enforce the
+            // confirmed one-submission-per-hour throttle. Null for a post
+            // still sitting in draft.
+            'submitted_at' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_INT,
+                Field::FIELD_PARAM_TYPE_VALUE => 10,
+                Field::FIELD_PARAM_OTHER => 'UNSIGNED DEFAULT NULL',
+            ],
         ];
     }
 
@@ -155,6 +167,7 @@ class SwessPost extends Table
         $this->_key = [
             'user_id' => ['user_id'],
             'status' => ['status'],
+            'submitted_at' => ['submitted_at'],
             // Not consumed by anything yet (no scheduler exists), but a
             // future one would filter exactly this way - cheap to index
             // now rather than as a later migration.

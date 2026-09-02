@@ -92,6 +92,17 @@ class SubscriptionPackage extends Table
                 Field::FIELD_PARAM_TYPE_VALUE => 255,
                 Field::FIELD_PARAM_OTHER => 'NULL',
             ],
+            // A small icon (font-icon class), same convention and same
+            // fallback pattern as hulahoot_industry.icon - shown on the
+            // package card whenever no full image has been uploaded, so
+            // a plan is never blank/iconless. Admin-editable per package
+            // from the same edit screen, never hardcoded to a tier name
+            // anywhere that reads it.
+            'icon' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_VARCHAR,
+                Field::FIELD_PARAM_TYPE_VALUE => 100,
+                Field::FIELD_PARAM_OTHER => 'NULL',
+            ],
             // Optional hex color for card accents/highlighting. Blank =
             // theme default.
             'accent_color' => [
@@ -165,6 +176,58 @@ class SubscriptionPackage extends Table
                 Field::FIELD_PARAM_TYPE => Field::TYPE_TINYINT,
                 Field::FIELD_PARAM_TYPE_VALUE => 1,
                 Field::FIELD_PARAM_OTHER => 'UNSIGNED NOT NULL DEFAULT \'1\'',
+            ],
+            // Confirmed requirement: "Domination is the only package
+            // eligible for the 30 day renewal/grace flow... Do not
+            // hardcode the package name; use the editable toggle so Admin
+            // can control it later." Admin-editable per package (AdminCP
+            // -> Subscription Packages -> Edit), read by
+            // Marketplace::getGracePeriodDays()/reconcilePurchaseTermsForUser()
+            // and Service\ExpiryReminders - a purchase against a package
+            // with is_renewable=0 gets NO renewal reminders and NO grace
+            // window at all; its access simply ends the moment its term
+            // expires. Default '0' here is only the column-level fallback
+            // for a brand new package row an admin hasn't configured yet
+            // - the actual Lite=off/Elite=off/Domination=on defaults for
+            // EXISTING packages are a one-time data seed, never a
+            // hardcoded name check in application code.
+            'is_renewable' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_TINYINT,
+                Field::FIELD_PARAM_TYPE_VALUE => 1,
+                Field::FIELD_PARAM_OTHER => 'UNSIGNED NOT NULL DEFAULT \'0\'',
+            ],
+            // Set once, the moment a renewable package's grace period
+            // fully lapses without renewal (Marketplace's expiry sweep -
+            // see that class for the exact trigger point). While true,
+            // this specific package is excluded from
+            // Marketplace::getPackagesForIndustry() (hidden from the
+            // public storefront) even if it still has open slots -
+            // confirmed requirement: "If the holder doesn't renew within
+            // the 30 day grace period. The package is hidden and only
+            // admin can make it active or put it back on the market
+            // again." Cleared only by an admin explicitly re-enabling the
+            // package from AdminCP, never automatically.
+            'is_locked_pending_admin' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_TINYINT,
+                Field::FIELD_PARAM_TYPE_VALUE => 1,
+                Field::FIELD_PARAM_OTHER => 'UNSIGNED NOT NULL DEFAULT \'0\'',
+            ],
+            // A package with zero hulahoot_subscription_package_industry
+            // rows already means "available to every industry" per
+            // Marketplace::getPackagesForIndustry()'s own "universal
+            // fallback" convention (hulahoot_industries_help) - that's a
+            // different thing from an "Open Partnership" package (the
+            // $4M formula PDF's separate, non-industry inventory track,
+            // sold on its own rather than shown mixed into every
+            // industry's storefront). This flag is what keeps the two
+            // apart: an Open package also has zero industry rows, but
+            // is_open = 1 excludes it from that universal fallback
+            // instead of including it - see getPackagesForIndustry()'s
+            // and the new getOpenPackages()'s own queries.
+            'is_open' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_TINYINT,
+                Field::FIELD_PARAM_TYPE_VALUE => 1,
+                Field::FIELD_PARAM_OTHER => 'UNSIGNED NOT NULL DEFAULT \'0\'',
             ],
             'created' => [
                 Field::FIELD_PARAM_TYPE => Field::TYPE_INT,

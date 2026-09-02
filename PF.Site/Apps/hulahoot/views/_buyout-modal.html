@@ -1,0 +1,97 @@
+<style>
+.hulahoot-buyout-overlay {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,.55); z-index: 10000;
+    align-items: center; justify-content: center; padding: 20px;
+}
+.hulahoot-buyout-overlay.is-open { display: flex; }
+.hulahoot-buyout-modal {
+    background: #fff; border-radius: 10px; max-width: 420px; width: 100%;
+    padding: 26px 26px 22px; box-shadow: 0 20px 50px rgba(0,0,0,.25);
+}
+.hulahoot-buyout-modal h2 { margin: 0 0 4px; font-size: 19px; font-weight: 800; color: #000; }
+.hulahoot-buyout-modal .hulahoot-buyout-sub { margin: 0 0 18px; font-size: 13.5px; color: #797979; }
+.hulahoot-buyout-line {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 9px 0; font-size: 14px; border-bottom: 1px solid #f0f0f0;
+}
+.hulahoot-buyout-line .k { color: #797979; }
+.hulahoot-buyout-line .v { font-weight: 600; color: #000; font-variant-numeric: tabular-nums; }
+.hulahoot-buyout-line.total { border-bottom: none; padding-top: 14px; }
+.hulahoot-buyout-line.total .k { color: #000; font-weight: 700; font-size: 15px; }
+.hulahoot-buyout-line.total .v { font-size: 20px; font-weight: 800; }
+.hulahoot-buyout-actions { display: flex; gap: 10px; margin-top: 20px; }
+.hulahoot-buyout-actions button {
+    flex: 1; padding: 11px 14px; border-radius: 6px; font-size: 14px; font-weight: 700;
+    cursor: pointer; border: 1px solid transparent; transition: transform .1s ease, opacity .15s ease;
+}
+.hulahoot-buyout-actions button:hover { transform: translateY(-1px); }
+.hulahoot-buyout-cancel { background: #fff; border-color: #d5d5d5 !important; color: #000; }
+.hulahoot-buyout-confirm { background: #000; color: #fff; }
+.hulahoot-buyout-confirm:disabled { opacity: .6; cursor: default; transform: none; }
+</style>
+
+<div class="hulahoot-buyout-overlay" id="js_hulahoot_buyout_overlay">
+    <div class="hulahoot-buyout-modal">
+        <h2>{{ _p('hulahoot_buy_out_modal_title') }}</h2>
+        <p class="hulahoot-buyout-sub" id="js_hulahoot_buyout_plan_name"></p>
+
+        <div class="hulahoot-buyout-line">
+            <span class="k">{{ _p('hulahoot_buy_out_modal_price_per_slot') }}</span>
+            <span class="v" id="js_hulahoot_buyout_unit_price"></span>
+        </div>
+        <div class="hulahoot-buyout-line">
+            <span class="k">{{ _p('hulahoot_buy_out_modal_slots') }}</span>
+            <span class="v" id="js_hulahoot_buyout_slot_count"></span>
+        </div>
+        <div class="hulahoot-buyout-line total">
+            <span class="k">{{ _p('hulahoot_buy_out_modal_total') }}</span>
+            <span class="v" id="js_hulahoot_buyout_total"></span>
+        </div>
+
+        <div class="hulahoot-buyout-actions">
+            <button type="button" class="hulahoot-buyout-cancel" id="js_hulahoot_buyout_cancel">{{ _p('hulahoot_buy_out_modal_cancel') }}</button>
+            <button type="button" class="hulahoot-buyout-confirm" id="js_hulahoot_buyout_confirm">{{ _p('hulahoot_buy_out_modal_confirm') }}</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var overlay = document.getElementById('js_hulahoot_buyout_overlay');
+    var confirmBtn = document.getElementById('js_hulahoot_buyout_confirm');
+    var cancelBtn = document.getElementById('js_hulahoot_buyout_cancel');
+    var pendingForm = null;
+
+    window.hulahootOpenBuyoutModal = function (form, planName, unitPrice, currency, slotCount, isFree) {
+        pendingForm = form;
+        document.getElementById('js_hulahoot_buyout_plan_name').textContent = planName;
+        if (isFree) {
+            document.getElementById('js_hulahoot_buyout_unit_price').textContent = '{{ _p('hulahoot_free') | e('js') }}';
+            document.getElementById('js_hulahoot_buyout_total').textContent = '{{ _p('hulahoot_free') | e('js') }}';
+        } else {
+            document.getElementById('js_hulahoot_buyout_unit_price').textContent = unitPrice + ' ' + currency;
+            document.getElementById('js_hulahoot_buyout_total').textContent = (unitPrice * slotCount).toFixed(2) + ' ' + currency;
+        }
+        document.getElementById('js_hulahoot_buyout_slot_count').textContent = slotCount;
+        overlay.classList.add('is-open');
+        return false;
+    };
+
+    function closeModal() {
+        overlay.classList.remove('is-open');
+        pendingForm = null;
+    }
+
+    cancelBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closeModal();
+    });
+    confirmBtn.addEventListener('click', function () {
+        if (!pendingForm) return;
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = '{{ _p('hulahoot_buy_out_modal_processing') | e('js') }}';
+        pendingForm.submit();
+    });
+})();
+</script>

@@ -3,17 +3,12 @@
 <a href="{{ url('/find-your-industry') }}" class="hulahoot-back-link"><i class="fa fa-arrow-left" aria-hidden="true"></i> {{ _p('hulahoot_back_to_industries') }}</a>
 
 <div class="hulahoot-industry-detail-header">
-    {% if industry.banner %}
-        <img class="hulahoot-industry-banner" src="/PF.Base/file/pic/hulahoot/{{ industry.banner|replace({'%s': ''}) }}" alt="">
-    {% endif %}
-    <h1>{{ _p(industry.name)|e }}</h1>
-    {% if industry.description %}
-        <p>{{ industry.description|e }}</p>
-    {% endif %}
+    <h1>{{ _p('hulahoot_open_partnerships') }}</h1>
+    <p>{{ _p('hulahoot_open_partnerships_subtitle') }}</p>
 </div>
 
 {% if packages is empty %}
-    <div class="hulahoot-industry-empty">{{ _p('hulahoot_no_packages_for_industry') }}</div>
+    <div class="hulahoot-industry-empty">{{ _p('hulahoot_no_open_packages') }}</div>
 {% else %}
     <div class="hulahoot-package-grid">
         {% for package in packages %}
@@ -78,7 +73,6 @@
                     <form method="post" action="{{ url('/industry/subscribe') }}">
                         <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
                         <input type="hidden" name="package_id" value="{{ package.package_id }}">
-                        <input type="hidden" name="industry_slug" value="{{ industry.slug }}">
                         <button type="submit" class="btn hulahoot-package-cta"{% if package.accent_color %} style="background-color: {{ package.accent_color|e }}; border-color: {{ package.accent_color|e }};"{% endif %}>
                             {{ package.button_text|default(_p('hulahoot_choose_plan')) }}
                         </button>
@@ -88,7 +82,6 @@
                         <form method="post" action="{{ url('/industry/buy-out') }}" class="hulahoot-package-buyout-form" onsubmit="return hulahootOpenBuyoutModal(this, '{{ package.display_name|e('js') }}', {{ package.default_cost|default(0) }}, '{{ package.default_currency_id|e('js') }}', {{ package.slots_remaining }}, {{ package.default_cost ? 'false' : 'true' }});">
                             <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
                             <input type="hidden" name="package_id" value="{{ package.package_id }}">
-                            <input type="hidden" name="industry_slug" value="{{ industry.slug }}">
                             <button type="submit" class="hulahoot-package-buyout-btn">
                                 {{ _p('hulahoot_buy_out_remaining') }}
                             </button>

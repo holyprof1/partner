@@ -25,7 +25,7 @@
         <div class="hulahoot-swess-empty">{{ _p('hulahoot_no_entitlement') }}</div>
         <a href="{{ url('/find-your-industry') }}" class="btn btn-primary btn-sm hulahoot-swess-cta">{{ _p('hulahoot_choose_plan') }}</a>
     {% else %}
-        <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_native_package') }}</span><span class="v">{{ _p(entitlement.package_title) }}</span></div>
+        <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_native_package') }}</span><span class="v">{{ entitlement.package_title }}</span></div>
         <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_credits') }}</span><span class="v">{{ entitlement.monthly_credits }}</span></div>
         <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_purchase_limit') }}</span><span class="v">{{ entitlement.purchase_limit|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>
         <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_campaign_limit') }}</span><span class="v">{{ entitlement.campaign_limit|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>

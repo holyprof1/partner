@@ -116,6 +116,7 @@ class SubscriptionPackageAdmin
             'description' => '',
             'badge_text' => '',
             'image' => '',
+            'icon' => '',
             'accent_color' => '',
             'button_text' => '',
             'ordering' => 0,
@@ -126,6 +127,9 @@ class SubscriptionPackageAdmin
             'monthly_credits' => 0,
             'swess_enabled' => 0,
             'is_active' => 0,
+            'is_renewable' => 0,
+            'is_locked_pending_admin' => 0,
+            'is_open' => 0,
         ];
     }
 
@@ -432,6 +436,7 @@ class SubscriptionPackageAdmin
             'subtitle' => trim((string)($aData['subtitle'] ?? '')),
             'description' => trim((string)($aData['description'] ?? '')),
             'badge_text' => trim((string)($aData['badge_text'] ?? '')),
+            'icon' => trim((string)($aData['icon'] ?? '')) ?: null,
             'accent_color' => $sAccentColor,
             'button_text' => trim((string)($aData['button_text'] ?? '')),
             'ordering' => max(0, (int)($aData['ordering'] ?? 0)),
@@ -442,6 +447,14 @@ class SubscriptionPackageAdmin
             'monthly_credits' => max(0, (int)($aData['monthly_credits'] ?? 0)),
             'swess_enabled' => !empty($aData['swess_enabled']) ? 1 : 0,
             'is_active' => !empty($aData['is_active']) ? 1 : 0,
+            'is_renewable' => !empty($aData['is_renewable']) ? 1 : 0,
+            // Confirmed requirement: "only admin can make it active or
+            // put it back on the market again" - unchecking this box is
+            // the admin action that releases a package the automatic
+            // expiry sweep locked. Never set true by this form itself;
+            // only Marketplace's sweep sets it true in the first place.
+            'is_locked_pending_admin' => !empty($aData['is_locked_pending_admin']) ? 1 : 0,
+            'is_open' => !empty($aData['is_open']) ? 1 : 0,
         ];
     }
 }

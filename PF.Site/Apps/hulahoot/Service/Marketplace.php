@@ -130,10 +130,10 @@ class Marketplace
             ->leftJoin(':hulahoot_subscription_package_industry', 'hspi', 'hspi.package_id = hsp.package_id AND hspi.industry_id = ' . $iIndustryId)
             ->join(':subscribe_package', 'sp', 'sp.package_id = hsp.package_id')
             ->where(
-                '(hspi.industry_id = ' . $iIndustryId . ' OR NOT EXISTS ('
+                '(hspi.industry_id = ' . $iIndustryId . ' OR (hsp.is_open = 0 AND NOT EXISTS ('
                 . 'SELECT 1 FROM ' . Phpfox::getT('hulahoot_subscription_package_industry')
                 . ' x WHERE x.package_id = hsp.package_id'
-                . ')) AND hsp.is_active = 1 AND sp.is_active = 1 AND sp.is_removed = 0'
+                . '))) AND hsp.is_active = 1 AND hsp.is_locked_pending_admin = 0 AND sp.is_active = 1 AND sp.is_removed = 0'
             )
             ->order('hsp.ordering ASC, sp.ordering ASC')
             ->execute('getSlaveRows');
@@ -169,12 +169,67 @@ class Marketplace
     }
 
     /**
+     * Every "Open Partnership" package that's purchasable right now - the
+     * $4M formula PDF's separate, non-industry inventory track
+     * (is_open = 1, see that column's own docblock for why this is
+     * distinct from a package with no industry links). Same shape and
+     * same active/not-removed/not-locked rules as
+     * getPackagesForIndustry(), just scoped to is_open = 1 instead of a
+     * specific Industry.
+     *
+     * @return array in hulahoot_subscription_package.ordering order
+     */
+    public function getOpenPackages()
+    {
+        if (!Phpfox::isAppActive('Core_Subscriptions')) {
+            return [];
+        }
+
+        $aRows = (array)db()->select('hsp.*, sp.title, sp.cost, sp.recurring_cost, sp.recurring_period')
+            ->from(':hulahoot_subscription_package', 'hsp')
+            ->join(':subscribe_package', 'sp', 'sp.package_id = hsp.package_id')
+            ->where('hsp.is_open = 1 AND hsp.is_active = 1 AND hsp.is_locked_pending_admin = 0 AND sp.is_active = 1 AND sp.is_removed = 0')
+            ->order('hsp.ordering ASC, sp.ordering ASC')
+            ->execute('getSlaveRows');
+
+        $sDefaultCurrencyId = Phpfox::getService('core.currency')->getDefault();
+        $oFeatureService = new SubscriptionPackageAdmin();
+
+        foreach ($aRows as &$aRow) {
+            $aRow['package_id'] = (int)$aRow['package_id'];
+            $aRow['features'] = array_column($oFeatureService->getFeaturesForPackage($aRow['package_id']), 'feature_text');
+            $aRow['display_name'] = $aRow['display_name'] !== null && $aRow['display_name'] !== ''
+                ? $aRow['display_name']
+                : _p($aRow['title']);
+
+            $aCosts = Phpfox::getLib('parse.format')->isSerialized($aRow['cost']) ? unserialize($aRow['cost']) : [];
+            $aRow['default_cost'] = $aCosts[$sDefaultCurrencyId] ?? 0;
+            $aRow['default_currency_id'] = $sDefaultCurrencyId;
+
+            $iLimit = $aRow['purchase_limit'] !== null ? (int)$aRow['purchase_limit'] : null;
+            $aRow['slots_remaining'] = $iLimit !== null
+                ? max(0, $iLimit - $this->getOccupiedSlotCount($aRow['package_id']))
+                : null;
+            $aRow['is_sold_out'] = $iLimit !== null && $aRow['slots_remaining'] <= 0;
+        }
+        unset($aRow);
+
+        return $aRows;
+    }
+
+    /**
      * How many of a package's slots are currently spoken for: completed
-     * purchases still inside their 1-year term, OR inside the extra
-     * GRACE_PERIOD_DAYS renewal window after that. A purchase whose term
-     * AND grace period have both fully lapsed no longer counts - its
-     * slot is back on the market, even though the purchase row itself
-     * still exists (native purchase history is never deleted).
+     * purchases still inside their 1-year term, OR - ONLY for a package
+     * with is_renewable = 1 (AdminCP -> Subscription Packages -> "Eligible
+     * for Renewal") - inside the extra GRACE_PERIOD_DAYS renewal window
+     * after that too. Confirmed requirement: "Domination is the only
+     * package eligible for the 30 day renewal/grace flow" - a
+     * non-renewable package's slot frees up the instant its raw
+     * expiry_date passes, no grace hold at all; a renewable one keeps
+     * holding the slot through its grace window same as before. A
+     * purchase whose applicable window has fully lapsed no longer counts
+     * - its slot is back on the market, even though the purchase row
+     * itself still exists (native purchase history is never deleted).
      *
      * A purchase with expiry_date = 0 (native's "never expires" marker)
      * always counts - matches how native Core Subscriptions itself
@@ -186,16 +241,111 @@ class Marketplace
      */
     public function getOccupiedSlotCount($iPackageId)
     {
-        $iGraceCutoff = time() - (self::getGracePeriodDays() * 86400);
+        $iPackageId = (int)$iPackageId;
+
+        $bIsRenewable = (bool)db()->select('is_renewable')
+            ->from(':hulahoot_subscription_package')
+            ->where(['package_id' => $iPackageId])
+            ->execute('getSlaveField');
+
+        $iCutoff = $bIsRenewable ? (time() - (self::getGracePeriodDays() * 86400)) : time();
 
         return (int)db()->select('COUNT(*)')
             ->from(':subscribe_purchase')
             ->where(
-                'package_id = ' . (int)$iPackageId
+                'package_id = ' . $iPackageId
                 . ' AND status = "completed"'
-                . ' AND (expiry_date = 0 OR expiry_date > ' . $iGraceCutoff . ')'
+                . ' AND (expiry_date = 0 OR expiry_date > ' . $iCutoff . ')'
             )
             ->execute('getSlaveField');
+    }
+
+    /**
+     * Daily sweep (called from cron alongside Service\ExpiryReminders -
+     * see send-expiry-reminders.php): finds every renewable package
+     * (is_renewable = 1) where a holder's grace window has JUST fully
+     * lapsed - crossed from "still counted as occupying a slot" to "no
+     * longer does", per getOccupiedSlotCount()'s own cutoff - with no
+     * OTHER still-valid purchase of theirs against that same package
+     * covering them (i.e. they never renewed by buying it again before
+     * time ran out), and locks that package. Confirmed requirement: "If
+     * the holder doesn't renew within the 30 day grace period. The
+     * package is hidden and only admin can make it active or put it back
+     * on the market again."
+     *
+     * Deliberately package-level, not per-slot: a multi-slot renewable
+     * package (e.g. "Automotive - Domination" with purchase_limit > 1)
+     * gets hidden from new purchases entirely the moment any ONE holder's
+     * window lapses unrenewed, exactly as the confirmed requirement
+     * states ("the package is hidden") - existing holders' own access is
+     * untouched either way (Entitlement/Swess already gate on each
+     * purchase's own expiry_date, never on this flag).
+     *
+     * Idempotent: only locks a package still sitting at
+     * is_locked_pending_admin = 0, and only admin unchecking that box
+     * (SubscriptionPackageAddController) ever clears it - this sweep
+     * never clears it itself, and never re-locks an already-locked one.
+     *
+     * @return int how many packages were newly locked this run
+     */
+    public function lockExpiredRenewablePackages()
+    {
+        $iNow = time();
+        $iGraceCutoff = $iNow - (self::getGracePeriodDays() * 86400);
+        // Anything that lapsed more than a day before the cutoff was
+        // already caught by yesterday's run (or is stale data predating
+        // this feature) - only look at what crossed the line since the
+        // last time this ran, so a long-lapsed purchase an admin already
+        // reviewed and released doesn't get immediately re-locked next
+        // time this sweep runs.
+        $iPriorCutoff = $iGraceCutoff - 86400;
+
+        $aLapsed = db()->select('sp.purchase_id, sp.user_id, sp.package_id')
+            ->from(':subscribe_purchase', 'sp')
+            ->join(':hulahoot_subscription_package', 'hsp', 'hsp.package_id = sp.package_id')
+            ->where(
+                'sp.status = "completed" AND hsp.is_renewable = 1 AND hsp.is_locked_pending_admin = 0'
+                . ' AND sp.expiry_date > 0 AND sp.expiry_date <= ' . $iPriorCutoff
+                . ' AND sp.expiry_date > ' . ($iPriorCutoff - 86400)
+            )
+            ->execute('getSlaveRows');
+
+        $iLocked = 0;
+        foreach ($aLapsed as $aPurchase) {
+            $iPackageId = (int)$aPurchase['package_id'];
+            $iUserId = (int)$aPurchase['user_id'];
+
+            // Did this same user renew (buy this same package again) in
+            // time? Any completed purchase of theirs against this package
+            // that's still within its own term/grace covers them.
+            $bStillCovered = (bool)db()->select('purchase_id')
+                ->from(':subscribe_purchase')
+                ->where(
+                    'user_id = ' . $iUserId . ' AND package_id = ' . $iPackageId
+                    . ' AND status = "completed"'
+                    . ' AND (expiry_date = 0 OR expiry_date > ' . $iGraceCutoff . ')'
+                )
+                ->execute('getSlaveField');
+
+            if ($bStillCovered) {
+                continue;
+            }
+
+            $n = db()->update(':hulahoot_subscription_package', [
+                'is_locked_pending_admin' => 1,
+            ], ['package_id' => $iPackageId, 'is_locked_pending_admin' => 0]);
+
+            if ($n > 0) {
+                $iLocked++;
+                Phpfox::getLog('hulahoot.log')->info(
+                    'Marketplace::lockExpiredRenewablePackages(): package ' . $iPackageId
+                    . ' locked pending admin review - purchase ' . (int)$aPurchase['purchase_id']
+                    . ' (user ' . $iUserId . ') lapsed its grace window unrenewed.'
+                );
+            }
+        }
+
+        return $iLocked;
     }
 
     /**

@@ -987,6 +987,28 @@ group('/find-your-industry', function () {
 
 });
 
+// GET /open-partnerships - the $4M Partnership Formula PDF's "Open
+// Partnerships" inventory: packages with is_open = 1, not tied to any
+// industry (Service\Marketplace::getOpenPackages()). Reuses the exact
+// same /industry/subscribe and /industry/buy-out POST routes as an
+// Industry page's cards do - those routes only ever need package_id, and
+// already redirect back here when industry_slug is empty (see below).
+route('/open-partnerships', function () {
+    auth()->membersOnly();
+
+    (new \Apps\Hulahoot\Service\PurchaseFlow())->expandAllPendingBuyouts(\Phpfox::getUserId());
+    (new \Apps\Hulahoot\Service\Marketplace())->reconcilePurchaseTermsForUser(\Phpfox::getUserId());
+
+    $service = new \Apps\Hulahoot\Service\Marketplace();
+
+    title(_p('hulahoot_open_partnerships'));
+
+    return view('open-partnerships.html', [
+        'packages' => $service->getOpenPackages(),
+        'csrf_token' => \Phpfox::getService('log.session')->getToken(),
+    ]);
+});
+
 group('/industry', function () {
 
     route('/', function () {
@@ -1036,16 +1058,22 @@ group('/industry', function () {
 
         $iPackageId = (int)request()->get('package_id');
         $sIndustrySlug = (string)request()->get('industry_slug');
+        // No industry_slug means this came from the Open Partnerships
+        // page (its cards never post one - see open-partnerships.html),
+        // so send the buyer back there instead of a broken /industry
+        // page with an empty slug.
+        $sReturnRoute = $sIndustrySlug !== '' ? '/industry' : '/open-partnerships';
+        $aReturnParams = $sIndustrySlug !== '' ? ['slug' => $sIndustrySlug] : [];
         $service = new \Apps\Hulahoot\Service\PurchaseFlow();
 
         try {
             $aResult = $service->initiate(\Phpfox::getUserId(), $iPackageId);
         } catch (\InvalidArgumentException $e) {
-            return url()->send('/industry', ['slug' => $sIndustrySlug], $e->getMessage());
+            return url()->send($sReturnRoute, $aReturnParams, $e->getMessage());
         }
 
         if ($aResult['completed']) {
-            return url()->send('/industry', ['slug' => $sIndustrySlug], _p('hulahoot_subscribed_successfully'));
+            return url()->send($sReturnRoute, $aReturnParams, _p('hulahoot_subscribed_successfully'));
         }
 
         return url()->send('subscribe.register', ['id' => $aResult['purchase_id']]);
@@ -1072,16 +1100,19 @@ group('/industry', function () {
 
         $iPackageId = (int)request()->get('package_id');
         $sIndustrySlug = (string)request()->get('industry_slug');
+        // See /industry/subscribe's identical comment above.
+        $sReturnRoute = $sIndustrySlug !== '' ? '/industry' : '/open-partnerships';
+        $aReturnParams = $sIndustrySlug !== '' ? ['slug' => $sIndustrySlug] : [];
         $service = new \Apps\Hulahoot\Service\PurchaseFlow();
 
         try {
             $aResult = $service->buyOutRemainingSlots(\Phpfox::getUserId(), $iPackageId);
         } catch (\InvalidArgumentException $e) {
-            return url()->send('/industry', ['slug' => $sIndustrySlug], $e->getMessage());
+            return url()->send($sReturnRoute, $aReturnParams, $e->getMessage());
         }
 
         if ($aResult['completed']) {
-            return url()->send('/industry', ['slug' => $sIndustrySlug], _p('hulahoot_buy_out_success', ['count' => $aResult['completed_count']]));
+            return url()->send($sReturnRoute, $aReturnParams, _p('hulahoot_buy_out_success', ['count' => $aResult['completed_count']]));
         }
 
         return url()->send('subscribe.register', ['id' => $aResult['purchase_id']]);

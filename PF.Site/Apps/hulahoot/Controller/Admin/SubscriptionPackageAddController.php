@@ -55,6 +55,7 @@ class SubscriptionPackageAddController extends Phpfox_Component
                     'subtitle' => $req->get('subtitle'),
                     'description' => $req->get('description'),
                     'badge_text' => $req->get('badge_text'),
+                    'icon' => $req->get('icon'),
                     'accent_color' => $req->get('accent_color'),
                     'button_text' => $req->get('button_text'),
                     'ordering' => $req->get('ordering'),
@@ -65,6 +66,9 @@ class SubscriptionPackageAddController extends Phpfox_Component
                     'monthly_credits' => (int)$req->get('monthly_credits'),
                     'swess_enabled' => $req->get('swess_enabled') ? 1 : 0,
                     'is_active' => $req->get('is_active') ? 1 : 0,
+                    'is_renewable' => $req->get('is_renewable') ? 1 : 0,
+                    'is_locked_pending_admin' => $req->get('is_locked_pending_admin') ? 1 : 0,
+                    'is_open' => $req->get('is_open') ? 1 : 0,
                 ];
                 $selectedIndustryIds = array_map('intval', (array)$req->get('industry_ids', []));
                 // One feature per line - the simplest possible "add /

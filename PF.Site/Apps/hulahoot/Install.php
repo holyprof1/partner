@@ -129,6 +129,32 @@ class Install extends App\App
                 'ordering' => $iIndex++,
             ],
 
+            // Master on/off switches for each mail category - the
+            // confirmed requirement "how can i pick, enable and disable
+            // type of mail to be sent... i need on and off". Checked at
+            // the top of each sender (Service\ExpiryReminders::
+            // sendDuePreExpiryReminders()/sendDuePostExpiryReminders(),
+            // Service\Swess::sendSwessLifecycleEmail()) before anything
+            // is built or sent - a clean AdminCP checkbox rather than the
+            // less discoverable "set the count to 0" trick the reminder
+            // counts above still separately support for fine-tuning.
+            'enable_subscription_reminder_mail' => [
+                'var_name' => 'enable_subscription_reminder_mail',
+                'info' => 'Enable Subscription Renewal Reminder Emails',
+                'description' => 'Master on/off switch for both pre-expiry and post-expiry (grace period) renewal reminder emails above. Turn off to stop all renewal reminder emails from going out, without losing the count/timing settings.',
+                'type' => 'boolean',
+                'value' => '1',
+                'ordering' => $iIndex++,
+            ],
+            'enable_swess_mail' => [
+                'var_name' => 'enable_swess_mail',
+                'info' => 'Enable SWESS Approval/Rejection Emails',
+                'description' => 'Master on/off switch for the email sent to a publisher when their SWESS post is approved or rejected. The in-app notification (bell icon) is unaffected either way.',
+                'type' => 'boolean',
+                'value' => '1',
+                'ordering' => $iIndex++,
+            ],
+
             // Email template settings - same native pattern Core_Subscriptions
             // itself uses for its own emails (group_id 'email' + a value of
             // {_p var="..."} + a "Click here to edit" link that opens the

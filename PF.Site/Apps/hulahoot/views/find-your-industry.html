@@ -7,6 +7,8 @@
         <i class="fa fa-search" aria-hidden="true"></i>
         <input type="text" id="js_hulahoot_industry_search" placeholder="{{ _p('hulahoot_search_industry_placeholder') }}" autofocus>
     </div>
+
+    <a href="{{ url('/open-partnerships') }}" class="hulahoot-back-link">{{ _p('hulahoot_open_partnerships') }} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
 </div>
 
 {% if industries is empty %}

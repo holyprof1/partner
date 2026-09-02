@@ -138,13 +138,17 @@ class ExpiryReminders
      */
     private function sendDuePreExpiryReminders()
     {
+        if (!Phpfox::getParam('hulahoot.enable_subscription_reminder_mail')) {
+            return 0;
+        }
+
         $iNow = time();
         $iStartDays = self::getPreExpiryReminderStartDays();
         $iCount = self::getPreExpiryReminderCount();
 
         if ($iCount < 1 || $iStartDays < 1) {
-            // An admin can effectively disable this phase by setting
-            // either to 0.
+            // An admin can also disable just this one phase by setting
+            // either to 0, independent of the master switch above.
             return 0;
         }
 
@@ -154,7 +158,7 @@ class ExpiryReminders
         $aDue = db()->select('sp.purchase_id, sp.user_id, sp.package_id, sp.expiry_date')
             ->from(':subscribe_purchase', 'sp')
             ->join(':hulahoot_subscription_package', 'hsp', 'hsp.package_id = sp.package_id')
-            ->where('sp.status = "completed" AND sp.expiry_date > ' . $iNow . ' AND sp.expiry_date <= ' . $iWindowEnd)
+            ->where('sp.status = "completed" AND hsp.is_renewable = 1 AND sp.expiry_date > ' . $iNow . ' AND sp.expiry_date <= ' . $iWindowEnd)
             ->execute('getSlaveRows');
 
         if (!$aDue) {
@@ -183,6 +187,10 @@ class ExpiryReminders
      */
     private function sendDuePostExpiryReminders()
     {
+        if (!Phpfox::getParam('hulahoot.enable_subscription_reminder_mail')) {
+            return 0;
+        }
+
         $iNow = time();
         $iGraceDays = Marketplace::getGracePeriodDays();
         $iCount = self::getPostExpiryReminderCount();
@@ -197,7 +205,7 @@ class ExpiryReminders
         $aDue = db()->select('sp.purchase_id, sp.user_id, sp.package_id, sp.expiry_date')
             ->from(':subscribe_purchase', 'sp')
             ->join(':hulahoot_subscription_package', 'hsp', 'hsp.package_id = sp.package_id')
-            ->where('sp.status = "completed" AND sp.expiry_date > 0 AND sp.expiry_date <= ' . $iNow . ' AND sp.expiry_date > ' . $iGraceCutoff)
+            ->where('sp.status = "completed" AND hsp.is_renewable = 1 AND sp.expiry_date > 0 AND sp.expiry_date <= ' . $iNow . ' AND sp.expiry_date > ' . $iGraceCutoff)
             ->execute('getSlaveRows');
 
         if (!$aDue) {

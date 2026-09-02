@@ -108,6 +108,38 @@ defined('PHPFOX') or exit('NO DICE!');
                     </label>
                 </div>
             </div>
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label">{_p var='hulahoot_field_is_open'}</label>
+                <div class="col-sm-9">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="is_open" value="1" {if $rules.is_open}checked{/if}> {_p var='hulahoot_is_open_help'}
+                    </label>
+                    <span class="help-block">{_p var='hulahoot_is_open_detail'}</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label">{_p var='hulahoot_field_is_renewable'}</label>
+                <div class="col-sm-9">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="is_renewable" value="1" {if $rules.is_renewable}checked{/if}> {_p var='hulahoot_is_renewable_help'}
+                    </label>
+                    <span class="help-block">{_p var='hulahoot_is_renewable_detail'}</span>
+                </div>
+            </div>
+
+            {if $rules.is_locked_pending_admin}
+            <div class="form-group">
+                <label class="col-sm-3 control-label">{_p var='hulahoot_field_locked_pending_admin'}</label>
+                <div class="col-sm-9">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="is_locked_pending_admin" value="1" checked> {_p var='hulahoot_locked_pending_admin_help'}
+                    </label>
+                    <span class="help-block">{_p var='hulahoot_locked_pending_admin_detail'}</span>
+                </div>
+            </div>
+            {/if}
         </div>
 
         <div class="form-group">
@@ -149,6 +181,14 @@ defined('PHPFOX') or exit('NO DICE!');
                 <label for="hulahoot_badge_text" class="col-sm-3 control-label">{_p var='hulahoot_field_badge_text'}</label>
                 <div class="col-sm-9">
                     <input type="text" name="badge_text" id="hulahoot_badge_text" class="form-control" maxlength="50" value="{$rules.badge_text|clean}" placeholder="{_p var='hulahoot_badge_text_placeholder'}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="hulahoot_package_icon" class="col-sm-3 control-label">{_p var='hulahoot_field_icon'}</label>
+                <div class="col-sm-9">
+                    <input type="text" name="icon" id="hulahoot_package_icon" class="form-control" maxlength="100" value="{$rules.icon|clean}" placeholder="fa-rocket">
+                    <span class="help-block">{_p var='hulahoot_package_icon_help'} <a href="https://fontawesome.com/v4/icons/" target="_blank" rel="noopener">{_p var='hulahoot_icon_help_link'}</a></span>
                 </div>
             </div>
 

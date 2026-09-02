@@ -1035,6 +1035,23 @@ class Swess
                 throw new \InvalidArgumentException('This target level is not allowed for your account.');
             }
 
+            // Confirmed rate limit: "1 post per hour is what is done" -
+            // one submission per user per rolling hour, regardless of
+            // package. Anchored to submitted_at (set only by this method,
+            // the moment a post actually leaves 'draft'), never `updated`
+            // - `updated` also moves when an admin approves/rejects some
+            // OTHER, older post of this user's, which would wrongly
+            // extend the cooldown for a submission that never happened.
+            $iLastSubmittedAt = (int)db()->select('MAX(submitted_at) AS ts')
+                ->from(':hulahoot_swess_post')
+                ->where('user_id = ' . $iUserId . ' AND submitted_at IS NOT NULL')
+                ->execute('getSlaveField');
+            if ($iLastSubmittedAt && (time() - $iLastSubmittedAt) < 3600) {
+                throw new \InvalidArgumentException(_p('hulahoot_swess_submit_rate_limited', [
+                    'minutes' => (int)ceil((3600 - (time() - $iLastSubmittedAt)) / 60),
+                ]));
+            }
+
             if ((bool)$aWhitelist['requires_review']) {
                 $sNewStatus = 'pending';
             } elseif (!empty($aPost['scheduled_at'])) {
@@ -1046,6 +1063,7 @@ class Swess
             db()->update(':hulahoot_swess_post', [
                 'status' => $sNewStatus,
                 'rejection_reason' => null,
+                'submitted_at' => time(),
                 'updated' => time(),
             ], ['swess_post_id' => (int)$iPostId]);
 
@@ -1105,6 +1123,7 @@ class Swess
                 'new_status' => $sNewStatus,
             ], $iActorUserId);
             notify('Hulahoot', 'post_approved', (int)$iPostId, (int)$aPost['user_id']);
+            $this->sendSwessLifecycleEmail((int)$aPost['user_id'], 'approved', (int)$iPostId);
         } finally {
             db()->select("RELEASE_LOCK('" . $sLockName . "') AS released")->from('DUAL')->execute('getSlaveRow');
         }
@@ -1156,8 +1175,53 @@ class Swess
                 'reason' => $sReason,
             ], $iActorUserId);
             notify('Hulahoot', 'post_rejected', (int)$iPostId, (int)$aPost['user_id']);
+            $this->sendSwessLifecycleEmail((int)$aPost['user_id'], 'rejected', (int)$iPostId, trim((string)$sReason));
         } finally {
             db()->select("RELEASE_LOCK('" . $sLockName . "') AS released")->from('DUAL')->execute('getSlaveRow');
+        }
+    }
+
+    /**
+     * Sends the SWESS approve/reject email notification, on top of the
+     * always-on in-app bell notification notify() already sent above -
+     * gated by the admin-editable hulahoot.enable_swess_mail master
+     * switch (AdminCP -> Settings -> Hulahoot, "Enable SWESS Email
+     * Notifications"), the confirmed requirement for an explicit on/off
+     * for this category of mail. A transient send failure here must
+     * never turn an otherwise-successful approve/reject action into an
+     * apparent failure for the admin - swallowed the same way
+     * PurchaseFlow::completeAsHulahoot()'s own confirmation email is.
+     *
+     * @param int $iUserId the SWESS post's own author
+     * @param string $sOutcome 'approved' | 'rejected'
+     * @param int $iPostId
+     * @param string|null $sRejectionReason only used when $sOutcome is 'rejected'
+     */
+    private function sendSwessLifecycleEmail($iUserId, $sOutcome, $iPostId, $sRejectionReason = null)
+    {
+        if (!\Phpfox::getParam('hulahoot.enable_swess_mail')) {
+            return;
+        }
+
+        $sSubjectVar = $sOutcome === 'approved' ? 'hulahoot_swess_post_approved_email_subject' : 'hulahoot_swess_post_rejected_email_subject';
+        $sMessageVar = $sOutcome === 'approved' ? 'hulahoot_swess_post_approved_email_message' : 'hulahoot_swess_post_rejected_email_message';
+
+        $aParams = [
+            'site_title' => \Phpfox::getParam('core.site_title'),
+            'link' => \Phpfox_Url::instance()->getDomain() . 'hulahoot/swess/posts',
+        ];
+        if ($sOutcome === 'rejected') {
+            $aParams['reason'] = (string)$sRejectionReason;
+        }
+
+        try {
+            \Phpfox::getLib('mail')
+                ->to($iUserId)
+                ->subject([$sSubjectVar, ['site_title' => $aParams['site_title']]])
+                ->message([$sMessageVar, $aParams])
+                ->send();
+        } catch (\Throwable $e) {
+            // Nothing else to do here - the approve/reject action itself already succeeded.
         }
     }
 
