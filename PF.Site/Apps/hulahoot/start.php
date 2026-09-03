@@ -349,6 +349,9 @@ group('/my-profiles', function () {
         'hulahoot.admincp.swess' => \Apps\Hulahoot\Controller\Admin\SwessController::class,
         'hulahoot.admincp.swess-whitelist' => \Apps\Hulahoot\Controller\Admin\SwessWhitelistController::class,
         'hulahoot.admincp.swess-whitelist-add' => \Apps\Hulahoot\Controller\Admin\SwessWhitelistAddController::class,
+        // Milestone 2: real credit ledger correction screen - see
+        // Controller/Admin/SwessCreditController.php.
+        'hulahoot.admincp.swess-credit' => \Apps\Hulahoot\Controller\Admin\SwessCreditController::class,
         'hulahoot.admincp.swess-tag' => \Apps\Hulahoot\Controller\Admin\SwessTagController::class,
         'hulahoot.admincp.swess-tag-add' => \Apps\Hulahoot\Controller\Admin\SwessTagAddController::class,
         'hulahoot.admincp.swess-approval' => \Apps\Hulahoot\Controller\Admin\SwessApprovalController::class,
@@ -587,6 +590,17 @@ group('/admincp/hulahoot', function () {
         exit;
     });
 
+    // GET/POST /admincp/hulahoot/swess/credits?user_id=X - Milestone 2's
+    // real credit ledger correction screen. Reuses the exact same
+    // /swess/whitelist/search-users type-ahead endpoint above for its own
+    // user search - see Controller/Admin/SwessCreditController.php.
+    route('/swess/credits', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.swess-credit');
+
+        return 'controller';
+    });
+
     route('/swess/tag', function () {
         auth()->isAdmin(true);
         \Phpfox::getLib('module')->dispatch('hulahoot.admincp.swess-tag');
@@ -737,6 +751,7 @@ group('/hulahoot/swess', function () {
 
         $aIdentities = $swessService->getApprovedIdentities((int)$aWhitelist['whitelist_id']);
         $aAllowedLevels = $swessService->getAllowedTargetLevels($aWhitelist);
+        $campaignService = new \Apps\Hulahoot\Service\Campaign();
         $error = null;
 
         if (request()->method() === 'POST') {
@@ -751,6 +766,9 @@ group('/hulahoot/swess', function () {
                     'tag_id' => (int)request()->get('tag_id'),
                     'distribution_target_type' => (string)request()->get('distribution_target_type', 'site_wide'),
                     'distribution_target_label' => trim((string)request()->get('distribution_target_label')) ?: null,
+                    // Milestone 2: composer extension fields.
+                    'link_url' => trim((string)request()->get('link_url')) ?: null,
+                    'package_id' => (int)request()->get('package_id') ?: null,
                 ];
 
                 $sScheduledLocal = trim((string)request()->get('scheduled_at'));
@@ -777,10 +795,48 @@ group('/hulahoot/swess', function () {
                 }
 
                 try {
+                    // Milestone 2: "Create New Campaign" inline, same
+                    // create-and-select shape already used for the SWESS
+                    // whitelist type-ahead's "no exact match, fall back"
+                    // path - a brand-new campaign name wins over an
+                    // existing campaign_id selection if both are somehow
+                    // present, since typing a new name is the more
+                    // deliberate, more recent action.
+                    $sNewCampaignName = trim((string)request()->get('new_campaign_name'));
+                    if ($sNewCampaignName !== '') {
+                        $aData['campaign_id'] = $campaignService->create($iUserId, $sNewCampaignName);
+                    } else {
+                        $aData['campaign_id'] = (int)request()->get('campaign_id') ?: null;
+                    }
+
                     if ($aPost) {
                         $swessService->updatePost($iPostId, $iUserId, $aData);
                     } else {
                         $iPostId = $swessService->createDraftPost($iUserId, $aData);
+                    }
+
+                    // Milestone 2: media attach - reuses Service\ImageUpload
+                    // exactly as every other single-image field in this app
+                    // already does, one named field per photo slot (no
+                    // array-upload handling exists anywhere in this
+                    // codebase to reuse instead - see attachMedia()'s own
+                    // docblock). Up to 4 photos per post.
+                    $aUploadedPaths = [];
+                    $oImageUpload = new \Apps\Hulahoot\Service\ImageUpload();
+                    foreach (['media_1', 'media_2', 'media_3', 'media_4'] as $sField) {
+                        $sPath = $oImageUpload->upload($sField);
+                        if ($sPath !== null) {
+                            $aUploadedPaths[] = $sPath;
+                        }
+                    }
+                    if ($aUploadedPaths) {
+                        $swessService->attachMedia($iPostId, $iUserId, $aUploadedPaths);
+                    }
+
+                    if (request()->get('remove_media_id')) {
+                        foreach ((array)request()->get('remove_media_id') as $iRemoveMediaId) {
+                            $swessService->removeMedia((int)$iRemoveMediaId, $iUserId);
+                        }
                     }
 
                     if ($sAction === 'submit') {
@@ -812,6 +868,9 @@ group('/hulahoot/swess', function () {
             $aPost['scheduled_at_local'] = gmdate('Y-m-d\TH:i', (int)$aPost['scheduled_at'] + (int)round($fOffsetHours * 3600));
         }
 
+        $aEntitlement = (new \Apps\Hulahoot\Service\Entitlement())->getActiveEntitlement($iUserId);
+        $oImageUploadForUrls = new \Apps\Hulahoot\Service\ImageUpload();
+
         return view('swess-composer.html', [
             'swess_active' => 'create',
             'post' => $aPost,
@@ -819,6 +878,15 @@ group('/hulahoot/swess', function () {
             'identities' => $aIdentities,
             'identity_tags_json' => json_encode($aIdentityTags),
             'allowed_levels' => $aAllowedLevels,
+            // Milestone 2.
+            'campaigns' => $campaignService->getActiveByUserId($iUserId),
+            'active_purchases' => $aEntitlement['active_purchases'] ?? [],
+            'credit_balance' => (new \Apps\Hulahoot\Service\CreditLedger())->getBalance($iUserId),
+            'credits_per_post' => \Apps\Hulahoot\Service\CreditLedger::getCreditsPerPost(),
+            'existing_media' => $aPost && $iPostId ? array_map(function ($aMedia) use ($oImageUploadForUrls) {
+                $aMedia['url'] = $oImageUploadForUrls->resolveUrl($aMedia['file_path']);
+                return $aMedia;
+            }, $swessService->getMediaForPost($iPostId)) : [],
             'error' => $error,
             'csrf_token' => \Phpfox::getService('log.session')->getToken(),
         ]);
@@ -908,10 +976,18 @@ group('/hulahoot/swess', function () {
         }
         unset($aRow);
 
+        $oImageUploadForDetail = new \Apps\Hulahoot\Service\ImageUpload();
+
         return view('swess-post-detail.html', [
             'swess_active' => 'posts',
             'post' => $aPost,
             'tag' => $aPost['tag_id'] ? $swessService->getTagById((int)$aPost['tag_id']) : null,
+            // Milestone 2.
+            'media' => array_map(function ($aMedia) use ($oImageUploadForDetail) {
+                $aMedia['url'] = $oImageUploadForDetail->resolveUrl($aMedia['file_path']);
+                return $aMedia;
+            }, $swessService->getMediaForPost($iPostId)),
+            'campaign' => $aPost['campaign_id'] ? (new \Apps\Hulahoot\Service\Campaign())->getById((int)$aPost['campaign_id']) : null,
             'history' => $aHistory,
             'csrf_token' => \Phpfox::getService('log.session')->getToken(),
         ]);

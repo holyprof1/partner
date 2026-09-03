@@ -155,6 +155,43 @@ class Install extends App\App
                 'ordering' => $iIndex++,
             ],
 
+            // Milestone 2: the submit rate limit was a hardcoded 3600
+            // (seconds) in Service\Swess::submitPost() - see that
+            // method's own use of both settings below for exactly how.
+            // Same "master switch + numeric setting" shape as the mail
+            // toggles above, rather than overloading a 0-minute value to
+            // mean "disabled".
+            'enable_submit_rate_limit' => [
+                'var_name' => 'enable_submit_rate_limit',
+                'info' => 'Enable SWESS Submission Rate Limit',
+                'description' => 'Master on/off switch for the one-submission-per-window limit below. Turn off to let a publisher submit as often as they like.',
+                'type' => 'boolean',
+                'value' => '1',
+                'ordering' => $iIndex++,
+            ],
+            'submit_rate_limit_minutes' => [
+                'var_name' => 'submit_rate_limit_minutes',
+                'info' => 'SWESS Submission Rate Limit (Minutes)',
+                'description' => 'How many minutes must pass between one SWESS post submission and the next, per publisher. Currently 60 (one hour).',
+                'type' => '',
+                'value' => '60',
+                'ordering' => $iIndex++,
+            ],
+
+            // Milestone 2: the real credit ledger (Service\CreditLedger) -
+            // how many credits one SWESS post submission costs. Admin-
+            // editable rather than a fixed 1, the same "nothing the admin
+            // needs to change later stays hardcoded" rule every other
+            // numeric business rule in this app already follows.
+            'swess_credits_per_post' => [
+                'var_name' => 'swess_credits_per_post',
+                'info' => 'SWESS Credits Per Post',
+                'description' => 'How many credits one SWESS post submission reserves/spends against a publisher\'s available balance. Currently 1.',
+                'type' => '',
+                'value' => '1',
+                'ordering' => $iIndex++,
+            ],
+
             // Email template settings - same native pattern Core_Subscriptions
             // itself uses for its own emails (group_id 'email' + a value of
             // {_p var="..."} + a "Click here to edit" link that opens the
@@ -301,6 +338,19 @@ class Install extends App\App
             'SwessIdentityTag',
             'SwessAuditLog',
             'SwessPost',
+            // Milestone 2 (Portal Completion) - see Service\CreditLedger.php,
+            // Service\Campaign.php, and SwessPost's own extra columns
+            // (link_url/campaign_id/package_id/credit_amount, added above
+            // this array's own table-creation pass touches nothing else).
+            // Campaign before Post references it only loosely (soft
+            // reference, no ordering requirement) - listed here in the
+            // same "children after what they reference" spirit as the
+            // rest of this array regardless.
+            'SwessCampaign',
+            'SwessPostMedia',
+            'SwessPostMention',
+            'SwessCreditAccount',
+            'SwessCreditTransaction',
         ];
 
         // Registers a real phpfox_menu row via the sanctioned App

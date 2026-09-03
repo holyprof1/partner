@@ -9,6 +9,8 @@
 .hulahoot-swess-detail-content {
     border: 1px solid #e2e2e2; border-radius: 10px; padding: 18px 20px; font-size: 14.5px; white-space: pre-wrap; margin-bottom: 16px;
 }
+.hulahoot-swess-detail-media { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.hulahoot-swess-detail-media img { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e2e2; }
 .hulahoot-swess-detail-facts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .hulahoot-swess-detail-facts span { font-size: 12px; background: #f2f2f2; border-radius: 999px; padding: 3px 12px; }
 .hulahoot-swess-rejection { background: #f8d7da; color: #842029; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; font-size: 13.5px; }
@@ -44,11 +46,25 @@
 
     <div class="hulahoot-swess-detail-content">{{ post.content|default('—') }}</div>
 
+    {% if media %}
+        <div class="hulahoot-swess-detail-media">
+            {% for item in media %}
+                <img src="{{ item.url }}" alt="">
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if post.link_url %}
+        <p><a href="{{ post.link_url }}" target="_blank" rel="noopener noreferrer">{{ post.link_url }}</a></p>
+    {% endif %}
+
     <div class="hulahoot-swess-detail-facts">
         <span>{% if post.identity_type == 'self' %}{{ _p('hulahoot_swess_identity_self') }}{% else %}{{ _p('hulahoot_swess_identity_page') }} #{{ post.identity_id }}{% endif %}</span>
         {% if tag %}<span>{{ tag.name }}</span>{% endif %}
         <span>{{ post.distribution_target_type }}{% if post.distribution_target_label %}: {{ post.distribution_target_label }}{% endif %}</span>
         {% if post.scheduled_at %}<span>{{ _p('hulahoot_swess_field_scheduled_for') }}: {{ post.scheduled_at|date('M j, Y g:i A') }}</span>{% endif %}
+        {% if campaign %}<span>{{ _p('hulahoot_swess_field_campaign') }}: {{ campaign.name }}</span>{% endif %}
+        {% if post.credit_amount %}<span>{{ _p('hulahoot_swess_credit_amount') }}: {{ post.credit_amount }}</span>{% endif %}
     </div>
 
     <div class="hulahoot-swess-detail-actions">

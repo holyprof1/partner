@@ -19,9 +19,14 @@ namespace Apps\Hulahoot\Service;
  *   creates, owns, or modifies a Page; it only records that a specific,
  *   already-existing Page has been approved
  * - Service\Entitlement / Core Subscriptions for subscription/credit
- *   state - not referenced here at all; entitlement is a separate
- *   question from "is this identity whitelisted," and the two are meant
- *   to be checked independently by whatever future caller needs both
+ *   state, and (Milestone 2) Service\CreditLedger for actually spending
+ *   it - canPostAs() itself still never checks either: "is this identity
+ *   whitelisted" stays a question about identity/tag configuration only,
+ *   answered the same way regardless of what a user can afford. Credit
+ *   availability is checked exactly once, at submitPost() time (the
+ *   moment a post would actually cost something) - a whitelisted user
+ *   with zero credits can still draft, edit, and preview freely; only
+ *   submitting is gated.
  *
  * canPostAs() is the enforcement method the whole SWESS foundation exists
  * to prove: it must return the same answer whether asked about a normal
@@ -51,6 +56,32 @@ class Swess
      * correctly once real publishing is built.
      */
     const POST_STATUSES = ['draft', 'pending', 'approved', 'scheduled', 'published', 'failed', 'rejected', 'archived'];
+
+    /** Documented DEFAULT - see getSubmitRateLimitMinutes(). Matches the
+     * fixed 3600-second window this app shipped with before Milestone 2's
+     * settings-framework conversion. */
+    const DEFAULT_SUBMIT_RATE_LIMIT_MINUTES = 60;
+
+    /**
+     * Milestone 2: the one-submission-per-rolling-window rate limit was a
+     * hardcoded 3600 (seconds) in submitPost() through Milestone 1 - every
+     * other numeric rule in this app (term days, grace days, reminder
+     * counts, credits per post) already goes through Phpfox::getParam(),
+     * so this closes that one inconsistency. A master on/off switch
+     * (hulahoot.enable_submit_rate_limit) is a separate setting - see
+     * submitPost()'s own use of both - matching the same "master switch +
+     * numeric setting" shape Install.php already uses for the expiry-
+     * reminder mail categories, rather than overloading 0 minutes to mean
+     * "disabled" the way a plain numeric-only setting would have to.
+     *
+     * @return int currently admin-configured rate-limit window, in minutes
+     */
+    public static function getSubmitRateLimitMinutes()
+    {
+        $iValue = (int)\Phpfox::getParam('hulahoot.submit_rate_limit_minutes');
+
+        return $iValue > 0 ? $iValue : self::DEFAULT_SUBMIT_RATE_LIMIT_MINUTES;
+    }
 
     // ---- Whitelist -----------------------------------------------------
 
@@ -873,12 +904,15 @@ class Swess
      * Create a new draft. Deliberately no validation beyond basic type-
      * cleaning - "no validation enforced" for Save as Draft, per spec.
      * The real checks (identity approved, tag assigned, target level
-     * allowed, content present) happen in submitPost().
+     * allowed, content present, campaign/package ownership, credit
+     * availability) happen in submitPost().
      *
      * @param int $iUserId
      * @param array $aData identity_type, identity_id, content, tag_id,
      *        distribution_target_type, distribution_target_value,
-     *        distribution_target_label, scheduled_at
+     *        distribution_target_label, scheduled_at, link_url (Milestone 2),
+     *        campaign_id (Milestone 2, nullable), package_id (Milestone 2,
+     *        nullable - auto-resolved at submit time if omitted)
      *
      * @return int the new swess_post_id
      */
@@ -886,7 +920,7 @@ class Swess
     {
         $iNow = time();
 
-        return (int)db()->insert(':hulahoot_swess_post', [
+        $iPostId = (int)db()->insert(':hulahoot_swess_post', [
             'user_id' => (int)$iUserId,
             'identity_type' => (string)($aData['identity_type'] ?? ''),
             'identity_id' => (int)($aData['identity_id'] ?? 0),
@@ -896,10 +930,17 @@ class Swess
             'distribution_target_value' => $aData['distribution_target_value'] ?? null,
             'distribution_target_label' => $aData['distribution_target_label'] ?? null,
             'scheduled_at' => !empty($aData['scheduled_at']) ? (int)$aData['scheduled_at'] : null,
+            'link_url' => self::_normalizeLinkUrl($aData['link_url'] ?? null),
+            'campaign_id' => !empty($aData['campaign_id']) ? (int)$aData['campaign_id'] : null,
+            'package_id' => !empty($aData['package_id']) ? (int)$aData['package_id'] : null,
             'status' => 'draft',
             'created' => $iNow,
             'updated' => $iNow,
         ]);
+
+        $this->syncMentionsForPost($iPostId, (string)($aData['content'] ?? ''));
+
+        return $iPostId;
     }
 
     /**
@@ -950,12 +991,182 @@ class Swess
             'distribution_target_value' => array_key_exists('distribution_target_value', $aData) ? $aData['distribution_target_value'] : $aPost['distribution_target_value'],
             'distribution_target_label' => array_key_exists('distribution_target_label', $aData) ? $aData['distribution_target_label'] : $aPost['distribution_target_label'],
             'scheduled_at' => !empty($aData['scheduled_at']) ? (int)$aData['scheduled_at'] : $aPost['scheduled_at'],
+            'link_url' => array_key_exists('link_url', $aData) ? self::_normalizeLinkUrl($aData['link_url']) : $aPost['link_url'],
+            'campaign_id' => array_key_exists('campaign_id', $aData) ? (!empty($aData['campaign_id']) ? (int)$aData['campaign_id'] : null) : $aPost['campaign_id'],
+            'package_id' => array_key_exists('package_id', $aData) ? (!empty($aData['package_id']) ? (int)$aData['package_id'] : null) : $aPost['package_id'],
             'status' => 'draft',
             'rejection_reason' => null,
             'updated' => time(),
         ], ['swess_post_id' => (int)$iPostId]);
 
+        $this->syncMentionsForPost(
+            (int)$iPostId,
+            isset($aData['content']) ? (string)$aData['content'] : (string)$aPost['content']
+        );
+
         return true;
+    }
+
+    // ---- Media / mentions / campaign (Milestone 2) ----------------------
+
+    /**
+     * Attach one or more already-uploaded photo files to a post - the
+     * composer's "media" requirement. Reuses Service\ImageUpload for the
+     * actual upload/storage (no parallel upload pipeline); this method
+     * only records the resulting stored paths against the post, ordered
+     * by attach sequence.
+     *
+     * @param int $iPostId
+     * @param int $iUserId must own the post
+     * @param string[] $aFilePaths stored paths, as returned by
+     *        Service\ImageUpload::upload() - already uploaded by the caller
+     *
+     * @return void
+     *
+     * @throws \InvalidArgumentException if the post doesn't belong to $iUserId or
+     *         isn't currently editable
+     */
+    public function attachMedia($iPostId, $iUserId, array $aFilePaths)
+    {
+        $aPost = $this->getPostById($iPostId);
+
+        if (!$aPost || (int)$aPost['user_id'] !== (int)$iUserId) {
+            throw new \InvalidArgumentException('Post ' . $iPostId . ' does not belong to user ' . $iUserId . '.');
+        }
+
+        if (!in_array($aPost['status'], ['draft', 'rejected', 'failed'], true)) {
+            throw new \InvalidArgumentException('This post can no longer be edited (status: ' . $aPost['status'] . ').');
+        }
+
+        if (!$aFilePaths) {
+            return;
+        }
+
+        $iOrdering = (int)db()->select('COALESCE(MAX(ordering), -1) AS m')
+            ->from(':hulahoot_swess_post_media')
+            ->where(['swess_post_id' => (int)$iPostId])
+            ->execute('getSlaveField');
+
+        $iNow = time();
+        foreach ($aFilePaths as $sFilePath) {
+            $iOrdering++;
+            db()->insert(':hulahoot_swess_post_media', [
+                'swess_post_id' => (int)$iPostId,
+                'media_type' => 'image',
+                'file_path' => (string)$sFilePath,
+                'ordering' => $iOrdering,
+                'created' => $iNow,
+            ]);
+        }
+    }
+
+    /**
+     * @param int $iPostId
+     *
+     * @return array ordered
+     */
+    public function getMediaForPost($iPostId)
+    {
+        return (array)db()->select('*')
+            ->from(':hulahoot_swess_post_media')
+            ->where(['swess_post_id' => (int)$iPostId])
+            ->order('ordering ASC, id ASC')
+            ->execute('getSlaveRows');
+    }
+
+    /**
+     * @param int $iMediaId
+     * @param int $iUserId must own the parent post
+     *
+     * @return void
+     *
+     * @throws \InvalidArgumentException if the media row doesn't exist, its
+     *         post doesn't belong to $iUserId, or the post isn't editable
+     */
+    public function removeMedia($iMediaId, $iUserId)
+    {
+        $aMedia = db()->select('*')->from(':hulahoot_swess_post_media')->where(['id' => (int)$iMediaId])->execute('getSlaveRow');
+
+        if (!$aMedia) {
+            throw new \InvalidArgumentException('Media ' . $iMediaId . ' does not exist.');
+        }
+
+        $aPost = $this->getPostById((int)$aMedia['swess_post_id']);
+
+        if (!$aPost || (int)$aPost['user_id'] !== (int)$iUserId) {
+            throw new \InvalidArgumentException('Media ' . $iMediaId . ' does not belong to user ' . $iUserId . '.');
+        }
+
+        if (!in_array($aPost['status'], ['draft', 'rejected', 'failed'], true)) {
+            throw new \InvalidArgumentException('This post can no longer be edited (status: ' . $aPost['status'] . ').');
+        }
+
+        db()->delete(':hulahoot_swess_post_media', ['id' => (int)$iMediaId]);
+    }
+
+    /**
+     * Re-derives the mention set from a post's own content every time it's
+     * saved (create or update) - never additive, so removing an @mention
+     * from the text correctly removes it here too, matching how the
+     * disclosure-tag/identity junctions in this app are always the source
+     * of truth re-derived from an explicit action, not accumulated forever.
+     * Only a real, existing username resolves to a row - an unmatched
+     * "@word" in the content is left as plain text, exactly as typed,
+     * never rejected (mentions are informational, not a validation gate -
+     * submitPost() never checks them).
+     *
+     * @param int $iPostId
+     * @param string $sContent
+     *
+     * @return void
+     */
+    public function syncMentionsForPost($iPostId, $sContent)
+    {
+        $iPostId = (int)$iPostId;
+
+        db()->delete(':hulahoot_swess_post_mention', ['swess_post_id' => $iPostId]);
+
+        if (trim((string)$sContent) === '') {
+            return;
+        }
+
+        if (!preg_match_all('/@([A-Za-z0-9_.\-]{2,60})/', (string)$sContent, $aMatches)) {
+            return;
+        }
+
+        $aUsernames = array_values(array_unique($aMatches[1]));
+        $aSeenUserIds = [];
+        $iNow = time();
+
+        foreach ($aUsernames as $sUsername) {
+            $aUser = db()->select('user_id')->from(':user')->where(['user_name' => $sUsername])->execute('getSlaveRow');
+
+            if (!$aUser || isset($aSeenUserIds[(int)$aUser['user_id']])) {
+                continue;
+            }
+
+            $aSeenUserIds[(int)$aUser['user_id']] = true;
+
+            db()->insert(':hulahoot_swess_post_mention', [
+                'swess_post_id' => $iPostId,
+                'mentioned_user_id' => (int)$aUser['user_id'],
+                'created' => $iNow,
+            ]);
+        }
+    }
+
+    /**
+     * @param int $iPostId
+     *
+     * @return array {mentioned_user_id, user_name, full_name}[]
+     */
+    public function getMentionsForPost($iPostId)
+    {
+        return (array)db()->select('m.mentioned_user_id, u.user_name, u.full_name')
+            ->from(':hulahoot_swess_post_mention', 'm')
+            ->join(':user', 'u', 'u.user_id = m.mentioned_user_id')
+            ->where(['m.swess_post_id' => (int)$iPostId])
+            ->execute('getSlaveRows');
     }
 
     /**
@@ -1036,21 +1247,78 @@ class Swess
             }
 
             // Confirmed rate limit: "1 post per hour is what is done" -
-            // one submission per user per rolling hour, regardless of
+            // one submission per user per rolling window, regardless of
             // package. Anchored to submitted_at (set only by this method,
             // the moment a post actually leaves 'draft'), never `updated`
             // - `updated` also moves when an admin approves/rejects some
             // OTHER, older post of this user's, which would wrongly
             // extend the cooldown for a submission that never happened.
-            $iLastSubmittedAt = (int)db()->select('MAX(submitted_at) AS ts')
-                ->from(':hulahoot_swess_post')
-                ->where('user_id = ' . $iUserId . ' AND submitted_at IS NOT NULL')
-                ->execute('getSlaveField');
-            if ($iLastSubmittedAt && (time() - $iLastSubmittedAt) < 3600) {
-                throw new \InvalidArgumentException(_p('hulahoot_swess_submit_rate_limited', [
-                    'minutes' => (int)ceil((3600 - (time() - $iLastSubmittedAt)) / 60),
-                ]));
+            // Milestone 2: both the window length and whether this limit
+            // applies at all are now admin-configurable (AdminCP ->
+            // Settings -> Hulahoot) - see getSubmitRateLimitMinutes()'s
+            // own docblock for why this was the one hardcoded numeric
+            // rule left in the lifecycle.
+            if (\Phpfox::getParam('hulahoot.enable_submit_rate_limit')) {
+                $iWindowSeconds = self::getSubmitRateLimitMinutes() * 60;
+
+                $iLastSubmittedAt = (int)db()->select('MAX(submitted_at) AS ts')
+                    ->from(':hulahoot_swess_post')
+                    ->where('user_id = ' . $iUserId . ' AND submitted_at IS NOT NULL')
+                    ->execute('getSlaveField');
+                if ($iLastSubmittedAt && (time() - $iLastSubmittedAt) < $iWindowSeconds) {
+                    throw new \InvalidArgumentException(_p('hulahoot_swess_submit_rate_limited', [
+                        'minutes' => (int)ceil(($iWindowSeconds - (time() - $iLastSubmittedAt)) / 60),
+                    ]));
+                }
             }
+
+            // Milestone 2: campaign association, if set, must be the
+            // submitter's own active campaign - closes the same "trusted
+            // request param pointing at someone else's row" gap the
+            // approved-identity/tag actions already guard against.
+            if (!empty($aPost['campaign_id']) && !(new Campaign())->belongsToUser((int)$aPost['campaign_id'], $iUserId)) {
+                throw new \InvalidArgumentException(_p('hulahoot_swess_campaign_not_found'));
+            }
+
+            // Milestone 2: package association - which of the submitter's
+            // own active, Hulahoot-managed purchases this post's credit is
+            // drawn against. Entitlement::getActiveEntitlement() already
+            // merges every such purchase for this user; validate an
+            // explicitly-chosen one belongs to that set, or fall back to
+            // its own "soonest expiring" pick (the same one the SWESS
+            // Wallet/entitlement tab already treats as the headline plan)
+            // when the composer didn't specify one.
+            $aEntitlement = (new Entitlement())->getActiveEntitlement($iUserId);
+            $iResolvedPackageId = !empty($aPost['package_id']) ? (int)$aPost['package_id'] : null;
+
+            if ($aEntitlement) {
+                $aActivePackageIds = array_map(function ($aActive) {
+                    return (int)$aActive['package_id'];
+                }, $aEntitlement['active_purchases']);
+
+                if ($iResolvedPackageId !== null && !in_array($iResolvedPackageId, $aActivePackageIds, true)) {
+                    throw new \InvalidArgumentException(_p('hulahoot_swess_package_not_found'));
+                }
+
+                if ($iResolvedPackageId === null) {
+                    $iResolvedPackageId = (int)$aEntitlement['package_id'];
+                }
+            } else {
+                // No active package at all - the confirmed credit-exempt
+                // (admin/staff) case. A package_id submitted anyway can't
+                // belong to anything real for this user.
+                $iResolvedPackageId = null;
+            }
+
+            // Milestone 2: reserve the credit this submission costs - the
+            // real AVAILABLE -> RESERVED transition Service\CreditLedger
+            // implements. Thrown before any status write below, same
+            // "validate everything, then commit" shape every other check
+            // in this method already follows - an insufficient-credit
+            // submitter's post stays exactly where it was (draft/rejected/
+            // failed), nothing partially applied.
+            $iCreditAmount = CreditLedger::getCreditsPerPost();
+            (new CreditLedger())->reserve($iUserId, (int)$iPostId, $iCreditAmount);
 
             if ((bool)$aWhitelist['requires_review']) {
                 $sNewStatus = 'pending';
@@ -1064,12 +1332,27 @@ class Swess
                 'status' => $sNewStatus,
                 'rejection_reason' => null,
                 'submitted_at' => time(),
+                'package_id' => $iResolvedPackageId,
+                'credit_amount' => $iCreditAmount,
                 'updated' => time(),
             ], ['swess_post_id' => (int)$iPostId]);
+
+            // "published" here is the same local-bookkeeping finish line
+            // submitPost()'s own docblock already documents - the credit
+            // reserved above is finalized as spent (RESERVED -> USED) the
+            // moment SWESS itself considers the post live, exactly the
+            // same rule approvePost()/publishDuePosts() apply when THEY
+            // are what moves a post into 'published'. A 'pending' or
+            // 'scheduled' post stays reserved, not yet spent.
+            if ($sNewStatus === 'published') {
+                (new CreditLedger())->consume($iUserId, (int)$iPostId);
+            }
 
             $this->logAudit($iUserId, $aPost['identity_type'], (int)$aPost['identity_id'], 'post_submitted', [
                 'swess_post_id' => (int)$iPostId,
                 'new_status' => $sNewStatus,
+                'credit_amount' => $iCreditAmount,
+                'package_id' => $iResolvedPackageId,
             ]);
             notify('Hulahoot', 'post_submitted', (int)$iPostId, $iUserId);
 
@@ -1117,6 +1400,15 @@ class Swess
                 'status' => $sNewStatus,
                 'updated' => time(),
             ], ['swess_post_id' => (int)$iPostId]);
+
+            // Milestone 2: the credit reserved at submit time is finalized
+            // as spent the moment this approval is what makes the post
+            // 'published' - see submitPost()'s own matching comment. A
+            // post approved straight into 'scheduled' stays reserved until
+            // publishDuePosts() actually publishes it.
+            if ($sNewStatus === 'published') {
+                (new CreditLedger())->consume((int)$aPost['user_id'], (int)$iPostId);
+            }
 
             $this->logAudit((int)$aPost['user_id'], $aPost['identity_type'], (int)$aPost['identity_id'], 'post_approved', [
                 'swess_post_id' => (int)$iPostId,
@@ -1169,6 +1461,13 @@ class Swess
                 'rejection_reason' => trim((string)$sReason),
                 'updated' => time(),
             ], ['swess_post_id' => (int)$iPostId]);
+
+            // Milestone 2: a rejected post must be edited and resubmitted
+            // (updatePost() resets it to 'draft') - the credit reserved at
+            // submit time is returned to available now, not held hostage
+            // until a resubmission that may never come. Resubmitting
+            // reserves fresh, via submitPost() itself.
+            (new CreditLedger())->release((int)$aPost['user_id'], (int)$iPostId, 'rejected');
 
             $this->logAudit((int)$aPost['user_id'], $aPost['identity_type'], (int)$aPost['identity_id'], 'post_rejected', [
                 'swess_post_id' => (int)$iPostId,
@@ -1263,6 +1562,12 @@ class Swess
                 'updated' => time(),
             ], ['swess_post_id' => (int)$iPostId]);
 
+            // Milestone 2: an archived post never publishes - return
+            // whatever credit was reserved for it (a no-op if it was
+            // already consumed as 'published' before being cancelled from
+            // 'approved', or if it was never reserved at all).
+            (new CreditLedger())->release((int)$iUserId, (int)$iPostId, 'cancelled');
+
             $this->logAudit((int)$iUserId, $aPost['identity_type'], (int)$aPost['identity_id'], 'post_cancelled', [
                 'swess_post_id' => (int)$iPostId,
             ]);
@@ -1295,6 +1600,15 @@ class Swess
             throw new \InvalidArgumentException('Only a draft can be deleted directly - use Cancel instead.');
         }
 
+        // Milestone 2: a draft is never reserved (submitPost() is the only
+        // reserve() call site), so there's no credit to release here - but
+        // its media/mention child rows need the same explicit service-
+        // layer cascade every other Hulahoot child table already follows
+        // (see Service\Swess::deleteWhitelist()'s own docblock for why:
+        // no hard FK anywhere in this schema means nothing else will
+        // clean these up).
+        db()->delete(':hulahoot_swess_post_media', ['swess_post_id' => (int)$iPostId]);
+        db()->delete(':hulahoot_swess_post_mention', ['swess_post_id' => (int)$iPostId]);
         db()->delete(':hulahoot_swess_post', ['swess_post_id' => (int)$iPostId]);
     }
 
@@ -1406,6 +1720,12 @@ class Swess
                         'updated' => time(),
                     ], ['swess_post_id' => $iPostId]);
 
+                    // Milestone 2: this is the scheduled path's own
+                    // 'published' finish line - finalize its reserved
+                    // credit as spent, same rule submitPost()/approvePost()
+                    // apply for the immediate-publish paths.
+                    (new CreditLedger())->consume((int)$aFresh['user_id'], $iPostId);
+
                     $this->logAudit((int)$aFresh['user_id'], $aFresh['identity_type'], (int)$aFresh['identity_id'], 'post_published', [
                         'swess_post_id' => $iPostId,
                     ]);
@@ -1417,6 +1737,13 @@ class Swess
                         'rejection_reason' => substr($e->getMessage(), 0, 255),
                         'updated' => time(),
                     ], ['swess_post_id' => $iPostId]);
+
+                    // Milestone 2: a technical failure must not permanently
+                    // consume the credit reserved for this post - return it
+                    // to available. The publisher can then edit and
+                    // resubmit (updatePost() already allows 'failed'),
+                    // reserving fresh via submitPost() itself.
+                    (new CreditLedger())->release((int)$aFresh['user_id'], $iPostId, 'publish_failed');
 
                     $this->logAudit((int)$aFresh['user_id'], $aFresh['identity_type'], (int)$aFresh['identity_id'], 'post_failed', [
                         'swess_post_id' => $iPostId,
@@ -1472,6 +1799,18 @@ class Swess
      *                 the composer doesn't populate it yet, pending the
      *                 main Hulahoot Location & Context Service),
      *             scheduled_at: int|null,
+     *             link_url: string|null (Milestone 2),
+     *             media: {media_type, file_path, ordering}[] (Milestone 2,
+     *                 ordered - resolve file_path with Service\ImageUpload::
+     *                 resolveUrl() the same way every other stored image
+     *                 in this app already is),
+     *             mentions: {mentioned_user_id, user_name, full_name}[]
+     *                 (Milestone 2),
+     *             campaign: {campaign_id, name}|null (Milestone 2),
+     *             package_id: int|null (Milestone 2 - which active
+     *                 purchase this post's credit was drawn against),
+     *             credit_amount: int|null (Milestone 2 - how many credits
+     *                 were reserved/spent for this post),
      *             entitlement: Service\Entitlement::getActiveEntitlement()'s
      *                 snapshot for this post's user at hand-off time
      *         }
@@ -1496,6 +1835,7 @@ class Swess
         }
 
         $aTag = $aPost['tag_id'] ? $this->getTagById((int)$aPost['tag_id']) : null;
+        $aCampaign = $aPost['campaign_id'] ? (new Campaign())->getById((int)$aPost['campaign_id']) : null;
 
         return [
             'post_id' => (int)$aPost['swess_post_id'],
@@ -1514,6 +1854,18 @@ class Swess
                 'label' => $aPost['distribution_target_label'],
             ],
             'scheduled_at' => $aPost['scheduled_at'] !== null ? (int)$aPost['scheduled_at'] : null,
+            'link_url' => $aPost['link_url'],
+            'media' => array_map(function ($aMedia) {
+                return [
+                    'media_type' => $aMedia['media_type'],
+                    'file_path' => $aMedia['file_path'],
+                    'ordering' => (int)$aMedia['ordering'],
+                ];
+            }, $this->getMediaForPost((int)$aPost['swess_post_id'])),
+            'mentions' => $this->getMentionsForPost((int)$aPost['swess_post_id']),
+            'campaign' => $aCampaign ? ['campaign_id' => (int)$aCampaign['campaign_id'], 'name' => $aCampaign['name']] : null,
+            'package_id' => $aPost['package_id'] !== null ? (int)$aPost['package_id'] : null,
+            'credit_amount' => $aPost['credit_amount'] !== null ? (int)$aPost['credit_amount'] : null,
             'created' => (int)$aPost['created'],
             'updated' => (int)$aPost['updated'],
             'entitlement' => (new Entitlement())->getActiveEntitlement((int)$aPost['user_id']),
@@ -1521,6 +1873,34 @@ class Swess
     }
 
     // ---- Internal ------------------------------------------------------
+
+    /**
+     * Milestone 2: the composer's "approved link" field. Blank/null is
+     * always valid (the field is optional) - only a non-blank value must
+     * actually be a well-formed http(s) URL, so the future hand-off
+     * pipeline never has to defensively re-validate what it receives.
+     *
+     * @param string|null $sUrl
+     *
+     * @return string|null
+     *
+     * @throws \InvalidArgumentException if a non-blank value isn't a
+     *         well-formed http(s) URL
+     */
+    private static function _normalizeLinkUrl($sUrl)
+    {
+        $sUrl = trim((string)$sUrl);
+
+        if ($sUrl === '') {
+            return null;
+        }
+
+        if (!preg_match('#^https?://#i', $sUrl) || !filter_var($sUrl, FILTER_VALIDATE_URL)) {
+            throw new \InvalidArgumentException(_p('hulahoot_swess_link_invalid'));
+        }
+
+        return mb_substr($sUrl, 0, 500);
+    }
 
     /**
      * @param array $aData

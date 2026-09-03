@@ -137,6 +137,46 @@ class SwessPost extends Table
                 Field::FIELD_PARAM_TYPE_VALUE => 255,
                 Field::FIELD_PARAM_OTHER => 'NULL',
             ],
+            // Milestone 2: the composer's "approved link" field - stored
+            // verbatim, validated (well-formed URL) at the service layer,
+            // never resolved/expanded here.
+            'link_url' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_VARCHAR,
+                Field::FIELD_PARAM_TYPE_VALUE => 500,
+                Field::FIELD_PARAM_OTHER => 'NULL',
+            ],
+            // Milestone 2: soft reference to hulahoot_swess_campaign.campaign_id -
+            // which of this publisher's own campaigns this post belongs to,
+            // if any. Optional: a post need not belong to a campaign.
+            'campaign_id' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_INT,
+                Field::FIELD_PARAM_TYPE_VALUE => 10,
+                Field::FIELD_PARAM_OTHER => 'UNSIGNED DEFAULT NULL',
+            ],
+            // Milestone 2: soft reference to subscribe_package.package_id -
+            // which of the publisher's own active purchases this post's
+            // credit was drawn against. A publisher may hold more than one
+            // active, Hulahoot-managed purchase at once (Entitlement's own
+            // merge-across-purchases rule) - this records which specific
+            // one this post counts against, for later per-package
+            // reporting. Set at submit time by Service\Swess::submitPost(),
+            // validated there against the submitter's own active purchases.
+            'package_id' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_INT,
+                Field::FIELD_PARAM_TYPE_VALUE => 10,
+                Field::FIELD_PARAM_OTHER => 'UNSIGNED DEFAULT NULL',
+            ],
+            // Milestone 2: how many credits this specific post reserved/
+            // consumed - denormalized from hulahoot_swess_credit_transaction
+            // onto the post itself purely for cheap display (post list,
+            // detail view) without a ledger join. The ledger rows
+            // (Service\CreditLedger) remain the authoritative source for
+            // balance math; this column is never read for that.
+            'credit_amount' => [
+                Field::FIELD_PARAM_TYPE => Field::TYPE_INT,
+                Field::FIELD_PARAM_TYPE_VALUE => 10,
+                Field::FIELD_PARAM_OTHER => 'UNSIGNED DEFAULT NULL',
+            ],
             'created' => [
                 Field::FIELD_PARAM_TYPE => Field::TYPE_INT,
                 Field::FIELD_PARAM_TYPE_VALUE => 10,
