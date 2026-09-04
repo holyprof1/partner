@@ -68,6 +68,16 @@ class SwessCreditController extends Phpfox_Component
         $aLedger = $aOwner ? $service->getLedgerForUser($iUserId, 50) : [];
         foreach ($aLedger as &$aTx) {
             $aTx['created_display'] = Phpfox::getLib('date')->convertTime((int)$aTx['created'], 'core.global_update_time');
+            // Pre-resolved here, not built from a dynamic phrase key in the
+            // template - Smarty's backtick interpolation doesn't reliably
+            // support dot-notation array access like `$aTx.type`, and this
+            // is the same "resolve in the controller" pattern created_display
+            // above already uses.
+            $aTx['type_display'] = _p('hulahoot_swess_credit_type_' . $aTx['type']);
+            // Same "resolve here, not with a Smarty modifier" reason as
+            // above - this Smarty install has no |default modifier
+            // registered.
+            $aTx['note_display'] = $aTx['note'] !== null && $aTx['note'] !== '' ? $aTx['note'] : '—';
         }
         unset($aTx);
 

@@ -106,9 +106,9 @@ defined('PHPFOX') or exit('NO DICE!');
                     {foreach from=$ledger item=aTx}
                         <tr>
                             <td>{$aTx.created_display}</td>
-                            <td>{_p var="hulahoot_swess_credit_type_`$aTx.type`"}</td>
+                            <td>{$aTx.type_display}</td>
                             <td>{$aTx.amount}</td>
-                            <td>{$aTx.note|default:'&mdash;'|clean} {if $aTx.swess_post_id}(#{$aTx.swess_post_id}){/if}</td>
+                            <td>{$aTx.note_display|clean} {if $aTx.swess_post_id}(#{$aTx.swess_post_id}){/if}</td>
                         </tr>
                     {/foreach}
                 </tbody>
@@ -119,6 +119,7 @@ defined('PHPFOX') or exit('NO DICE!');
     {/if}
 </div>
 <script>
+{literal}
 (function () {
     var input = document.getElementById('hulahoot_swess_credit_user_lookup');
     var results = document.getElementById('hulahoot_swess_credit_user_lookup_results');
@@ -139,7 +140,7 @@ defined('PHPFOX') or exit('NO DICE!');
         if (!users.length) {
             var empty = document.createElement('div');
             empty.className = 'hulahoot-swess-user-search-empty';
-            empty.textContent = '{_p var="hulahoot_swess_search_no_results" phpfox_squote=true}';
+            empty.textContent = '{/literal}{_p var="hulahoot_swess_search_no_results" phpfox_squote=true}{literal}';
             results.appendChild(empty);
             results.classList.add('is-open');
             return;
@@ -200,4 +201,5 @@ defined('PHPFOX') or exit('NO DICE!');
         }
     });
 })();
+{/literal}
 </script>
