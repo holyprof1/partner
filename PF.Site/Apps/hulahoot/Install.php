@@ -192,6 +192,23 @@ class Install extends App\App
                 'ordering' => $iIndex++,
             ],
 
+            // Milestone 2: the composer's "Video" requirement (master plan
+            // item 2). Admin-editable for the same reason the rate limit
+            // above is - the practical ceiling is an operational decision
+            // (storage budget, partner expectations), not a constant.
+            // NOTE: this caps what the APPLICATION accepts. PHP's own
+            // upload_max_filesize/post_max_size are a separate, lower
+            // ceiling that applies first - see the Portal-scoped .user.ini.
+            // Setting this above those PHP values has no effect.
+            'swess_max_video_mb' => [
+                'var_name' => 'swess_max_video_mb',
+                'info' => 'SWESS Max Video Size (MB)',
+                'description' => 'Largest video file, in megabytes, a publisher may attach to a SWESS post. Must not exceed the server\'s PHP upload_max_filesize (currently configured Portal-wide via .user.ini).',
+                'type' => '',
+                'value' => '50',
+                'ordering' => $iIndex++,
+            ],
+
             // Email template settings - same native pattern Core_Subscriptions
             // itself uses for its own emails (group_id 'email' + a value of
             // {_p var="..."} + a "Click here to edit" link that opens the
