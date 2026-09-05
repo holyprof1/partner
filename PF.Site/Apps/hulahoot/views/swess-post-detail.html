@@ -11,6 +11,7 @@
 }
 .hulahoot-swess-detail-media { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .hulahoot-swess-detail-media img { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e2e2; }
+.hulahoot-swess-detail-media video { max-width: 320px; border-radius: 8px; border: 1px solid #e2e2e2; background: #000; }
 .hulahoot-swess-detail-facts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .hulahoot-swess-detail-facts span { font-size: 12px; background: #f2f2f2; border-radius: 999px; padding: 3px 12px; }
 .hulahoot-swess-rejection { background: #f8d7da; color: #842029; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; font-size: 13.5px; }
@@ -49,7 +50,11 @@
     {% if media %}
         <div class="hulahoot-swess-detail-media">
             {% for item in media %}
-                <img src="{{ item.url }}" alt="">
+                {% if item.media_type == 'video' %}
+                    <video src="{{ item.url }}" controls preload="metadata"></video>
+                {% else %}
+                    <img src="{{ item.url }}" alt="">
+                {% endif %}
             {% endfor %}
         </div>
     {% endif %}
