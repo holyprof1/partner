@@ -1668,6 +1668,72 @@ class Swess
     }
 
     /**
+     * Read-only inspection feed for the AdminCP SWESS Posts screen -
+     * every post across every publisher, optionally narrowed to one
+     * status.
+     *
+     * Master plan item 32 ("Give Admin Full SWESS Controls") requires
+     * "Inspect scheduled posts", and item 33 ("Validate All Pre-Launch
+     * Scheduled Posts") is impossible without it: until now the only
+     * admin-facing post view was the Approval Queue, which shows
+     * 'pending' and nothing else, so scheduled and published posts were
+     * invisible to administrators.
+     *
+     * Deliberately read-only and deliberately separate from
+     * getPendingPosts() rather than a widening of it - the Approval Queue
+     * is an action surface whose "oldest first, pending only" contract is
+     * load-bearing for review order, and this must not disturb it.
+     *
+     * @param string|null $sStatus one of self::POST_STATUSES; anything
+     *        else (including null) means "all statuses"
+     * @param int $iLimit hard cap, since this is the one query in the app
+     *        that spans every publisher's posts at once
+     *
+     * @return array post rows + publisher user_name + tag name
+     */
+    public function getPostsForAdmin($sStatus = null, $iLimit = 200)
+    {
+        $oQuery = db()->select('p.*, u.user_name, t.name AS tag_name')
+            ->from(':hulahoot_swess_post', 'p')
+            ->join(':user', 'u', 'u.user_id = p.user_id')
+            ->leftJoin(':hulahoot_swess_tag', 't', 't.tag_id = p.tag_id');
+
+        if ($sStatus !== null && in_array($sStatus, self::POST_STATUSES, true)) {
+            $oQuery->where(['p.status' => $sStatus]);
+        }
+
+        return (array)$oQuery
+            ->order('p.updated DESC')
+            ->limit((int)$iLimit)
+            ->execute('getSlaveRows');
+    }
+
+    /**
+     * Per-status totals for the same screen's filter, so an administrator
+     * can see at a glance where posts actually are without clicking
+     * through every status. Counts the whole table, independent of
+     * getPostsForAdmin()'s display cap.
+     *
+     * @return array status => count, including zero-count statuses so the
+     *         filter renders a stable, complete list
+     */
+    public function getPostCountsByStatus()
+    {
+        $aCounts = array_fill_keys(self::POST_STATUSES, 0);
+
+        $aRows = (array)db()->select('status, COUNT(*) AS total')
+            ->from(':hulahoot_swess_post')
+            ->group('status')
+            ->execute('getSlaveRows');
+
+        foreach ($aRows as $aRow) {
+            $aCounts[$aRow['status']] = (int)$aRow['total'];
+        }
+
+        return $aCounts;
+    }
+
+    /**
      * Publish every 'scheduled' post whose scheduled_at has arrived -
      * called from publish-scheduled-swess-posts.php, a standalone CLI
      * script (its own crontab entry, not phpFox's native phpfox_cron
