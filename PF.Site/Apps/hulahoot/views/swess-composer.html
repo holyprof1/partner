@@ -203,7 +203,13 @@
 
             <div class="hulahoot-swess-composer-actions">
                 <button type="submit" name="swess_action" value="submit" class="btn btn-primary">{{ _p('hulahoot_swess_submit_post') }}</button>
-                <button type="submit" name="swess_action" value="save_draft" class="btn btn-default">{{ _p('hulahoot_swess_save_draft') }}</button>
+                {# formnovalidate: a draft is explicitly allowed to be incomplete (master plan
+                   item 2 "Draft / save", and Milestone 2's own "Draft -> compose full post"
+                   ordering), so the browser must not enforce the `required` on content/tag_id
+                   for THIS button. It suppresses validation only for the button that carries
+                   it - Submit above stays fully validated, and Service\Swess::submitPost()
+                   remains the real server-side gate for both paths either way. #}
+                <button type="submit" name="swess_action" value="save_draft" class="btn btn-default" formnovalidate>{{ _p('hulahoot_swess_save_draft') }}</button>
                 <a href="{{ url('/hulahoot/swess/posts') }}" class="btn btn-link">{{ _p('hulahoot_cancel') }}</a>
             </div>
         </form>
