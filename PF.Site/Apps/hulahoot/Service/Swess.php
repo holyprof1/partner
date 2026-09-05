@@ -1010,23 +1010,32 @@ class Swess
     // ---- Media / mentions / campaign (Milestone 2) ----------------------
 
     /**
-     * Attach one or more already-uploaded photo files to a post - the
-     * composer's "media" requirement. Reuses Service\ImageUpload for the
-     * actual upload/storage (no parallel upload pipeline); this method
-     * only records the resulting stored paths against the post, ordered
-     * by attach sequence.
+     * Attach one or more already-uploaded media files to a post - the
+     * composer's "media" requirement. Reuses Service\ImageUpload /
+     * Service\VideoUpload for the actual upload/storage (no parallel
+     * upload pipeline); this method only records the resulting stored
+     * paths against the post, ordered by attach sequence.
+     *
+     * $sMediaType defaults to 'image' so every existing caller keeps its
+     * exact previous behaviour; the video path passes 'video'. Ordering
+     * continues from whatever is already attached, so calling this once
+     * per media type (photos, then video) numbers them contiguously.
      *
      * @param int $iPostId
      * @param int $iUserId must own the post
      * @param string[] $aFilePaths stored paths, as returned by
-     *        Service\ImageUpload::upload() - already uploaded by the caller
+     *        Service\ImageUpload::upload() / Service\VideoUpload::upload() -
+     *        already uploaded by the caller
+     * @param string $sMediaType 'image' or 'video' - stored in
+     *        hulahoot_swess_post_media.media_type, which has always been a
+     *        real column rather than an implied constant
      *
      * @return void
      *
      * @throws \InvalidArgumentException if the post doesn't belong to $iUserId or
      *         isn't currently editable
      */
-    public function attachMedia($iPostId, $iUserId, array $aFilePaths)
+    public function attachMedia($iPostId, $iUserId, array $aFilePaths, $sMediaType = 'image')
     {
         $aPost = $this->getPostById($iPostId);
 
@@ -1047,12 +1056,14 @@ class Swess
             ->where(['swess_post_id' => (int)$iPostId])
             ->execute('getSlaveField');
 
+        $sMediaType = in_array($sMediaType, ['image', 'video'], true) ? $sMediaType : 'image';
+
         $iNow = time();
         foreach ($aFilePaths as $sFilePath) {
             $iOrdering++;
             db()->insert(':hulahoot_swess_post_media', [
                 'swess_post_id' => (int)$iPostId,
-                'media_type' => 'image',
+                'media_type' => $sMediaType,
                 'file_path' => (string)$sFilePath,
                 'ordering' => $iOrdering,
                 'created' => $iNow,
