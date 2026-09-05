@@ -123,6 +123,7 @@ class Install extends App\App
             _p('hulahoot_admin_swess_tags') => 'hulahoot.swess-tag',
             // Milestone 2 - see main app's start.php 'hulahoot.admincp.swess-credit'.
             _p('hulahoot_admin_swess_credits') => 'hulahoot.swess-credit',
+            _p('hulahoot_admin_swess_posts') => 'hulahoot.swess-posts',
             _p('hulahoot_admin_swess_audit') => 'hulahoot.swess-audit',
         ];
     }

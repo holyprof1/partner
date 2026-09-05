@@ -111,6 +111,7 @@ class AdmincpChrome
             // Milestone 2.
             _p('hulahoot_admin_swess_credits') => '/admincp/hulahoot/swess/credits',
             _p('hulahoot_admin_swess_approval') => '/admincp/hulahoot/swess/approval',
+            _p('hulahoot_admin_swess_posts') => '/admincp/hulahoot/swess/posts',
             _p('hulahoot_admin_swess_audit') => '/admincp/hulahoot/swess/audit',
         ];
     }

@@ -355,6 +355,11 @@ group('/my-profiles', function () {
         'hulahoot.admincp.swess-tag' => \Apps\Hulahoot\Controller\Admin\SwessTagController::class,
         'hulahoot.admincp.swess-tag-add' => \Apps\Hulahoot\Controller\Admin\SwessTagAddController::class,
         'hulahoot.admincp.swess-approval' => \Apps\Hulahoot\Controller\Admin\SwessApprovalController::class,
+        // Milestone 2: read-only inspection across every publisher and
+        // status (master plan item 32 "Inspect scheduled posts") - the
+        // Approval Queue above only ever shows 'pending'. See
+        // Controller/Admin/SwessPostsController.php.
+        'hulahoot.admincp.swess-posts' => \Apps\Hulahoot\Controller\Admin\SwessPostsController::class,
         'hulahoot.admincp.swess-audit' => \Apps\Hulahoot\Controller\Admin\SwessAuditController::class,
 
         // Backs the "SWESS Wallet" profile tab (/username/hulahoot),
@@ -620,6 +625,16 @@ group('/admincp/hulahoot', function () {
     route('/swess/approval', function () {
         auth()->isAdmin(true);
         \Phpfox::getLib('module')->dispatch('hulahoot.admincp.swess-approval');
+
+        return 'controller';
+    });
+
+    // GET /admincp/hulahoot/swess/posts - read-only inspection of every
+    // SWESS post across every publisher, filterable by status. Distinct
+    // from /swess/approval, which is the pending-only action queue.
+    route('/swess/posts', function () {
+        auth()->isAdmin(true);
+        \Phpfox::getLib('module')->dispatch('hulahoot.admincp.swess-posts');
 
         return 'controller';
     });
