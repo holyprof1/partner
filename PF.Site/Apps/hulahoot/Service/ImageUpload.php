@@ -48,6 +48,10 @@ class ImageUpload
             return null;
         }
 
+        // Same defence-in-depth applied to the video folder - see
+        // Service\UploadStorage. No behaviour change to the upload itself.
+        UploadStorage::harden(self::UPLOAD_DIR);
+
         $mLoaded = Phpfox_File::instance()->load($sFormField, $aAllowedExtensions);
 
         if ($mLoaded === false) {

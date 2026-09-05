@@ -135,6 +135,10 @@ class VideoUpload
         // and is the honest place to fail.
         $this->_assertRealVideo($_FILES[$sFormField]['tmp_name'] ?? null);
 
+        // Guarantees the storage folder exists and cannot serve an
+        // executable, before anything is written into it.
+        UploadStorage::harden(self::UPLOAD_DIR);
+
         $mLoaded = Phpfox_File::instance()->load($sFormField, $aAllowed, $iMaxBytes);
 
         if ($mLoaded === false) {
