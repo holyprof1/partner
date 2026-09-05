@@ -1,0 +1,32 @@
+<style>
+.hulahoot-swess-nav {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e5e5e5;
+    padding-bottom: 2px;
+}
+.hulahoot-swess-nav a {
+    display: inline-block;
+    padding: 9px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #797979;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: color .15s ease, border-color .15s ease;
+}
+.hulahoot-swess-nav a:hover { color: #000; text-decoration: none; }
+.hulahoot-swess-nav a.is-active { color: #000; border-bottom-color: #000; }
+@media (max-width: 480px) {
+    .hulahoot-swess-nav { gap: 0; }
+    .hulahoot-swess-nav a { padding: 9px 10px; font-size: 12.5px; }
+}
+</style>
+<div class="hulahoot-swess-nav">
+    <a href="{{ url('/hulahoot/swess') }}" class="{{ swess_active == 'dashboard' ? 'is-active' : '' }}">{{ _p('hulahoot_swess_nav_dashboard') }}</a>
+    <a href="{{ url('/hulahoot/swess/create') }}" class="{{ swess_active == 'create' ? 'is-active' : '' }}">{{ _p('hulahoot_swess_nav_create') }}</a>
+    <a href="{{ url('/hulahoot/swess/posts') }}" class="{{ swess_active == 'posts' ? 'is-active' : '' }}">{{ _p('hulahoot_swess_nav_posts') }}</a>
+    <a href="{{ url('/hulahoot/swess/entitlement') }}" class="{{ swess_active == 'entitlement' ? 'is-active' : '' }}">{{ _p('hulahoot_swess_nav_entitlement') }}</a>
+</div>

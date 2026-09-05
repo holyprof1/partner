@@ -1,0 +1,105 @@
+<style>
+/* Shared design tokens for every SWESS member-facing page - status badges,
+   empty states, button polish (hover/press/disabled feedback) - kept in one
+   place so the five pages that use them (dashboard, composer, posts list,
+   post detail, entitlement) stay visually consistent instead of each
+   re-declaring its own slightly-different copy. */
+
+.hulahoot-swess-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    white-space: nowrap;
+    background: #f2f2f2;
+    color: #676767;
+}
+.hulahoot-swess-status-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+}
+.hulahoot-swess-status-badge.st-published,
+.hulahoot-swess-status-badge.st-approved { background: #000; color: #fff; }
+.hulahoot-swess-status-badge.st-pending,
+.hulahoot-swess-status-badge.st-scheduled { background: #fff3cd; color: #8a6d00; }
+.hulahoot-swess-status-badge.st-rejected,
+.hulahoot-swess-status-badge.st-failed { background: #f8d7da; color: #842029; }
+.hulahoot-swess-status-badge.st-draft,
+.hulahoot-swess-status-badge.st-archived { background: #f2f2f2; color: #9a9a9a; }
+
+.hulahoot-swess-empty {
+    text-align: center;
+    color: #9a9a9a;
+    padding: 40px 16px;
+    border: 1px dashed #d8d8d8;
+    border-radius: 10px;
+    font-size: 13.5px;
+}
+
+/* Buttons/links across every SWESS page get the same tactile feedback -
+   a small lift on hover, a settle on press, and a clear disabled/"working"
+   state for form submissions (see hulahootSwessLockForm() below). Scoped to
+   these namespaced classes only, never bare .btn, so nothing outside SWESS
+   is affected. */
+.hulahoot-swess-composer .btn,
+.hulahoot-swess-posts-header .btn,
+.hulahoot-swess-post-row a,
+.hulahoot-swess-detail-actions .btn,
+.hulahoot-swess-entitlement-card .btn,
+.hulahoot-swess-primary-cta .btn,
+.hulahoot-swess-card-head a,
+.hulahoot-swess-filters a {
+    transition: transform .1s ease, opacity .15s ease, box-shadow .15s ease, background-color .15s ease, color .15s ease;
+}
+.hulahoot-swess-composer .btn:hover:not(:disabled),
+.hulahoot-swess-detail-actions .btn:hover:not(:disabled),
+.hulahoot-swess-entitlement-card .btn:hover:not(:disabled),
+.hulahoot-swess-primary-cta .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,.08);
+}
+.hulahoot-swess-composer .btn:active:not(:disabled),
+.hulahoot-swess-detail-actions .btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+}
+.hulahoot-swess-filters a:hover:not(.is-active) { background: #e8e8e8; color: #333; }
+.hulahoot-swess-post-row:hover { border-color: #cfcfcf; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+.hulahoot-swess-post-row { transition: border-color .15s ease, box-shadow .15s ease; }
+
+/* Submit buttons in a "working" state - set by hulahootSwessLockForm() the
+   instant a form is submitted, so a slow request (or the per-post GET_LOCK
+   contention on the server) reads as "in progress" instead of a dead click,
+   and a double-click can't fire the request twice from the UI side too. */
+.hulahoot-swess-btn-loading {
+    opacity: .65;
+    cursor: default;
+    pointer-events: none;
+}
+</style>
+<script>
+window.hulahootSwessLockForm = window.hulahootSwessLockForm || function (form, activeLabelsByValue) {
+    form.addEventListener('submit', function () {
+        var buttons = form.querySelectorAll('button[type="submit"]');
+        for (var i = 0; i < buttons.length; i++) {
+            var btn = buttons[i];
+            btn.classList.add('hulahoot-swess-btn-loading');
+            if (activeLabelsByValue && activeLabelsByValue[btn.value]) {
+                btn.textContent = activeLabelsByValue[btn.value];
+            }
+            if (btn !== document.activeElement) {
+                btn.disabled = true;
+            }
+        }
+    });
+};
+</script>

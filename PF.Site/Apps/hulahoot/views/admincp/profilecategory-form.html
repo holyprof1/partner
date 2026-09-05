@@ -1,0 +1,81 @@
+{% include 'admincp/_admin-styles.html' %}
+<div class="hulahoot-admin">
+    <div class="page-header hulahoot-page-header">
+        <h1>{{ is_edit ? _p('hulahoot_edit_category') : _p('hulahoot_add_category') }}</h1>
+        <div class="hulahoot-header-actions">
+            <a href="{{ url('/admincp/hulahoot/profilecategory', {profile_type_id: profile_type.profile_type_id}) }}" class="btn btn-default">{{ _p('hulahoot_back_to_categories') }}</a>
+        </div>
+    </div>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error|e }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ url('/admincp/hulahoot/profilecategory/add', is_edit ? {id: category_id} : {profile_type_id: profile_type.profile_type_id}) }}" class="form-horizontal hulahoot-admin-form">
+        <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
+
+        <div class="form-group">
+            <label class="col-sm-3 control-label">{{ _p('hulahoot_field_profile_type') }}</label>
+            <div class="col-sm-9">
+                <p class="form-control-static">{{ _p(profile_type.name)|e }}</p>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="hulahoot_category_name" class="col-sm-3 control-label">{{ _p('hulahoot_field_name') }}</label>
+            <div class="col-sm-9">
+                <input type="text" name="name" id="hulahoot_category_name" class="form-control" maxlength="100" value="{{ _p(values.name)|e }}" placeholder="{{ _p('hulahoot_category_name_placeholder') }}" required autofocus>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="hulahoot_category_parent" class="col-sm-3 control-label">{{ _p('hulahoot_field_parent_category') }}</label>
+            <div class="col-sm-9">
+                <select name="parent_id" id="hulahoot_category_parent" class="form-control">
+                    <option value="0"{% if not values.parent_id %} selected{% endif %}>{{ _p('hulahoot_top_level_category') }}</option>
+                    {% for top in top_categories %}
+                        <option value="{{ top.category_id }}"{% if values.parent_id == top.category_id %} selected{% endif %}>
+                            {{ _p(top.name)|e }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-sm-3 control-label">{{ _p('hulahoot_field_active') }}</label>
+            <div class="col-sm-9">
+                <label class="checkbox-inline">
+                    <input type="checkbox" name="is_active" value="1"{% if values.is_active %} checked{% endif %}> {{ _p('hulahoot_active') }}
+                </label>
+            </div>
+        </div>
+
+        <details class="hulahoot-advanced">
+            <summary>{{ _p('hulahoot_advanced_settings') }}</summary>
+            <div class="hulahoot-advanced-body">
+                <div class="form-group">
+                    <label for="hulahoot_category_name_url" class="col-sm-3 control-label">{{ _p('hulahoot_field_slug') }}</label>
+                    <div class="col-sm-9">
+                        <input type="text" name="name_url" id="hulahoot_category_name_url" class="form-control" maxlength="100" value="{{ values.name_url|e }}" placeholder="{{ _p('hulahoot_slug_placeholder') }}">
+                        <span class="help-block">{{ _p('hulahoot_slug_help') }}</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="hulahoot_category_ordering" class="col-sm-3 control-label">{{ _p('hulahoot_field_sort_order') }}</label>
+                    <div class="col-sm-9">
+                        <input type="number" name="ordering" id="hulahoot_category_ordering" class="form-control" value="{{ values.ordering }}">
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <div class="form-group">
+            <div class="col-sm-offset-3 col-sm-9">
+                <button type="submit" class="btn btn-primary">{{ _p('hulahoot_save_changes') }}</button>
+                <a href="{{ url('/admincp/hulahoot/profilecategory', {profile_type_id: profile_type.profile_type_id}) }}" class="btn btn-link">{{ _p('hulahoot_cancel') }}</a>
+            </div>
+        </div>
+    </form>
+</div>

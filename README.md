@@ -1,5 +1,3 @@
-# partner
+# Hulahoot Partnership Portal
 
-Hulahoot Partnership Portal repository.
-
-This repository is used for the Partnership Portal implementation work.
+Companion repository for the Hulahoot app deployed on partnershipportal.hulahoot.com. Tracks PF.Site/Apps/hulahoot only - not the full phpFox installation.

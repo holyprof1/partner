@@ -1,0 +1,46 @@
+{% include 'admincp/_admin-styles.html' %}
+<div class="hulahoot-admin">
+    <div class="page-header hulahoot-page-header">
+        <h1>{{ _p('hulahoot_admin_profile_types') }}</h1>
+        <div class="hulahoot-header-actions">
+            <a href="{{ url('/admincp/hulahoot/profiletype/add') }}" class="btn btn-primary">
+                <i class="fa fa-plus"></i> {{ _p('hulahoot_add_profile_type') }}
+            </a>
+        </div>
+    </div>
+
+    <table class="table table-bordered table-striped hulahoot-admin-table">
+        <thead>
+            <tr>
+                <th>{{ _p('hulahoot_field_name') }}</th>
+                <th>{{ _p('hulahoot_field_active') }}</th>
+                <th>{{ _p('hulahoot_field_registration_allowed') }}</th>
+                <th>{{ _p('hulahoot_field_profile_count') }}</th>
+                <th>{{ _p('hulahoot_field_actions') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for type in types %}
+                <tr>
+                    <td>
+                        {{ _p(type.name)|e }}
+                        {% if type.is_default %}<span class="label label-info">{{ _p('hulahoot_default') }}</span>{% endif %}
+                    </td>
+                    <td>{% if type.is_active %}<span class="label label-success">{{ _p('hulahoot_active') }}</span>{% else %}<span class="label label-default">{{ _p('hulahoot_inactive') }}</span>{% endif %}</td>
+                    <td>{{ type.is_individual ? _p('hulahoot_yes') : _p('hulahoot_no') }}</td>
+                    <td>{{ type.profile_count }}</td>
+                    <td class="hulahoot-admin-actions">
+                        <a href="{{ url('/admincp/hulahoot/profiletype/add', {id: type.profile_type_id}) }}" class="btn btn-default btn-sm">{{ _p('hulahoot_edit') }}</a>
+                        <a href="{{ url('/admincp/hulahoot/profilecategory', {profile_type_id: type.profile_type_id}) }}" class="btn btn-default btn-sm">{{ _p('hulahoot_manage_categories') }}</a>
+                        <a href="{{ url('/admincp/hulahoot/profiletype/delete', {id: type.profile_type_id}) }}" class="btn btn-danger btn-sm">{{ _p('hulahoot_delete') }}</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            {% if types is empty %}
+                <tr>
+                    <td colspan="5" class="hulahoot-admin-empty">{{ _p('hulahoot_no_profile_types_found') }}</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,49 @@
+<style>
+    .hulahoot-admin { max-width: 900px; }
+    .hulahoot-admin .page-header.hulahoot-page-header {
+        display: flex; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #e5e5e5;
+        margin: 0 0 20px; padding-bottom: 14px;
+    }
+    .hulahoot-admin .page-header.hulahoot-page-header h1 {
+        margin: 0; font-size: 20px; font-weight: 600;
+    }
+    .hulahoot-admin .page-header.hulahoot-page-header .hulahoot-header-actions {
+        display: flex; gap: 8px; flex-wrap: wrap;
+    }
+
+    .hulahoot-admin-table { background: #fff; }
+    .hulahoot-admin-table th {
+        font-size: 12px; text-transform: uppercase; letter-spacing: .03em;
+        color: #767676; font-weight: 600; border-bottom-width: 1px !important;
+    }
+    .hulahoot-admin-table td { vertical-align: middle !important; }
+    .hulahoot-admin-table .hulahoot-sub-row td:first-child { color: #555; }
+    .hulahoot-admin-actions { white-space: nowrap; text-align: right; }
+    .hulahoot-admin-actions .btn { margin-left: 4px; }
+    .hulahoot-admin-empty { text-align: center; color: #888; padding: 28px 10px !important; }
+
+    .hulahoot-admin-form .form-group { margin-bottom: 16px; }
+    .hulahoot-admin-form label.control-label { font-weight: 600; }
+    .hulahoot-admin-form .help-block { margin-top: 4px; font-size: 12.5px; }
+
+    .hulahoot-advanced {
+        margin: 22px 0 20px; border: 1px solid #e2e2e2; border-radius: 4px;
+        background: #fafafa;
+    }
+    .hulahoot-advanced > summary {
+        cursor: pointer; padding: 10px 14px; font-weight: 600; font-size: 13px;
+        color: #555; list-style: none; user-select: none;
+    }
+    .hulahoot-advanced > summary::-webkit-details-marker { display: none; }
+    .hulahoot-advanced > summary::before {
+        content: "\25B8"; display: inline-block; margin-right: 7px;
+        transition: transform .15s ease;
+    }
+    .hulahoot-advanced[open] > summary::before { transform: rotate(90deg); }
+    .hulahoot-advanced > summary:hover { color: #222; }
+    .hulahoot-advanced-body {
+        padding: 4px 16px 16px; border-top: 1px solid #e2e2e2;
+    }
+    .hulahoot-advanced-body .form-group:first-child { margin-top: 16px; }
+</style>

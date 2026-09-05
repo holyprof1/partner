@@ -1,0 +1,94 @@
+{% include '_marketplace-styles.html' %}
+{% include '_buyout-modal.html' %}
+<a href="{{ url('/find-your-industry') }}" class="hulahoot-back-link"><i class="fa fa-arrow-left" aria-hidden="true"></i> {{ _p('hulahoot_back_to_industries') }}</a>
+
+<div class="hulahoot-industry-detail-header">
+    <h1>{{ _p('hulahoot_open_partnerships') }}</h1>
+    <p>{{ _p('hulahoot_open_partnerships_subtitle') }}</p>
+</div>
+
+{% if packages is empty %}
+    <div class="hulahoot-industry-empty">{{ _p('hulahoot_no_open_packages') }}</div>
+{% else %}
+    <div class="hulahoot-package-grid">
+        {% for package in packages %}
+            <div class="hulahoot-package-card"{% if package.accent_color %} style="border-color: {{ package.accent_color|e }};"{% endif %}>
+                {% if package.badge_text %}
+                    <span class="hulahoot-package-card-badge"{% if package.accent_color %} style="background-color: {{ package.accent_color|e }};"{% endif %}>{{ package.badge_text|e }}</span>
+                {% endif %}
+
+                {% if package.image %}
+                    <img class="hulahoot-package-image" src="/PF.Base/file/pic/hulahoot/{{ package.image|replace({'%s': ''}) }}" alt="">
+                {% else %}
+                    <span class="hulahoot-package-card-icon"><i class="fa {{ package.icon|default('fa-star') }}" aria-hidden="true"></i></span>
+                {% endif %}
+
+                <div class="hulahoot-package-name">{{ package.display_name|e }}</div>
+                {% if package.subtitle %}
+                    <div class="hulahoot-package-subtitle">{{ package.subtitle|e }}</div>
+                {% endif %}
+
+                <div class="hulahoot-package-price">
+                    {% if package.default_cost %}
+                        {{ package.default_cost }} {{ package.default_currency_id|e }}
+                        {% if package.recurring_period %}<small>/ {{ _p('hulahoot_per_billing_cycle') }}</small>{% endif %}
+                    {% else %}
+                        {{ _p('hulahoot_free') }}
+                    {% endif %}
+                </div>
+
+                {% if package.description %}
+                    <div class="hulahoot-package-description">{{ package.description|e }}</div>
+                {% endif %}
+
+                {% if package.features is not empty %}
+                    <ul class="hulahoot-package-features">
+                        {% for feature in package.features %}
+                            <li>{{ feature|e }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                <div class="hulahoot-package-meta">
+                    {% if package.monthly_credits %}<span>{{ _p('hulahoot_credits') }}: {{ package.monthly_credits }}</span>{% endif %}
+                    {% if package.purchase_limit %}<span>{{ _p('hulahoot_field_purchase_limit') }}: {{ package.purchase_limit }}</span>{% endif %}
+                    {% if package.campaign_limit %}<span>{{ _p('hulahoot_field_campaign_limit') }}: {{ package.campaign_limit }}</span>{% endif %}
+                </div>
+
+                {% if package.slots_remaining is not null %}
+                    <div class="hulahoot-package-slots{% if package.is_sold_out %} hulahoot-package-slots-sold-out{% endif %}">
+                        {% if package.is_sold_out %}
+                            {{ _p('hulahoot_slots_sold_out') }}
+                        {% else %}
+                            {{ _p('hulahoot_slots_remaining', {'remaining': package.slots_remaining, 'total': package.purchase_limit}) }}
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {% if package.is_sold_out %}
+                    <button type="button" class="btn hulahoot-package-cta hulahoot-package-cta-current" disabled>
+                        {{ _p('hulahoot_slots_sold_out') }}
+                    </button>
+                {% else %}
+                    <form method="post" action="{{ url('/industry/subscribe') }}">
+                        <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="package_id" value="{{ package.package_id }}">
+                        <button type="submit" class="btn hulahoot-package-cta"{% if package.accent_color %} style="background-color: {{ package.accent_color|e }}; border-color: {{ package.accent_color|e }};"{% endif %}>
+                            {{ package.button_text|default(_p('hulahoot_choose_plan')) }}
+                        </button>
+                    </form>
+
+                    {% if package.slots_remaining is not null and package.slots_remaining > 1 %}
+                        <form method="post" action="{{ url('/industry/buy-out') }}" class="hulahoot-package-buyout-form" onsubmit="return hulahootOpenBuyoutModal(this, '{{ package.display_name|e('js') }}', {{ package.default_cost|default(0) }}, '{{ package.default_currency_id|e('js') }}', {{ package.slots_remaining }}, {{ package.default_cost ? 'false' : 'true' }});">
+                            <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
+                            <input type="hidden" name="package_id" value="{{ package.package_id }}">
+                            <button type="submit" class="hulahoot-package-buyout-btn">
+                                {{ _p('hulahoot_buy_out_remaining') }}
+                            </button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}

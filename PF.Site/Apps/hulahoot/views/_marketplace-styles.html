@@ -1,0 +1,392 @@
+<style>
+/* No manual width breakout here: on these routes the theme's own
+   #main already carries both empty-left and empty-right (no sidebar
+   blocks assigned), which natively triggers
+   ".empty-left.empty-right #content-holder { width: 100% }" in the
+   theme's own CSS - so #content-holder is already the full width of
+   .container-fluid (max-width: 1190px, 20px side padding - confirmed
+   directly from the theme's compiled CSS). A 100vw/negative-margin
+   breakout on top of that spills past the theme's own page bounds
+   instead of matching them - that was the cause of the misaligned
+   "spilling out of its own card" look. Just use 100% width. */
+
+.hulahoot-marketplace-hero {
+    text-align: center;
+    padding: 30px 15px 20px;
+}
+.hulahoot-marketplace-hero h1 {
+    font-size: 34px;
+    font-weight: 800;
+    margin: 0 0 10px;
+    color: #000;
+}
+.hulahoot-marketplace-hero p {
+    color: #797979;
+    font-size: 16px;
+    margin: 0 auto 24px;
+    max-width: 560px;
+}
+.hulahoot-industry-search {
+    max-width: 720px;
+    margin: 0 auto 30px;
+    position: relative;
+}
+.hulahoot-industry-search input {
+    width: 100%;
+    padding: 14px 20px 14px 44px;
+    border: 2px solid #000;
+    border-radius: 999px;
+    font-size: 16px;
+}
+.hulahoot-industry-search input:focus {
+    outline: none;
+    border-color: #000;
+    box-shadow: 0 0 0 3px rgba(0,0,0,.08);
+}
+.hulahoot-industry-search .fa {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #797979;
+}
+.hulahoot-industry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+}
+.hulahoot-industry-card {
+    display: block;
+    text-align: center;
+    padding: 22px 14px;
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+    background: #fff;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow .18s ease, border-color .18s ease, transform .18s ease;
+}
+.hulahoot-industry-card:hover {
+    box-shadow: 0 8px 20px rgba(0,0,0,.1);
+    border-color: #000;
+    text-decoration: none;
+    color: inherit;
+    transform: translateY(-3px);
+}
+.hulahoot-industry-card:focus-visible {
+    outline: 2px solid #2c7be5;
+    outline-offset: 2px;
+}
+.hulahoot-industry-card-thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 12px;
+    display: block;
+    background: #f0f0f0;
+}
+.hulahoot-industry-card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f0f0;
+    color: #000;
+    font-size: 22px;
+}
+.hulahoot-industry-card-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: #000;
+}
+.hulahoot-industry-empty {
+    text-align: center;
+    color: #797979;
+    padding: 40px 20px;
+}
+
+.hulahoot-industry-banner {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+.hulahoot-industry-detail-header h1 {
+    font-size: 30px;
+    font-weight: 800;
+    margin: 0 0 8px;
+    color: #000;
+}
+.hulahoot-industry-detail-header p {
+    color: #797979;
+    font-size: 15px;
+    max-width: 640px;
+}
+.hulahoot-back-link {
+    display: inline-block;
+    margin-bottom: 16px;
+    color: #000;
+    font-weight: 600;
+}
+
+.hulahoot-package-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    margin-top: 28px;
+}
+.hulahoot-package-card {
+    position: relative;
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+    background: #fff;
+    padding: 26px 22px 22px;
+    display: flex;
+    flex-direction: column;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.hulahoot-package-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0,0,0,.09);
+    border-color: #d0d0d0;
+}
+.hulahoot-package-card-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #000;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: 5px 14px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.hulahoot-package-image {
+    width: 100%;
+    max-height: 120px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 14px;
+}
+.hulahoot-package-card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f0f0;
+    color: #000;
+    font-size: 22px;
+}
+.hulahoot-package-name {
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: #000;
+}
+.hulahoot-package-subtitle {
+    color: #797979;
+    font-size: 13.5px;
+    margin-bottom: 14px;
+}
+.hulahoot-package-price {
+    font-size: 30px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: #000;
+}
+.hulahoot-package-price small {
+    font-size: 13px;
+    font-weight: 500;
+    color: #797979;
+}
+.hulahoot-package-description {
+    font-size: 13.5px;
+    color: #797979;
+    margin-bottom: 16px;
+}
+.hulahoot-package-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 18px;
+    flex-grow: 1;
+}
+.hulahoot-package-features li {
+    font-size: 13.5px;
+    padding: 5px 0 5px 24px;
+    position: relative;
+    color: #333;
+}
+.hulahoot-package-features li:before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    color: #000;
+    font-weight: 700;
+}
+.hulahoot-package-meta {
+    font-size: 12.5px;
+    color: #797979;
+    margin-bottom: 16px;
+}
+.hulahoot-package-meta span {
+    display: block;
+}
+.hulahoot-package-cta {
+    display: block;
+    text-align: center;
+    padding: 11px;
+    border-radius: 6px;
+    font-weight: 700;
+    background: #000;
+    color: #fff;
+    border: 1px solid #000;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease, background-color .15s ease, opacity .15s ease;
+}
+.hulahoot-package-cta:hover {
+    background: #222;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,.22);
+}
+.hulahoot-package-cta:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0,0,0,.18);
+}
+.hulahoot-package-cta:focus-visible {
+    outline: 2px solid #2c7be5;
+    outline-offset: 2px;
+}
+.hulahoot-package-cta-current {
+    background: #f0f0f0;
+    color: #9a9a9a;
+    border-color: #e2e2e2;
+    cursor: not-allowed;
+}
+.hulahoot-package-cta-current:hover {
+    background: #f0f0f0;
+    color: #9a9a9a;
+    transform: none;
+    box-shadow: none;
+}
+.hulahoot-package-slots {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #000;
+    background: #f2f2f2;
+    border-radius: 999px;
+    padding: 5px 12px;
+    display: inline-block;
+    margin-bottom: 14px;
+    width: fit-content;
+}
+.hulahoot-package-slots-sold-out {
+    color: #b3261e;
+    background: #fbeceb;
+}
+.hulahoot-package-buyout-form {
+    margin-top: 8px;
+}
+.hulahoot-package-buyout-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 9px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    background: #fff;
+    color: #000;
+    border: 1px solid #000;
+    cursor: pointer;
+    transition: background-color .15s ease, transform .12s ease, box-shadow .12s ease;
+}
+.hulahoot-package-buyout-btn:hover {
+    background: #f2f2f2;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,.1);
+}
+.hulahoot-package-buyout-btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+.hulahoot-package-buyout-btn:focus-visible {
+    outline: 2px solid #2c7be5;
+    outline-offset: 2px;
+}
+
+/* Mobile: tighter padding, smaller headline, single-column grids feel
+   deliberate rather than just "the desktop layout, squeezed". */
+@media (max-width: 600px) {
+    .hulahoot-marketplace-hero {
+        padding: 16px 10px 12px;
+    }
+    .hulahoot-marketplace-hero h1 {
+        font-size: 24px;
+    }
+    .hulahoot-marketplace-hero p {
+        font-size: 14px;
+    }
+    .hulahoot-industry-search input {
+        padding: 11px 16px 11px 40px;
+        font-size: 15px;
+    }
+    .hulahoot-industry-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    .hulahoot-industry-card {
+        padding: 14px 8px;
+    }
+    .hulahoot-industry-card-thumb,
+    .hulahoot-industry-card-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+    .hulahoot-industry-card-name {
+        font-size: 13px;
+    }
+    .hulahoot-industry-detail-header h1 {
+        font-size: 22px;
+    }
+    .hulahoot-industry-banner {
+        max-height: 140px;
+    }
+    .hulahoot-package-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-top: 20px;
+    }
+    .hulahoot-package-card {
+        padding: 22px 16px 18px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hulahoot-industry-card,
+    .hulahoot-package-card,
+    .hulahoot-package-cta,
+    .hulahoot-package-buyout-btn {
+        transition: none;
+    }
+    .hulahoot-industry-card:hover,
+    .hulahoot-package-card:hover,
+    .hulahoot-package-cta:hover,
+    .hulahoot-package-buyout-btn:hover {
+        transform: none;
+    }
+}
+</style>

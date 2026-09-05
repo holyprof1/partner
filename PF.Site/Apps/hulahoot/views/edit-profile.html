@@ -1,0 +1,108 @@
+{% include '_profile-styles.html' %}
+<div class="hulahoot-edit-profile">
+    <div class="page-header hulahoot-page-header">
+        <h1>{{ _p('hulahoot_edit_profile') }} &mdash; {{ _p(profile_type.name)|e }}</h1>
+        <a href="{{ url('/my-profiles') }}" class="btn btn-default hulahoot-btn-back">
+            <i class="fa fa-arrow-left"></i> {{ _p('hulahoot_my_profiles') }}
+        </a>
+    </div>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error|e }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ url('/my-profiles/edit', {id: profile.profile_id}) }}" class="form-horizontal hulahoot-profile-form" id="hulahoot_edit_form">
+        <input type="hidden" name="hulahoot_token" value="{{ csrf_token }}">
+
+        <div class="form-group">
+            <label for="hulahoot_profile_name" class="col-sm-3 control-label">{{ _p('hulahoot_profile_name') }}</label>
+            <div class="col-sm-9">
+                <input type="text" name="profile_name" id="hulahoot_profile_name" class="form-control"
+                       placeholder="{{ _p('hulahoot_profile_name_placeholder') }}" maxlength="100"
+                       value="{{ profile_name|e }}" required>
+            </div>
+        </div>
+
+        {% if profile_type.requires_category %}
+            <div class="form-group">
+                <label for="hulahoot_category_id" class="col-sm-3 control-label">{{ _p('hulahoot_category') }}</label>
+                <div class="col-sm-9">
+                    <select name="category_id" id="hulahoot_category_id" class="form-control" required>
+                        {% for category in categories %}
+                            <option value="{{ category.category_id }}"{% if category.category_id == current_category_id %} selected="selected"{% endif %}>
+                                {{ _p(category.name)|e }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group hulahoot-field-subcategory" style="display:none;">
+                <label for="hulahoot_subcategory_id" class="col-sm-3 control-label">{{ _p('hulahoot_subcategory_optional') }}</label>
+                <div class="col-sm-9">
+                    <select name="subcategory_id" id="hulahoot_subcategory_id" class="form-control">
+                        <option value="">{{ _p('hulahoot_none') }}</option>
+                    </select>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="form-group">
+            <div class="col-sm-offset-3 col-sm-9 hulahoot-form-actions">
+                <button type="submit" class="btn btn-primary">{{ _p('hulahoot_save_changes') }}</button>
+                <a href="{{ url('/my-profiles') }}" class="btn btn-link">{{ _p('hulahoot_cancel') }}</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% if profile_type.requires_category %}
+<script>
+(function () {
+    var subcategoriesByCategory = {{ subcategories_by_category_json|raw }};
+    var selectedSubcategoryId = {{ current_subcategory_id|default('null') }};
+
+    var categorySelect = document.getElementById('hulahoot_category_id');
+    var subcategoryField = document.querySelector('.hulahoot-field-subcategory');
+    var subcategorySelect = document.getElementById('hulahoot_subcategory_id');
+
+    function fillSelect(select, options, placeholder, selectedId) {
+        select.innerHTML = '';
+        var placeholderOption = document.createElement('option');
+        placeholderOption.value = '';
+        placeholderOption.textContent = placeholder;
+        select.appendChild(placeholderOption);
+
+        (options || []).forEach(function (option) {
+            var el = document.createElement('option');
+            el.value = option.id;
+            el.textContent = option.name;
+            if (selectedId && parseInt(selectedId, 10) === option.id) {
+                el.selected = true;
+            }
+            select.appendChild(el);
+        });
+    }
+
+    function onCategoryChange(preserveSubcategoryId) {
+        var categoryId = parseInt(categorySelect.value, 10);
+        var subs = categoryId ? subcategoriesByCategory[categoryId] : null;
+
+        if (!subs || !subs.length) {
+            subcategoryField.style.display = 'none';
+            subcategorySelect.innerHTML = '';
+            return;
+        }
+
+        subcategoryField.style.display = '';
+        fillSelect(subcategorySelect, subs, '{{ _p('hulahoot_none')|e('js') }}', preserveSubcategoryId);
+    }
+
+    categorySelect.addEventListener('change', function () { onCategoryChange(null); });
+
+    if (categorySelect.value) {
+        onCategoryChange(selectedSubcategoryId);
+    }
+})();
+</script>
+{% endif %}

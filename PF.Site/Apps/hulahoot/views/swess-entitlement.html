@@ -1,0 +1,35 @@
+{% include '_swess-nav.html' %}
+{% include '_swess-styles.html' %}
+<style>
+.hulahoot-swess-entitlement-card {
+    max-width: 480px; border: 1px solid #e2e2e2; border-radius: 10px; padding: 22px 24px; background: #fff;
+    transition: box-shadow .15s ease, border-color .15s ease;
+}
+.hulahoot-swess-entitlement-card:hover { border-color: #d5d5d5; box-shadow: 0 3px 12px rgba(0,0,0,.05); }
+.hulahoot-swess-entitlement-card h1 { font-size: 22px; font-weight: 800; margin: 0 0 4px; }
+.hulahoot-swess-entitlement-sub { font-size: 13px; color: #797979; margin: 0 0 18px; }
+.hulahoot-swess-ent-row { display: flex; justify-content: space-between; padding: 9px 0; font-size: 14px; border-bottom: 1px solid #f0f0f0; }
+.hulahoot-swess-ent-row:last-child { border-bottom: none; }
+.hulahoot-swess-ent-row .k { color: #797979; }
+.hulahoot-swess-ent-row .v { font-weight: 600; color: #000; font-variant-numeric: tabular-nums; }
+.hulahoot-swess-cta {
+    margin-top: 16px; background: #000; border-color: #000; font-weight: 700;
+    transition: transform .1s ease, box-shadow .15s ease;
+}
+.hulahoot-swess-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,.15); color: #fff; }
+</style>
+<div class="hulahoot-swess-entitlement-card">
+    <h1>{{ _p('hulahoot_swess_entitlement') }}</h1>
+    <p class="hulahoot-swess-entitlement-sub">{{ _p('hulahoot_swess_dashboard_subtitle') }}</p>
+    {% if entitlement is null %}
+        <div class="hulahoot-swess-empty">{{ _p('hulahoot_no_entitlement') }}</div>
+        <a href="{{ url('/find-your-industry') }}" class="btn btn-primary btn-sm hulahoot-swess-cta">{{ _p('hulahoot_choose_plan') }}</a>
+    {% else %}
+        <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_native_package') }}</span><span class="v">{{ entitlement.package_title }}</span></div>
+        <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_credits') }}</span><span class="v">{{ entitlement.monthly_credits }}</span></div>
+        <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_purchase_limit') }}</span><span class="v">{{ entitlement.purchase_limit|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>
+        <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_campaign_limit') }}</span><span class="v">{{ entitlement.campaign_limit|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>
+        <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_posting_limit_per_day') }}</span><span class="v">{{ entitlement.posting_limit_per_day|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>
+        <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_posting_limit_per_month') }}</span><span class="v">{{ entitlement.posting_limit_per_month|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>
+    {% endif %}
+</div>

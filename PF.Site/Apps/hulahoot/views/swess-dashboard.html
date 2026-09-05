@@ -1,0 +1,317 @@
+{% if is_authorized %}{% include '_swess-styles.html' %}{% endif %}
+<style>
+.hulahoot-swess-app {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+}
+.hulahoot-swess-app * { box-sizing: border-box; }
+
+/* ---- Header ---- */
+.hulahoot-swess-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e5e5e5;
+}
+.hulahoot-swess-header h1 {
+    margin: 0 0 4px;
+    font-size: 26px;
+    font-weight: 800;
+    color: #000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.hulahoot-swess-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: #000;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    flex-shrink: 0;
+}
+.hulahoot-swess-header p {
+    margin: 0;
+    color: #797979;
+    font-size: 14px;
+}
+.hulahoot-swess-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    white-space: nowrap;
+}
+.hulahoot-swess-status-pill.is-on { background: #000; color: #fff; }
+.hulahoot-swess-status-pill.is-off { background: #f2f2f2; color: #9a9a9a; }
+.hulahoot-swess-status-pill .dot {
+    width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+    box-shadow: 0 0 0 3px rgba(255,255,255,.15);
+}
+
+/* ---- Card ---- */
+.hulahoot-swess-card {
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+    background: #fff;
+    padding: 20px 22px;
+    margin-bottom: 18px;
+    transition: box-shadow .15s ease, border-color .15s ease;
+}
+.hulahoot-swess-card:hover { border-color: #d5d5d5; box-shadow: 0 3px 12px rgba(0,0,0,.05); }
+.hulahoot-swess-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.hulahoot-swess-card-head h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #000;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+/* ---- Permission rows ---- */
+.hulahoot-swess-perm-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13.5px;
+}
+.hulahoot-swess-perm-row:last-child { border-bottom: none; }
+.hulahoot-swess-flag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+}
+.hulahoot-swess-flag.on { background: #000; color: #fff; }
+.hulahoot-swess-flag.off { background: #f2f2f2; color: #9a9a9a; }
+
+/* ---- Primary CTA ---- */
+.hulahoot-swess-primary-cta {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+    background: #000; color: #fff; border-radius: 10px; padding: 22px 24px; margin-bottom: 18px;
+}
+.hulahoot-swess-primary-cta h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; }
+.hulahoot-swess-primary-cta p { margin: 0; font-size: 13px; color: #c9c9c9; }
+.hulahoot-swess-primary-cta .btn {
+    background: #fff; color: #000; border: none; font-weight: 700;
+    transition: transform .1s ease, box-shadow .15s ease;
+}
+.hulahoot-swess-primary-cta .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.35); }
+
+/* ---- Quick stats ---- */
+.hulahoot-swess-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+.hulahoot-swess-stat {
+    border: 1px solid #e2e2e2; border-radius: 10px; padding: 16px 18px; background: #fff;
+    transition: box-shadow .15s ease, border-color .15s ease;
+}
+.hulahoot-swess-stat:hover { border-color: #d5d5d5; box-shadow: 0 3px 12px rgba(0,0,0,.05); }
+.hulahoot-swess-stat .num { font-size: 24px; font-weight: 800; color: #000; font-variant-numeric: tabular-nums; }
+.hulahoot-swess-stat .label { font-size: 11.5px; color: #9a9a9a; text-transform: uppercase; letter-spacing: .03em; margin-top: 2px; }
+@media (max-width: 720px) { .hulahoot-swess-stats-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .hulahoot-swess-stats-row { grid-template-columns: 1fr 1fr; gap: 10px; } .hulahoot-swess-stat { padding: 12px 14px; } .hulahoot-swess-stat .num { font-size: 20px; } }
+
+/* ---- Posts preview ---- */
+.hulahoot-swess-post-preview-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13.5px;
+}
+.hulahoot-swess-post-preview-row:last-child { border-bottom: none; }
+.hulahoot-swess-post-preview-row .content { max-width: 480px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hulahoot-swess-post-preview-row .hulahoot-swess-status-badge { font-size: 10.5px; padding: 2px 9px; }
+.hulahoot-swess-post-preview-row a.content:hover { text-decoration: underline; }
+
+/* ---- Tag strip ---- */
+.hulahoot-swess-tag-chip {
+    display: inline-block;
+    background: #f0f0f0;
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 12px;
+    margin: 4px 6px 0 0;
+}
+.hulahoot-swess-tag-chip.is-default { background: #000; color: #fff; }
+
+/* ---- Secondary grid (identity + entitlement) ---- */
+.hulahoot-swess-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+@media (max-width: 720px) { .hulahoot-swess-grid { grid-template-columns: 1fr; } }
+.hulahoot-swess-identity { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.hulahoot-swess-identity:last-child { border-bottom: none; }
+.hulahoot-swess-identity-name { font-weight: 600; font-size: 13.5px; color: #000; }
+.hulahoot-swess-identity-type { font-size: 11.5px; color: #9a9a9a; text-transform: uppercase; letter-spacing: .02em; }
+.hulahoot-swess-ent-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13.5px; }
+.hulahoot-swess-ent-row .k { color: #797979; }
+.hulahoot-swess-ent-row .v { font-weight: 600; color: #000; }
+
+/* Empty states nested inside a card already have their own border - the
+   shared dashed-box treatment would be redundant, so this trims it back to
+   a plain centered note here specifically. */
+.hulahoot-swess-card .hulahoot-swess-empty { border: none; padding: 22px 10px; }
+
+/* ---- Unauthorized state ---- */
+.hulahoot-swess-locked {
+    max-width: 520px;
+    margin: 60px auto;
+    text-align: center;
+    padding: 40px 30px;
+    border: 1px solid #e2e2e2;
+    border-radius: 10px;
+}
+.hulahoot-swess-locked h1 { font-size: 20px; font-weight: 800; margin: 0 0 8px; color: #000; }
+.hulahoot-swess-locked p { color: #797979; font-size: 14px; margin: 0 0 20px; }
+</style>
+
+{% if not is_authorized %}
+    <div class="hulahoot-swess-locked">
+        <span class="hulahoot-swess-mark" style="margin-bottom:14px;">SW</span>
+        <h1>{{ _p('hulahoot_swess_not_authorized_title') }}</h1>
+        <p>{{ _p('hulahoot_swess_not_authorized_body') }}</p>
+        <a href="{{ url('/find-your-industry') }}" class="btn btn-default">{{ _p('hulahoot_back_to_industries') }}</a>
+    </div>
+{% else %}
+    <div class="hulahoot-swess-app">
+        <div class="hulahoot-swess-header">
+            <div>
+                <h1><span class="hulahoot-swess-mark">SW</span>{{ _p('hulahoot_swess_dashboard') }}</h1>
+                <p>{{ _p('hulahoot_swess_dashboard_subtitle') }}</p>
+            </div>
+            <span class="hulahoot-swess-status-pill is-on"><span class="dot"></span>{{ _p('hulahoot_swess_status_active') }}</span>
+        </div>
+
+        {% include '_swess-nav.html' %}
+
+        <!-- Authorization summary -->
+        <div class="hulahoot-swess-card">
+            <div class="hulahoot-swess-card-head"><h2>{{ _p('hulahoot_swess_my_authorization') }}</h2></div>
+            <div class="hulahoot-swess-perm-row">
+                <span>{{ _p('hulahoot_swess_field_enabled') }}</span>
+                <span class="hulahoot-swess-flag {{ whitelist.is_enabled ? 'on' : 'off' }}">{{ whitelist.is_enabled ? _p('hulahoot_yes') : _p('hulahoot_no') }}</span>
+            </div>
+            <div class="hulahoot-swess-perm-row">
+                <span>{{ _p('hulahoot_swess_field_post_as_self') }}</span>
+                <span class="hulahoot-swess-flag {{ whitelist.post_as_self ? 'on' : 'off' }}">{{ whitelist.post_as_self ? _p('hulahoot_yes') : _p('hulahoot_no') }}</span>
+            </div>
+            <div class="hulahoot-swess-perm-row">
+                <span>{{ _p('hulahoot_swess_field_post_as_business') }}</span>
+                <span class="hulahoot-swess-flag {{ whitelist.post_as_business ? 'on' : 'off' }}">{{ whitelist.post_as_business ? _p('hulahoot_yes') : _p('hulahoot_no') }}</span>
+            </div>
+            <div class="hulahoot-swess-perm-row">
+                <span>{{ _p('hulahoot_swess_field_requires_review') }}</span>
+                <span class="hulahoot-swess-flag {{ whitelist.requires_review ? 'on' : 'off' }}">{{ whitelist.requires_review ? _p('hulahoot_yes') : _p('hulahoot_no') }}</span>
+            </div>
+        </div>
+
+        <!-- Primary CTA -->
+        <div class="hulahoot-swess-primary-cta">
+            <div>
+                <h2>{{ _p('hulahoot_swess_create_post_cta') }}</h2>
+                <p>{{ _p('hulahoot_swess_dashboard_subtitle') }}</p>
+            </div>
+            <a href="{{ url('/hulahoot/swess/create') }}" class="btn btn-lg">{{ _p('hulahoot_swess_create_post_cta') }}</a>
+        </div>
+
+        <!-- Quick stats -->
+        <div class="hulahoot-swess-stats-row">
+            <div class="hulahoot-swess-stat"><div class="num">{{ post_counts.total }}</div><div class="label">{{ _p('hulahoot_swess_total_posts') }}</div></div>
+            <div class="hulahoot-swess-stat"><div class="num">{{ post_counts.published }}</div><div class="label">{{ _p('hulahoot_swess_published_posts') }}</div></div>
+            <div class="hulahoot-swess-stat"><div class="num">{{ post_counts.pending }}</div><div class="label">{{ _p('hulahoot_swess_pending_posts') }}</div></div>
+            <div class="hulahoot-swess-stat"><div class="num">{{ post_counts.drafts }}</div><div class="label">{{ _p('hulahoot_swess_draft_posts') }}</div></div>
+        </div>
+
+        <!-- Posts preview -->
+        <div class="hulahoot-swess-card">
+            <div class="hulahoot-swess-card-head">
+                <h2>{{ _p('hulahoot_swess_recent_posts') }}</h2>
+                <a href="{{ url('/hulahoot/swess/posts') }}" style="font-size:12.5px;">{{ _p('hulahoot_swess_view_all_posts') }}</a>
+            </div>
+            {% if recent_posts is empty %}
+                <div class="hulahoot-swess-empty">{{ _p('hulahoot_swess_no_posts_yet') }}</div>
+            {% else %}
+                {% for post in recent_posts %}
+                    <div class="hulahoot-swess-post-preview-row">
+                        <a href="{{ url('/hulahoot/swess/posts/view', {'id': post.swess_post_id}) }}" class="content">{{ post.content|default('—') }}</a>
+                        <span class="hulahoot-swess-status-badge st-{{ post.status }}">{{ _p('hulahoot_swess_status_' ~ post.status) }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Tag strip -->
+        <div class="hulahoot-swess-card">
+            <div class="hulahoot-swess-card-head"><h2>{{ _p('hulahoot_swess_available_tags') }}</h2></div>
+            {% if tags is empty %}
+                <div class="hulahoot-swess-empty">{{ _p('hulahoot_swess_no_tags_configured') }}</div>
+            {% else %}
+                {% for tag in tags %}
+                    <span class="hulahoot-swess-tag-chip">{{ tag.name }}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Identity + Entitlement -->
+        <div class="hulahoot-swess-grid">
+            <div class="hulahoot-swess-card">
+                <div class="hulahoot-swess-card-head"><h2>{{ _p('hulahoot_swess_publishing_identity') }}</h2></div>
+                {% if identities is empty %}
+                    <div class="hulahoot-swess-empty">{{ _p('hulahoot_swess_no_identities_yet') }}</div>
+                {% else %}
+                    {% for identity in identities %}
+                        <div class="hulahoot-swess-identity">
+                            <div>
+                                <div class="hulahoot-swess-identity-name">
+                                    {% if identity.identity_type == 'self' %}
+                                        {{ self_profile.profile_name|default(_p('hulahoot_swess_identity_self')) }}
+                                    {% else %}
+                                        {{ _p('hulahoot_swess_identity_page') }} #{{ identity.identity_id }}
+                                    {% endif %}
+                                </div>
+                                <div class="hulahoot-swess-identity-type">{{ identity.identity_type == 'self' ? _p('hulahoot_swess_identity_self') : _p('hulahoot_swess_identity_page') }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="hulahoot-swess-card">
+                <div class="hulahoot-swess-card-head">
+                    <h2>{{ _p('hulahoot_swess_entitlement') }}</h2>
+                    <a href="{{ url('/hulahoot/swess/entitlement') }}" style="font-size:12.5px;">{{ _p('hulahoot_swess_nav_entitlement') }}</a>
+                </div>
+                {% if entitlement is null %}
+                    <div class="hulahoot-swess-empty">{{ _p('hulahoot_no_entitlement') }}</div>
+                {% else %}
+                    <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_native_package') }}</span><span class="v">{{ entitlement.package_title }}</span></div>
+                    <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_credits') }}</span><span class="v">{{ entitlement.monthly_credits }}</span></div>
+                    <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_purchase_limit') }}</span><span class="v">{{ entitlement.purchase_limit|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>
+                    <div class="hulahoot-swess-ent-row"><span class="k">{{ _p('hulahoot_field_campaign_limit') }}</span><span class="v">{{ entitlement.campaign_limit|default(_p('hulahoot_unlimited_placeholder')) }}</span></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endif %}

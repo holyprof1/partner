@@ -1,0 +1,17 @@
+<div class="hulahoot-admin">
+    <div class="page-header hulahoot-page-header">
+        <h1>{{ _p('hulahoot_admin_profile_categories') }}</h1>
+    </div>
+
+    <p>{{ _p('hulahoot_pick_a_profile_type') }}</p>
+
+    <ul class="list-group hulahoot-type-picker">
+        {% for type in types %}
+            <li class="list-group-item">
+                <a href="{{ url('/admincp/hulahoot/profilecategory', {profile_type_id: type.profile_type_id}) }}">
+                    {{ _p(type.name)|e }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>

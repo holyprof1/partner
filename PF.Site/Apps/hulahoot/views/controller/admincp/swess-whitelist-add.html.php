@@ -1,0 +1,330 @@
+<?php
+defined('PHPFOX') or exit('NO DICE!');
+?>
+<style>
+{literal}
+    .hulahoot-admin { max-width: 1000px; }
+    .hulahoot-admin .page-header.hulahoot-page-header {
+        display: flex; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #e5e5e5;
+        margin: 0 0 20px; padding-bottom: 14px;
+    }
+    .hulahoot-admin .page-header.hulahoot-page-header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+    .hulahoot-admin .page-header.hulahoot-page-header .hulahoot-header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .hulahoot-admin-form .form-group { margin-bottom: 16px; }
+    .hulahoot-admin-form label.control-label { font-weight: 600; }
+    .hulahoot-admin-form .help-block { margin-top: 4px; font-size: 12.5px; }
+    .hulahoot-swess-section { margin: 30px 0 0; padding-top: 22px; border-top: 1px solid #e5e5e5; }
+    .hulahoot-swess-section h2 { font-size: 16px; font-weight: 600; margin: 0 0 14px; }
+    .hulahoot-swess-identity-card {
+        border: 1px solid #e2e2e2; border-radius: 4px; padding: 12px 14px; margin-bottom: 10px; background: #fff;
+        transition: box-shadow .15s ease, border-color .15s ease;
+    }
+    .hulahoot-swess-identity-card:hover { border-color: #d5d5d5; box-shadow: 0 3px 12px rgba(0,0,0,.05); }
+    .hulahoot-swess-identity-card .hulahoot-swess-identity-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .hulahoot-swess-tag-chip { display: inline-block; background: #f0f0f0; border-radius: 999px; padding: 2px 10px; font-size: 12px; margin: 6px 6px 0 0; transition: background-color .15s ease; }
+    .hulahoot-swess-tag-chip.is-default { background: #000; color: #fff; }
+    .hulahoot-swess-tag-chip form { display: inline; margin-left: 6px; }
+    .hulahoot-swess-tag-chip button { border: none; background: none; color: inherit; cursor: pointer; padding: 0; font-size: 11px; opacity: .6; transition: opacity .15s ease; }
+    .hulahoot-swess-tag-chip button:hover { opacity: 1; }
+    .hulahoot-swess-inline-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+    .hulahoot-swess-inline-form select, .hulahoot-swess-inline-form input[type=text] { padding: 4px 8px; }
+    .hulahoot-admin-form button[type=submit]:disabled { opacity: .6; cursor: default; }
+    .hulahoot-swess-mark {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 26px; height: 26px; border-radius: 7px; background: #000; color: #fff;
+        font-size: 11px; font-weight: 800; letter-spacing: -.02em; margin-right: 8px;
+        vertical-align: middle;
+    }
+    .hulahoot-swess-user-search { position: relative; }
+    .hulahoot-swess-user-search-results {
+        display: none; position: absolute; z-index: 20; top: 100%; left: 0; right: 0;
+        background: #fff; border: 1px solid #d5d5d5; border-top: none; border-radius: 0 0 4px 4px;
+        max-height: 240px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    }
+    .hulahoot-swess-user-search-results.is-open { display: block; }
+    .hulahoot-swess-user-search-result {
+        padding: 8px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #f0f0f0;
+    }
+    .hulahoot-swess-user-search-result:last-child { border-bottom: none; }
+    .hulahoot-swess-user-search-result:hover, .hulahoot-swess-user-search-result.is-active { background: #f3f3f3; }
+    .hulahoot-swess-user-search-result .hulahoot-swess-user-search-email { color: #888; font-size: 12px; margin-left: 4px; }
+    .hulahoot-swess-user-search-empty { padding: 8px 12px; color: #888; font-size: 13px; }
+{/literal}
+</style>
+<div class="hulahoot-admin">
+    <div class="page-header hulahoot-page-header">
+        <h1><span class="hulahoot-swess-mark">SW</span>{if $owner}{_p var='hulahoot_edit_swess_whitelist'}{else}{_p var='hulahoot_add_swess_whitelist'}{/if}</h1>
+        <div class="hulahoot-header-actions">
+            {if $whitelist_id}
+                <form method="post" action="/admincp/hulahoot/swess/whitelist/add?id={$whitelist_id}" style="display:inline;" onsubmit="return confirm('{_p var='hulahoot_confirm_delete_swess_whitelist' phpfox_squote=true}');">
+                    <input type="hidden" name="hulahoot_token" value="{$csrf_token}">
+                    <input type="hidden" name="do" value="delete_whitelist">
+                    <button type="submit" class="btn btn-danger">{_p var='hulahoot_delete_swess_whitelist'}</button>
+                </form>
+            {/if}
+            <a href="/admincp/hulahoot/swess/whitelist" class="btn btn-default">{_p var='hulahoot_back_to_swess_whitelist'}</a>
+        </div>
+    </div>
+
+    {if $error}
+        <div class="alert alert-danger">{$error|clean}</div>
+    {/if}
+
+    <form method="post" action="/admincp/hulahoot/swess/whitelist/add{if $whitelist_id}?id={$whitelist_id}{/if}" class="form-horizontal hulahoot-admin-form">
+        <input type="hidden" name="hulahoot_token" value="{$csrf_token}">
+        <input type="hidden" name="do" value="save_whitelist">
+
+        {if $owner}
+            <div class="form-group">
+                <label class="col-sm-3 control-label">{_p var='hulahoot_field_user'}</label>
+                <div class="col-sm-9">
+                    <p class="form-control-static">{$owner.user_name} <span class="text-muted">({$owner.full_name})</span></p>
+                </div>
+            </div>
+        {else}
+            <div class="form-group">
+                <label for="hulahoot_swess_user_lookup" class="col-sm-3 control-label">{_p var='hulahoot_field_user'}</label>
+                <div class="col-sm-9 hulahoot-swess-user-search">
+                    <input type="text" name="user_lookup" id="hulahoot_swess_user_lookup" class="form-control" placeholder="{_p var='hulahoot_swess_user_lookup_placeholder'}" required autofocus autocomplete="off">
+                    <input type="hidden" name="user_lookup_id" id="hulahoot_swess_user_lookup_id" value="">
+                    <div id="hulahoot_swess_user_lookup_results" class="hulahoot-swess-user-search-results"></div>
+                    <span class="help-block">{_p var='hulahoot_swess_user_lookup_help'}</span>
+                </div>
+            </div>
+        {/if}
+
+        <div class="form-group">
+            <label class="col-sm-3 control-label">{_p var='hulahoot_swess_field_enabled'}</label>
+            <div class="col-sm-9">
+                <label class="checkbox-inline">
+                    <input type="checkbox" name="is_enabled" value="1" {if $whitelist.is_enabled}checked{/if}> {_p var='hulahoot_swess_enabled_help'}
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-sm-3 control-label">{_p var='hulahoot_swess_field_post_as_self'}</label>
+            <div class="col-sm-9">
+                <label class="checkbox-inline">
+                    <input type="checkbox" name="post_as_self" value="1" {if $whitelist.post_as_self}checked{/if}> {_p var='hulahoot_yes'}
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-sm-3 control-label">{_p var='hulahoot_swess_field_post_as_business'}</label>
+            <div class="col-sm-9">
+                <label class="checkbox-inline">
+                    <input type="checkbox" name="post_as_business" value="1" {if $whitelist.post_as_business}checked{/if}> {_p var='hulahoot_yes'}
+                </label>
+                <span class="help-block">{_p var='hulahoot_swess_post_as_business_help'}</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-sm-3 control-label">{_p var='hulahoot_swess_field_requires_review'}</label>
+            <div class="col-sm-9">
+                <label class="checkbox-inline">
+                    <input type="checkbox" name="requires_review" value="1" {if $whitelist.requires_review}checked{/if}> {_p var='hulahoot_swess_requires_review_help'}
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="col-sm-3 control-label">{_p var='hulahoot_swess_field_allowed_target_levels'}</label>
+            <div class="col-sm-9">
+                {foreach from=$target_levels item=aLevel}
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="allowed_target_levels[]" value="{$aLevel.value}" {if in_array($aLevel.value, $allowed_levels)}checked{/if}> {$aLevel.label}
+                    </label>
+                {/foreach}
+                <span class="help-block">{_p var='hulahoot_swess_allowed_target_levels_help'}</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-offset-3 col-sm-9">
+                <button type="submit" class="btn btn-primary">{_p var='hulahoot_save_changes'}</button>
+            </div>
+        </div>
+    </form>
+
+    {if $whitelist_id}
+        <div class="hulahoot-swess-section">
+            <h2>{_p var='hulahoot_swess_approved_identities'}</h2>
+            <p class="help-block">{_p var='hulahoot_swess_approved_identities_help'}</p>
+
+            {foreach from=$identities item=aIdentity}
+                <div class="hulahoot-swess-identity-card">
+                    <div class="hulahoot-swess-identity-head">
+                        <div>
+                            <strong>{if $aIdentity.identity_type == 'self'}{_p var='hulahoot_swess_identity_self'}{else}{_p var='hulahoot_swess_identity_page'} #{$aIdentity.identity_id}{/if}</strong>
+                            {if !$aIdentity.is_active}<span class="label label-default">{_p var='hulahoot_inactive'}</span>{/if}
+                        </div>
+                        {if $aIdentity.is_active}
+                            <form method="post" action="/admincp/hulahoot/swess/whitelist/add?id={$whitelist_id}">
+                                <input type="hidden" name="hulahoot_token" value="{$csrf_token}">
+                                <input type="hidden" name="do" value="revoke_identity">
+                                <input type="hidden" name="approved_identity_id" value="{$aIdentity.approved_identity_id}">
+                                <button type="submit" class="btn btn-danger btn-sm">{_p var='hulahoot_swess_revoke'}</button>
+                            </form>
+                        {/if}
+                    </div>
+
+                    <div>
+                        {foreach from=$aIdentity.tags item=aIdentityTag}
+                            <span class="hulahoot-swess-tag-chip{if $aIdentityTag.is_default} is-default{/if}">
+                                {$aIdentityTag.name}
+                                <form method="post" action="/admincp/hulahoot/swess/whitelist/add?id={$whitelist_id}">
+                                    <input type="hidden" name="hulahoot_token" value="{$csrf_token}">
+                                    <input type="hidden" name="do" value="unassign_tag">
+                                    <input type="hidden" name="approved_identity_id" value="{$aIdentity.approved_identity_id}">
+                                    <input type="hidden" name="tag_id" value="{$aIdentityTag.tag_id}">
+                                    <button type="submit" title="{_p var='hulahoot_swess_remove_tag'}">&times;</button>
+                                </form>
+                            </span>
+                        {/foreach}
+                    </div>
+
+                    <form method="post" action="/admincp/hulahoot/swess/whitelist/add?id={$whitelist_id}" class="hulahoot-swess-inline-form">
+                        <input type="hidden" name="hulahoot_token" value="{$csrf_token}">
+                        <input type="hidden" name="do" value="assign_tag">
+                        <input type="hidden" name="approved_identity_id" value="{$aIdentity.approved_identity_id}">
+                        <select name="tag_id" class="form-control input-sm" required>
+                            <option value="">{_p var='hulahoot_swess_choose_tag'}</option>
+                            {foreach from=$tags item=aTag}
+                                <option value="{$aTag.tag_id}">{$aTag.name}</option>
+                            {/foreach}
+                        </select>
+                        <label class="checkbox-inline"><input type="checkbox" name="is_default" value="1"> {_p var='hulahoot_swess_make_default'}</label>
+                        <button type="submit" class="btn btn-default btn-sm">{_p var='hulahoot_swess_assign_tag'}</button>
+                    </form>
+                </div>
+            {foreachelse}
+                <p class="text-muted">{_p var='hulahoot_swess_no_identities_yet'}</p>
+            {/foreach}
+
+            <form method="post" action="/admincp/hulahoot/swess/whitelist/add?id={$whitelist_id}" class="hulahoot-swess-inline-form">
+                <input type="hidden" name="hulahoot_token" value="{$csrf_token}">
+                <input type="hidden" name="do" value="approve_identity">
+                <select name="identity_type" class="form-control input-sm" id="js_hulahoot_swess_identity_type">
+                    <option value="self">{_p var='hulahoot_swess_identity_self'}</option>
+                    <option value="page">{_p var='hulahoot_swess_identity_page'}</option>
+                </select>
+                <input type="text" name="identity_id" class="form-control input-sm" placeholder="{_p var='hulahoot_swess_page_id_placeholder'}">
+                <button type="submit" class="btn btn-primary btn-sm">{_p var='hulahoot_swess_approve_identity'}</button>
+            </form>
+            <p class="help-block">{_p var='hulahoot_swess_page_id_help'}</p>
+        </div>
+    {/if}
+</div>
+{if !$owner}
+<script>
+{literal}
+(function () {
+    var input = document.getElementById('hulahoot_swess_user_lookup');
+    var hiddenId = document.getElementById('hulahoot_swess_user_lookup_id');
+    var results = document.getElementById('hulahoot_swess_user_lookup_results');
+    if (!input || !hiddenId || !results) {
+        return;
+    }
+
+    var debounceTimer = null;
+    var currentRequest = null;
+
+    function closeResults() {
+        results.classList.remove('is-open');
+        results.innerHTML = '';
+    }
+
+    function renderResults(users) {
+        results.innerHTML = '';
+
+        if (!users.length) {
+            var empty = document.createElement('div');
+            empty.className = 'hulahoot-swess-user-search-empty';
+            empty.textContent = '{/literal}{_p var="hulahoot_swess_search_no_results" phpfox_squote=true}{literal}';
+            results.appendChild(empty);
+            results.classList.add('is-open');
+            return;
+        }
+
+        users.forEach(function (user) {
+            var row = document.createElement('div');
+            row.className = 'hulahoot-swess-user-search-result';
+            row.setAttribute('data-user-id', user.user_id);
+
+            var nameSpan = document.createElement('span');
+            nameSpan.textContent = user.user_name + (user.full_name ? ' (' + user.full_name + ')' : '');
+            row.appendChild(nameSpan);
+
+            var emailSpan = document.createElement('span');
+            emailSpan.className = 'hulahoot-swess-user-search-email';
+            emailSpan.textContent = user.email || '';
+            row.appendChild(emailSpan);
+
+            row.addEventListener('click', function () {
+                input.value = user.user_name;
+                hiddenId.value = user.user_id;
+                closeResults();
+            });
+
+            results.appendChild(row);
+        });
+
+        results.classList.add('is-open');
+    }
+
+    // Picking a suggestion is what actually resolves user_lookup_id -
+    // any further typing invalidates that pick, falling back to the
+    // controller's exact-match lookup on submit (see
+    // SwessWhitelistAddController's save_whitelist case).
+    input.addEventListener('input', function () {
+        hiddenId.value = '';
+
+        var query = input.value.trim();
+        window.clearTimeout(debounceTimer);
+
+        if (query.length < 2) {
+            closeResults();
+            return;
+        }
+
+        debounceTimer = window.setTimeout(function () {
+            if (currentRequest) {
+                currentRequest.abort();
+            }
+
+            var xhr = new XMLHttpRequest();
+            currentRequest = xhr;
+            xhr.open('GET', '/admincp/hulahoot/swess/whitelist/search-users?q=' + encodeURIComponent(query), true);
+            xhr.onload = function () {
+                if (xhr.status !== 200) {
+                    return;
+                }
+                try {
+                    renderResults(JSON.parse(xhr.responseText));
+                } catch (e) {
+                    closeResults();
+                }
+            };
+            xhr.send();
+        }, 250);
+    });
+
+    document.addEventListener('click', function (e) {
+        if (e.target !== input && !results.contains(e.target)) {
+            closeResults();
+        }
+    });
+
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeResults();
+        }
+    });
+})();
+{/literal}
+</script>
+{/if}
