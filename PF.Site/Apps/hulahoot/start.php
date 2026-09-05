@@ -898,6 +898,10 @@ group('/hulahoot/swess', function () {
             'active_purchases' => $aEntitlement['active_purchases'] ?? [],
             'credit_balance' => (new \Apps\Hulahoot\Service\CreditLedger())->getBalance($iUserId),
             'credits_per_post' => \Apps\Hulahoot\Service\CreditLedger::getCreditsPerPost(),
+            // Shown in the video field's help text so the publisher sees the
+            // real effective ceiling (admin setting, clamped to PHP's own
+            // upload_max_filesize) rather than a hardcoded number.
+            'max_video_mb' => (int)floor(\Apps\Hulahoot\Service\VideoUpload::getMaxBytes() / 1024 / 1024),
             'existing_media' => $aPost && $iPostId ? array_map(function ($aMedia) use ($oImageUploadForUrls, $oVideoUploadForUrls) {
                 // Photos and video live in the same table but separate
                 // storage directories, so the URL must be resolved by the

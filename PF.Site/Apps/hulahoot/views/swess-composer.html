@@ -45,7 +45,8 @@
 }
 .hulahoot-swess-media-existing { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
 .hulahoot-swess-media-thumb { width: 100px; text-align: center; }
-.hulahoot-swess-media-thumb img { width: 100px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e2e2; }
+.hulahoot-swess-media-thumb img,
+.hulahoot-swess-media-thumb video { width: 100px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e2e2; background: #000; }
 .hulahoot-swess-media-thumb label { display: block; font-size: 11px; color: #c0392b; margin-top: 4px; cursor: pointer; }
 
 @media (max-width: 560px) {
@@ -112,7 +113,11 @@
                     <div class="hulahoot-swess-media-existing">
                         {% for media in existing_media %}
                             <div class="hulahoot-swess-media-thumb">
-                                <img src="{{ media.url }}" alt="">
+                                {% if media.media_type == 'video' %}
+                                    <video src="{{ media.url }}" controls preload="metadata"></video>
+                                {% else %}
+                                    <img src="{{ media.url }}" alt="">
+                                {% endif %}
                                 <label><input type="checkbox" name="remove_media_id[]" value="{{ media.id }}"> {{ _p('hulahoot_swess_remove') }}</label>
                             </div>
                         {% endfor %}
@@ -123,6 +128,13 @@
                 <input type="file" class="form-control" name="media_3" accept="image/*" style="margin-top:8px;">
                 <input type="file" class="form-control" name="media_4" accept="image/*" style="margin-top:8px;">
                 <span class="help-block">{{ _p('hulahoot_swess_media_help') }}</span>
+
+                {# Video is its own composer field per master plan item 2, which lists
+                   "Photos" and "Video" separately. One per post; coexists with photos. #}
+                <label class="control-label" style="margin-top:14px;display:block;">{{ _p('hulahoot_swess_field_video') }}</label>
+                <input type="file" class="form-control" name="media_video"
+                       accept="video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.m4v,.webm,.ogv,.mov">
+                <span class="help-block">{{ _p('hulahoot_swess_video_help', {'limit': max_video_mb}) }}</span>
             </div>
 
             <div class="hulahoot-swess-step">
