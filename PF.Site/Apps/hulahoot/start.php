@@ -833,6 +833,20 @@ group('/hulahoot/swess', function () {
                         $swessService->attachMedia($iPostId, $iUserId, $aUploadedPaths);
                     }
 
+                    // Milestone 2: the composer's separate "Video" field
+                    // (master plan item 2 lists Photos and Video as two
+                    // distinct fields). One video per post, stored
+                    // Portal-side only - Service\VideoUpload's own docblock
+                    // covers why this deliberately does not touch the
+                    // native transcoding pipeline or Hulahoot publishing.
+                    // Attached after the photos so ordering stays
+                    // contiguous, and photos/video coexist on one post
+                    // rather than being mutually exclusive.
+                    $sVideoPath = (new \Apps\Hulahoot\Service\VideoUpload())->upload('media_video');
+                    if ($sVideoPath !== null) {
+                        $swessService->attachMedia($iPostId, $iUserId, [$sVideoPath], 'video');
+                    }
+
                     if (request()->get('remove_media_id')) {
                         foreach ((array)request()->get('remove_media_id') as $iRemoveMediaId) {
                             $swessService->removeMedia((int)$iRemoveMediaId, $iUserId);
@@ -870,6 +884,7 @@ group('/hulahoot/swess', function () {
 
         $aEntitlement = (new \Apps\Hulahoot\Service\Entitlement())->getActiveEntitlement($iUserId);
         $oImageUploadForUrls = new \Apps\Hulahoot\Service\ImageUpload();
+        $oVideoUploadForUrls = new \Apps\Hulahoot\Service\VideoUpload();
 
         return view('swess-composer.html', [
             'swess_active' => 'create',
@@ -883,8 +898,13 @@ group('/hulahoot/swess', function () {
             'active_purchases' => $aEntitlement['active_purchases'] ?? [],
             'credit_balance' => (new \Apps\Hulahoot\Service\CreditLedger())->getBalance($iUserId),
             'credits_per_post' => \Apps\Hulahoot\Service\CreditLedger::getCreditsPerPost(),
-            'existing_media' => $aPost && $iPostId ? array_map(function ($aMedia) use ($oImageUploadForUrls) {
-                $aMedia['url'] = $oImageUploadForUrls->resolveUrl($aMedia['file_path']);
+            'existing_media' => $aPost && $iPostId ? array_map(function ($aMedia) use ($oImageUploadForUrls, $oVideoUploadForUrls) {
+                // Photos and video live in the same table but separate
+                // storage directories, so the URL must be resolved by the
+                // row's own media_type.
+                $aMedia['url'] = $aMedia['media_type'] === 'video'
+                    ? $oVideoUploadForUrls->resolveUrl($aMedia['file_path'])
+                    : $oImageUploadForUrls->resolveUrl($aMedia['file_path']);
                 return $aMedia;
             }, $swessService->getMediaForPost($iPostId)) : [],
             'error' => $error,
@@ -977,14 +997,17 @@ group('/hulahoot/swess', function () {
         unset($aRow);
 
         $oImageUploadForDetail = new \Apps\Hulahoot\Service\ImageUpload();
+        $oVideoUploadForDetail = new \Apps\Hulahoot\Service\VideoUpload();
 
         return view('swess-post-detail.html', [
             'swess_active' => 'posts',
             'post' => $aPost,
             'tag' => $aPost['tag_id'] ? $swessService->getTagById((int)$aPost['tag_id']) : null,
             // Milestone 2.
-            'media' => array_map(function ($aMedia) use ($oImageUploadForDetail) {
-                $aMedia['url'] = $oImageUploadForDetail->resolveUrl($aMedia['file_path']);
+            'media' => array_map(function ($aMedia) use ($oImageUploadForDetail, $oVideoUploadForDetail) {
+                $aMedia['url'] = $aMedia['media_type'] === 'video'
+                    ? $oVideoUploadForDetail->resolveUrl($aMedia['file_path'])
+                    : $oImageUploadForDetail->resolveUrl($aMedia['file_path']);
                 return $aMedia;
             }, $swessService->getMediaForPost($iPostId)),
             'campaign' => $aPost['campaign_id'] ? (new \Apps\Hulahoot\Service\Campaign())->getById((int)$aPost['campaign_id']) : null,
